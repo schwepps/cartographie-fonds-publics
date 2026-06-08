@@ -7,16 +7,22 @@ By participating you agree to our [Code of Conduct](CODE_OF_CONDUCT.md).
 ## Development setup
 
 Prerequisites: **Python 3.11+** with [uv](https://github.com/astral-sh/uv), **Node 20+** with
-[pnpm](https://pnpm.io/), and **Docker** (optional — local Postgres/Redis).
+[pnpm](https://pnpm.io/), **Docker**, and the [Supabase CLI](https://supabase.com/docs/guides/cli)
+(for the local dev database).
 
 ```bash
 git clone https://github.com/schwepps/cartographie-fonds-publics.git
 cd cartographie-fonds-publics
-cp .env.example .env          # then set VITE_SUPABASE_* + DATABASE_URL (see DEPLOYMENT.md)
+cp .env.example .env          # ships working local-dev defaults (no secrets to fill in)
 make install
-make spike        # sanity check: runs offline, prints a SIREN match rate
-make up           # optional: local Postgres + Redis (prod uses Supabase)
+make spike            # sanity check: runs offline, prints a SIREN match rate
+make supabase-up      # start the local dev Supabase stack (Docker) + apply migrations
+make up               # optional: local Redis cache (prod uses Supabase)
 ```
+
+The local dev database is a full Supabase running in Docker — **isolated from production**.
+See [DEPLOYMENT.md → Local development](DEPLOYMENT.md) for the full loop and the dev↔prod
+secrets boundary ([SECURITY.md](SECURITY.md)).
 
 ## Workflow
 

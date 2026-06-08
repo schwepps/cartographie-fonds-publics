@@ -18,18 +18,45 @@ The frontend talks to Supabase **directly** (PostgREST for tables, the `graph_ne
 for traversal), protected by Row Level Security (public read). See
 [ADR-0005](docs/adr/0005-supabase-vercel-baas.md).
 
-## 1. Supabase (database + API)
+## Local development (dev environment)
+
+**Dev is a full Supabase running locally in Docker** via the Supabase CLI — not the prod
+project. This lets parallel Conductor worktrees develop safely with **no path to production
+writes** (everything is `127.0.0.1`). Prerequisites: **Docker** and the
+[Supabase CLI](https://supabase.com/docs/guides/cli).
+
+```bash
+make supabase-up     # `supabase start` — Postgres + PostgREST + Auth + Studio in Docker;
+                     # auto-applies supabase/migrations/*.sql on a fresh DB
+cp .env.example .env                     # root: ingestion env (local defaults, no secrets)
+cd packages/web && cp .env.example .env  # web: VITE_SUPABASE_* (local defaults)
+make web             # frontend reads the local stack at http://127.0.0.1:54321
+make db-verify       # optional: assert RLS posture (DATABASE_URL must point at :54322)
+make supabase-down   # stop the stack
+```
+
+Both `.env.example` files ship the **public local demo keys** (issuer `supabase-demo`,
+localhost-only — not secrets; re-fetch any time with `supabase status -o env`). After adding a
+migration, run `make supabase-reset` to re-apply.
+
+> **Dev ↔ prod boundary.** Local dev uses only local demo keys and never touches prod. Do
+> **not** `supabase link` / `supabase db push` the production project for routine dev — prod
+> migrations go through `make db-migrate` against the prod `DATABASE_URL` (§1). Production
+> secrets live only in GitHub Actions / Vercel, never in a local file. See SECURITY.md.
+
+---
+
+The sections below are the **production** deploy (the prod Supabase Pro project + Vercel + CI).
+
+## 1. Supabase (database + API) — production
 
 1. Create a project (you're on **Pro**: 8 GB DB, daily backups, **no auto-pause**).
-2. Apply the schema:
+2. Apply the schema with `DATABASE_URL` pointing at the **prod** project:
    ```bash
-   # Option A — Supabase CLI (local parity):
-   supabase link --project-ref YOUR_REF && supabase db push
-   # Option B — psql:
-   make db-migrate     # runs supabase/migrations/*.sql against $DATABASE_URL
+   make db-migrate     # runs supabase/migrations/*.sql against $DATABASE_URL (psql, fail-loud)
    ```
    This creates the curated tables, **RLS public-read** policies, and the `graph_neighbors`
-   RPC.
+   RPC — the same migrations the local dev stack applies, so dev and prod stay in parity.
 3. Grab the **Project URL** and **anon key** (frontend) and **service-role key** (ingestion).
 
 > Keep only the **curated graph + aggregates** here. Raw DECP/SIRENE extracts stay as Parquet
@@ -64,7 +91,7 @@ and as an ingestion lock. Not required for the MVP — add it when a query is me
 
 ## First-deploy checklist
 
-- [ ] Supabase project created; `make db-migrate` (or `supabase db push`) applied
+- [ ] Prod Supabase project created; `make db-migrate` applied against the prod `DATABASE_URL`
 - [ ] Verify RLS: anon can `select` curated tables and call `graph_neighbors`; cannot write
 - [ ] Vercel project connected; **Root Directory = `packages/web`**; `VITE_SUPABASE_*` env set; first deploy green
 - [ ] GitHub secrets `DATABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` set; run `data-refresh` once

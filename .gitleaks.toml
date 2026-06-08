@@ -1,0 +1,16 @@
+# gitleaks config — extends the default ruleset (does not replace it).
+# Sole purpose: allow the PUBLIC Supabase local-dev demo JWTs that ship in the .env.example
+# files. These keys are issued by "supabase-demo", are identical on every machine, and are
+# only valid against the local CLI stack (127.0.0.1) — they are NOT secrets. Any other JWT
+# (e.g. a real production anon/service-role key, which has a different issuer + signature) is
+# still detected and blocked. See SECURITY.md → "Secrets & environments".
+title = "cartographie-fonds-publics gitleaks config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Public Supabase local demo JWTs (issuer supabase-demo, localhost-only) — not secrets"
+regexes = [
+  '''eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\.eyJpc3MiOiJzdXBhYmFzZS1kZW1v[A-Za-z0-9_.\-]+''',
+]

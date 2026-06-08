@@ -1,0 +1,63 @@
+# Local development config for the Supabase CLI stack (`supabase start`).
+# This is the DEV environment — a full Supabase running in Docker on localhost.
+# Production is a separate Supabase Pro project (see DEPLOYMENT.md); nothing here touches it.
+# Reference: https://supabase.com/docs/guides/local-development/cli/config
+#
+# Trimmed to what this project uses: Postgres + PostgREST (tables + the `graph_neighbors`
+# RPC, under RLS public-read) + Auth (GoTrue — required to mint the anon/service_role JWTs the
+# frontend and ingestion use) + Studio. Storage/Realtime/Edge/Analytics are disabled to keep
+# the local stack lighter — handy when several Conductor worktrees run it at once.
+
+project_id = "cartographie-fonds-publics"
+
+[api]
+enabled = true
+# Frontend reads here: VITE_SUPABASE_URL=http://127.0.0.1:54321
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+# Direct Postgres for migrations + ingestion: postgresql://postgres:postgres@127.0.0.1:54322/postgres
+port = 54322
+shadow_port = 54320
+# Must match the remote (prod) database's major version. Run `SHOW server_version;` on prod
+# and align this if it differs. 17 is the current Supabase default for new projects.
+major_version = 17
+
+[db.migrations]
+# Local `supabase db reset` applies supabase/migrations/*.sql. Prod uses `make db-migrate`
+# (psql) over the same files — same SQL, same order, so dev/prod schema stays in parity.
+enabled = true
+
+[db.seed]
+# No seed data in scope yet (ingestion is stubbed); curated rows arrive via the pipeline.
+enabled = false
+
+[studio]
+enabled = true
+port = 54323
+api_url = "http://127.0.0.1"
+
+# Auth (GoTrue) is enabled only to mint the anon/service_role JWTs that PostgREST validates
+# and that `supabase status` prints. No login flows are used — access is RLS public-read via
+# the anon role.
+[auth]
+enabled = true
+
+# --- Unused services: disabled for a lean local stack -------------------------------------
+[storage]
+enabled = false
+
+[realtime]
+enabled = false
+
+[edge_runtime]
+enabled = false
+
+[analytics]
+enabled = false
+
+[inbucket]
+enabled = false

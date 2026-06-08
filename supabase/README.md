@@ -8,11 +8,15 @@ See [ADR-0005](../docs/adr/0005-supabase-vercel-baas.md).
 ## Apply migrations
 
 ```bash
-# Option A — Supabase CLI (local parity):
-supabase link --project-ref YOUR_REF && supabase db push
-# Option B — psql / make:
-make db-migrate          # applies every migrations/*.sql in order, fails loud on drift
+# Local dev (Supabase CLI stack): `make supabase-up` (supabase start) auto-applies every
+# migrations/*.sql on a fresh DB; after adding a new one, re-apply with:
+make supabase-reset      # supabase db reset — drops local DB and re-applies all migrations
+# Production: psql over the direct connection (same files, same order, fails loud on drift):
+make db-migrate          # applies every migrations/*.sql against $DATABASE_URL
 ```
+
+Dev and prod stay in parity because both paths run the **same** `migrations/*.sql` in lexical
+order. Dev = local stack (see [config.toml](config.toml)); prod = the Supabase Pro project.
 
 ## Migration conventions
 
@@ -27,9 +31,9 @@ make db-migrate          # applies every migrations/*.sql in order, fails loud o
   `create or replace function`. **Never edit a migration already applied to a shared database** —
   add a new one. `ON_ERROR_STOP=1` means any failure aborts the run loudly.
 - **Roles & grants are Supabase-provided.** The `anon`, `authenticated`, and `service_role`
-  roles plus their baseline table grants already exist in production — migrations must **not**
-  create them. (For a bare Postgres, `tests/supabase_roles.sql` recreates that baseline; see
-  below.)
+  roles plus their baseline table grants already exist in production **and in the local CLI
+  stack** — migrations must **not** create them. (Only a *bare* Postgres lacks them; CI uses
+  `tests/supabase_roles.sql` to recreate that baseline — see below.)
 - **New curated table → public-read RLS in the same migration**, and add the table to the loop
   list in [`tests/rls_checks.sql`](tests/rls_checks.sql) so the RLS check covers it.
 
@@ -37,16 +41,21 @@ make db-migrate          # applies every migrations/*.sql in order, fails loud o
 
 `make db-verify` runs [`tests/rls_checks.sql`](tests/rls_checks.sql): it asserts that `anon`
 can SELECT every curated table and call `graph_neighbors`, but cannot INSERT/UPDATE/DELETE.
-It expects a Supabase-like database (roles + grants present), so against a **bare** Postgres
-(`make up`, or CI) apply the compatibility shim first:
+It expects a Supabase-like database (roles + grants present). Against the **local CLI stack**
+it works directly (roles exist):
+
+```bash
+DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres make db-verify
+```
+
+The `tests/supabase_roles.sql` compatibility shim is **CI-only**: CI runs against a fresh,
+**bare** `postgres:16` (no Supabase roles), so it applies the shim first:
 
 ```bash
 psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/tests/supabase_roles.sql  # bare Postgres only
 make db-migrate
 make db-verify
 ```
-
-CI runs exactly this against a fresh `postgres:16` on every PR.
 
 ## Size discipline
 Pro gives an 8 GB database — ample for the curated graph + aggregates. Still load **summaries,
