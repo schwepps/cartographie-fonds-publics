@@ -15,7 +15,7 @@ up: ## Start optional local Redis (cache)
 down: ## Stop local Redis
 	docker compose down
 
-supabase-up: ## Start the local dev Supabase stack (Postgres + PostgREST + Studio)
+supabase-up: ## Start the local dev Supabase stack (Postgres + PostgREST + Auth + Studio)
 	supabase start
 
 supabase-down: ## Stop the local dev Supabase stack
