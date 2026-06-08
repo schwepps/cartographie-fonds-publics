@@ -23,9 +23,24 @@ make up           # optional: local Postgres + Redis (prod uses Supabase)
 - **One feature/fix per pull request.** Small PRs get reviewed faster.
 - **Conventional Commits** for commit messages and PR titles:
   `feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `chore:` (e.g. `feat(ingestion): add OFGL connector`).
+  This is **enforced** by a `commit-msg` hook (commitlint) — non-conforming messages are rejected.
 - Branch off `main`; open a PR; fill in the template checklist.
-- All checks must pass: `make lint format typecheck test`. Install the hooks once with
-  `uv run pre-commit install`.
+- All checks must pass: `make lint format typecheck test`.
+
+### Git hooks
+
+`make install` runs `pre-commit install`, which wires both the `pre-commit` and `commit-msg`
+stages automatically — no separate step. On every commit the hooks:
+
+- **commit message** → commitlint enforces Conventional Commits;
+- **staged Python** → ruff lint (`--fix`) + ruff format (staged files only);
+- **web** → when any `packages/web` file is staged, ESLint + Prettier lint the **whole**
+  `packages/web` package (not just the staged files), matching web CI;
+- **all staged changes** (any file type) → gitleaks secret scan (blocks committing secrets).
+
+Hooks fire based on the staged file set; the ruff and gitleaks checks operate on the staged
+changes themselves, while the web check runs across the package. If you ever need to bootstrap
+hooks manually, run `uv run pre-commit install`.
 
 ## Adding or fixing a data source
 

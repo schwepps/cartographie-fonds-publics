@@ -18,7 +18,8 @@ ingestion = { workspace = true }
 core = { workspace = true }
 
 [dependency-groups]
-dev = ["ruff==0.15.16", "pytest>=8", "mypy>=1.11", "types-PyYAML>=6", "respx>=0.21"]  # ruff pinned to the pre-commit hook rev; respx mocks httpx for offline connector tests
+dev = ["ruff==0.15.16", "pytest>=8", "mypy>=1.11", "types-PyYAML>=6", "respx>=0.21", "pre-commit>=4"]  # ruff pinned to the pre-commit hook rev; respx mocks httpx for offline connector tests; pre-commit drives git hooks
+audit = ["pip-audit>=2"]  # CI-only dependency vulnerability scanner (FSC-46)
 
 [tool.ruff]
 line-length = 100

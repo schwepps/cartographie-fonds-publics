@@ -4,9 +4,10 @@
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-12s\033[0m %s\n",$$1,$$2}'
 
-install: ## Install deps (Python via uv, web via pnpm)
+install: ## Install deps (Python via uv, web via pnpm) + git hooks
 	uv sync
 	cd packages/web && pnpm install
+	uv run pre-commit install --install-hooks
 
 up: ## Start optional local services (Postgres + Redis)
 	docker compose up -d

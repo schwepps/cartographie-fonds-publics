@@ -21,6 +21,31 @@ jobs:
       - name: Tests
         run: uv run pytest -q
 
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Scan for secrets (gitleaks)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+      - name: Sync deps (with audit group)
+        run: uv sync --all-packages --group audit
+      # Audits the resolved environment (skips local editable packages). pip-audit has no
+      # severity gate (all-or-nothing) — block on any advisory; add accepted lower-severity
+      # ones via `--ignore-vuln GHSA-…` with a comment explaining why.
+      - name: Audit Python dependencies (pip-audit)
+        run: uv run --group audit pip-audit --skip-editable
+
   database:
     runs-on: ubuntu-latest
     services:
