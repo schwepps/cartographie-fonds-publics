@@ -1,0 +1,14 @@
+{
+  "$schema": "https://frictionlessdata.io/schemas/table-schema.json",
+  "name": "decp-marches-trimmed",
+  "title": "DECP — trimmed Table Schema (test fixture)",
+  "description": "Faithful subset of the DECP marchés schema, just enough to exercise validation offline. Not authoritative; see schema.data.gouv.fr for the real descriptor.",
+  "fields": [
+    { "name": "acheteur_siren", "type": "string", "constraints": { "required": true } },
+    { "name": "acheteur_nom", "type": "string" },
+    { "name": "titulaire_siren", "type": "string", "constraints": { "required": true } },
+    { "name": "titulaire_nom", "type": "string" },
+    { "name": "montant", "type": "integer" },
+    { "name": "nature", "type": "string" }
+  ]
+}

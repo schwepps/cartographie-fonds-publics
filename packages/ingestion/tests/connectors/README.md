@@ -91,4 +91,33 @@ def test_validate_fails_loud_on_schema_drift(load_fixture) -> None:
 - **Keep it offline.** Never add a live fallback or a real URL the mock doesn't cover —
   `test_unmocked_request_is_blocked` documents why the suite refuses it.
 
+## `validate()` / `snapshot()` — delegate to the shared harness
+
+Don't re-implement validation or snapshotting per connector. Two connector-agnostic modules do
+the work (and own their own tests: [`../test_validation.py`](../test_validation.py),
+[`../test_snapshot.py`](../test_snapshot.py)):
+
+| Harness | What a connector calls it for |
+| -- | -- |
+| [`ingestion.validation.validate_extract`](../../src/ingestion/validation.py) | fail loud on schema/column drift; returns cell-warning counts |
+| [`ingestion.snapshot.write_snapshot`](../../src/ingestion/snapshot.py) | atomic Parquet snapshot with embedded provenance |
+
+```python
+from ingestion.validation import validate_extract
+from ingestion.snapshot import write_snapshot
+
+class DatagouvConnector(Connector):
+    def validate(self, raw: bytes, schema_ref: str | None) -> None:
+        validate_extract(raw, source_id=self.source_id, schema_ref=schema_ref)  # raises on drift
+
+    def snapshot(self, raw: bytes, source_id: str) -> str:
+        report = validate_extract(raw, source_id=source_id, schema_ref=self.schema_ref)
+        return str(write_snapshot(raw, source_id=source_id, extracted_at=self.extracted_at,
+                                  schema_ref=self.schema_ref, cell_warnings=report.cell_warning_count))
+```
+
+**Order matters (FSC-16 AC3):** always `validate()` *before* `snapshot()`. A drift raises, so
+`snapshot()` is never reached and the previous valid snapshot stays in service. `schema_ref`
+comes from the registry — `Source.schema_ref` / `Source.schema_validate`, never hardcoded.
+
 See [`test_harness.py`](test_harness.py) for runnable, offline examples of every piece.
