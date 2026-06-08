@@ -1,0 +1,6 @@
+# Code owners — see https://docs.github.com/articles/about-code-owners
+#
+# The connectors package is auto-discovered: dropping a new module there silently changes
+# runtime dispatch and runs its top-level code in CI. Require explicit review of any change
+# to that directory so a new connector file is never merged unseen.
+/packages/ingestion/src/ingestion/connectors/ @schwepps
