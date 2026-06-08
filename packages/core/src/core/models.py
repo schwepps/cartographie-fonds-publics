@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import StrEnum
 from typing import Annotated
 
 from pydantic import BaseModel, BeforeValidator
@@ -30,14 +30,14 @@ OptionalSiren = Annotated[str | None, BeforeValidator(_validate_siren)]
 RequiredSiren = Annotated[str, BeforeValidator(_validate_siren)]
 
 
-class Level(str, Enum):
+class Level(StrEnum):
     state = "state"
     local = "local"
     social = "social"
     delegated = "delegated"
 
 
-class EdgeType(str, Enum):
+class EdgeType(StrEnum):
     tutelle = "tutelle"  # oversight / parent ministry
     participation = "participation"  # ownership stake (SEM/SPL)
     funds = "funds"  # money flow
