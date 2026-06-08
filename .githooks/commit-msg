@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# Workspace-agnostic git hook. See CONTRIBUTING.md → "Git hooks".
+# Resolves pre-commit from THIS worktree's venv; see .githooks/pre-commit for why.
+set -euo pipefail
+
+ROOT="$(git rev-parse --show-toplevel)"
+ARGS=(hook-impl --config=.pre-commit-config.yaml --hook-type=commit-msg --hook-dir "$ROOT/.githooks" -- "$@")
+
+PY="$ROOT/.venv/bin/python"
+if [ -x "$PY" ]; then
+  exec "$PY" -m pre_commit "${ARGS[@]}"
+elif command -v pre-commit >/dev/null 2>&1; then
+  exec pre-commit "${ARGS[@]}"
+elif command -v uv >/dev/null 2>&1; then
+  exec uv run --project "$ROOT" pre-commit "${ARGS[@]}"
+else
+  echo 'pre-commit unavailable — run `make install` in this workspace.' >&2
+  exit 1
+fi

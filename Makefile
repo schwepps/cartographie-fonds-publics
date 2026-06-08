@@ -7,7 +7,8 @@ help: ## Show this help
 install: ## Install deps (Python via uv, web via pnpm) + git hooks
 	uv sync
 	cd packages/web && pnpm install
-	uv run pre-commit install --install-hooks
+	git config core.hooksPath .githooks   # committed, worktree-relative hooks (Conductor-safe)
+	uv run pre-commit install-hooks       # pre-build hook envs (does not touch .git/hooks)
 
 up: ## Start optional local services (Postgres + Redis)
 	docker compose up -d
