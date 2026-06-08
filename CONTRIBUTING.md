@@ -27,6 +27,54 @@ make up           # optional: local Postgres + Redis (prod uses Supabase)
 - Branch off `main`; open a PR; fill in the template checklist.
 - All checks must pass: `make lint format typecheck test`.
 
+### Branch protection (`main`)
+
+`main` is protected so no one — human or agent — can merge a PR with red CI. The required
+status checks are **`python`**, **`web`**, and **`database`** (the job names in
+[`ci.yml`](.github/workflows/ci.yml) and [`web-ci.yml`](.github/workflows/web-ci.yml)); names
+must match the jobs exactly. The `secrets` (gitleaks) and `audit` (pip-audit / pnpm audit) jobs
+stay advisory — they can fail on upstream advisories unrelated to a given PR.
+
+> The `web` check is a lightweight gate job that **always runs** and reports success when
+> `packages/web/**` is untouched, so non-web PRs never hang waiting for it. The actual web
+> gates run in the `build` job only when web files change.
+
+Enabling protection is a one-time admin action. With the GitHub CLI (`gh auth login` as a repo
+admin first):
+
+```bash
+gh api -X PUT repos/schwepps/cartographie-fonds-publics/branches/main/protection \
+  --input - <<'JSON'
+{
+  "required_status_checks": {
+    "strict": true,
+    "checks": [
+      { "context": "python" },
+      { "context": "web" },
+      { "context": "database" }
+    ]
+  },
+  "enforce_admins": true,
+  "required_pull_request_reviews": null,
+  "restrictions": null
+}
+JSON
+```
+
+Trade-offs to set deliberately:
+
+- `strict: true` — a PR must be up to date with `main` before merging (re-runs CI when the base
+  moves). Set `false` if forced re-runs become noisy with many parallel PRs.
+- `enforce_admins: true` — admins are bound by CI too. This is the point; flip to `false` only
+  if you need an emergency-merge escape hatch.
+- `required_pull_request_reviews: null` — no review required, so a solo maintainer can self-merge
+  green PRs. Add a review requirement here once there are other reviewers.
+
+Equivalent via the UI: **Settings → Branches → Add branch ruleset/rule** for `main` →
+**Require status checks to pass before merging** → add `python`, `web`, `database` → also tick
+**Require branches to be up to date** and **Do not allow bypassing the above settings** to match
+the CLI body above.
+
 ### Git hooks
 
 `make install` runs `pre-commit install`, which wires both the `pre-commit` and `commit-msg`

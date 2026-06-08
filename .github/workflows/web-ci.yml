@@ -1,12 +1,31 @@
 name: Web CI
+# No top-level path filter: the workflow must run on every PR so the `web` gate job can
+# always report a status (otherwise a required check would hang "Expected" on non-web PRs).
+# Path filtering is done inside, so the heavy `build` job still runs only when web changed.
 on:
   push:
     branches: [main]
-    paths: ["packages/web/**"]
   pull_request:
-    paths: ["packages/web/**"]
+concurrency:
+  group: web-ci-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
-  web:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      web: ${{ steps.filter.outputs.web }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            web:
+              - 'packages/web/**'
+
+  build:
+    needs: changes
+    if: needs.changes.outputs.web == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -25,3 +44,20 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm build
+
+  # Skip-aware gate: this is the deterministic required status check ("web"). It always runs
+  # and passes when `build` succeeded or was skipped (web untouched), failing only on a real
+  # build failure or cancellation.
+  web:
+    needs: build
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Gate on web build result
+        run: |
+          result="${{ needs.build.result }}"
+          echo "web build result: $result"
+          if [ "$result" = "success" ] || [ "$result" = "skipped" ]; then
+            exit 0
+          fi
+          exit 1
