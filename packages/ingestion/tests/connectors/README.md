@@ -30,6 +30,25 @@ Copy this when adding a connector test. It targets a hypothetical `DatagouvConne
 implementing the [`Connector` ABC](../../src/ingestion/connectors/base.py); swap in the
 real class and fixtures once the connector exists.
 
+The connector self-registers with `@register("<platform>")` keyed on its registry
+`platform` (`datagouv_api`, `ods_explore`, `rest`). That single decorator is all the
+dispatch wiring there is — `get_connector(source)` finds it automatically, with no edits
+to `cli.py` or `connectors/__init__.py`:
+
+```python
+from ingestion.connectors import Connector, register
+
+
+@register("datagouv_api")
+class DatagouvConnector(Connector):
+    ...  # implement discover/extract/validate/snapshot/stage
+```
+
+A connector module must do nothing at import time except register — no network, no
+`get_connector` calls, no other side effects. Auto-discovery imports every sibling module,
+so a module that fails or does work on import fails the whole pipeline (loudly, as a
+`ConnectorImportError` naming the module).
+
 ```python
 import httpx
 

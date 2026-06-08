@@ -1,4 +1,4 @@
-"""Connector contract. One implementation per access method (datagouv_api, ods, rest, file)."""
+"""Connector contract. One implementation per access method (datagouv_api, ods_explore, rest)."""
 
 from __future__ import annotations
 

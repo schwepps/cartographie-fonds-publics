@@ -34,6 +34,10 @@ class Source:
     def discovery(self) -> dict[str, Any]:
         return self.raw.get("discovery", {})
 
+    @property
+    def platform(self) -> str:
+        return self.raw.get("platform", "")
+
 
 def load_registry(path: Path | str = REGISTRY_PATH) -> dict[str, Any]:
     with open(path, encoding="utf-8") as fh:
