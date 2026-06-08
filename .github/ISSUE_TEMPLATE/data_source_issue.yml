@@ -1,0 +1,29 @@
+name: Data source drift / new source
+description: A source changed (URL, schema, slug) or you want to add one
+labels: [data-source]
+body:
+  - type: input
+    id: source_id
+    attributes:
+      label: "Source id (from data/registry/sources-registry.yaml)"
+    validations:
+      required: true
+  - type: dropdown
+    id: kind
+    attributes:
+      label: "Kind of change"
+      options:
+        - "URL changed"
+        - "Schema changed"
+        - "Dataset deprecated / re-slugged"
+        - "New source"
+        - "Data quality"
+    validations:
+      required: true
+  - type: textarea
+    id: details
+    attributes:
+      label: "Details"
+      description: "What changed and how you noticed it (link the dataset)."
+    validations:
+      required: true

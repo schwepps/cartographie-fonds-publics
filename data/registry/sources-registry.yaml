@@ -1,0 +1,306 @@
+# =============================================================================
+# sources-registry.yaml
+# Registre des sources — Cartographie des fonds publics (fullstackhuman)
+# -----------------------------------------------------------------------------
+# RÔLE : source de vérité unique pour l'ingestion. Aucun ID de dataset n'est
+#        codé en dur ailleurs dans le code. Les connecteurs lisent ce fichier,
+#        découvrent les ressources via API, valident, snapshotent, puis chargent.
+#
+# POURQUOI : les sources dérivent (re-slug annuel du PLF, dépréciation de
+#        datasets, migration d'URL service-public.fr -> .gouv.fr, évolution de
+#        schéma DECP). Centraliser ici = un seul endroit à corriger quand ça bouge.
+#
+# CONVENTION DE VERSION : ce fichier est versionné (git). Tout changement de
+#        source = 1 commit traçable. `schema_version` ci-dessous protège les
+#        connecteurs contre une évolution du format du registre lui-même.
+# =============================================================================
+
+schema_version: 1
+updated: 2026-06-08
+maintainer: contact@cartographie-fonds-publics.fr   # role address, not a personal inbox
+license_default: "Licence Ouverte / Etalab 2.0"   # sauf override par source
+
+# -----------------------------------------------------------------------------
+# Conventions transverses (appliquées par les connecteurs)
+# -----------------------------------------------------------------------------
+conventions:
+  join_key_primary: SIREN          # clé de rapprochement n°1 entre entités
+  join_key_secondary: SIRET        # niveau établissement
+  discovery_over_hardcoding: true  # résoudre par org+tag+millésime, jamais par slug figé
+  snapshot_raw: true               # archiver l'extrait brut (provenance + rebuild)
+  validate_against_schema: true    # valider via schema.data.gouv.fr quand dispo
+  drift_policy: "fail_loud"        # si colonnes/format changent -> alerte, pas de chargement silencieux
+  millesime_field: exercice        # année budgétaire normalisée
+  staleness_alert_factor: 2        # alerte si âge > 2x la cadence attendue
+
+# -----------------------------------------------------------------------------
+# Plateformes d'accès (réutilisées par les sources via `platform:`)
+# -----------------------------------------------------------------------------
+platforms:
+  datagouv_api:
+    type: rest
+    base: "https://www.data.gouv.fr/api/1/"
+    auth: none                      # lecture seule sans clé
+    notes: "Catalogue stable. Découverte par organisation + tag. Pagination standard."
+  datagouv_mcp:
+    type: mcp
+    base: "https://mcp.data.gouv.fr/mcp"
+    auth: none
+    tools: [search_datasets, search_organizations, get_dataset_info,
+            list_dataset_resources, get_resource_info, query_resource_data,
+            search_dataservices, get_dataservice_info,
+            get_dataservice_openapi_spec, get_metrics]
+    limits: "Tabular API : CSV <= 100 Mo, XLSX <= 12,5 Mo ; au-delà -> fichier direct."
+    notes: "Pratique pour le spike/exploration. Dépendance externe : pinner + fallback datagouv_api."
+  ods_explore:
+    type: ods                       # Opendatasoft Explore API v2.1
+    version: "2.1"
+    auth: none
+    notes: "Portails ODS : chemin /api/explore/v2.1/. Requêtes filtrables, export CSV/JSON. À confirmer par portail."
+  schema_registry:
+    type: rest
+    base: "https://schema.data.gouv.fr/"
+    auth: none
+    notes: "Schémas TableSchema officiels + validation. Sert de contrat anti-dérive."
+
+# -----------------------------------------------------------------------------
+# SOURCES
+#   discovery.strategy : comment localiser la ressource SANS slug figé
+#   volatility.level   : low | medium | high  (probabilité de casse dans le temps)
+#   blast_radius       : ce qui casse si la source change
+# -----------------------------------------------------------------------------
+sources:
+
+  # ---- COUCHE : LIENS INSTITUTIONNELS -------------------------------------
+  - id: operateurs_etat
+    layer: institutions
+    publisher: Direction du budget
+    description: "Jaune 'Opérateurs de l'État' — liste (~430), catégories, tutelle."
+    platform: datagouv_api
+    discovery:
+      strategy: "search_datasets(query='jaune opérateurs de l'État'); filtrer le millésime le plus récent"
+      pattern: "plf-<année>-jaune-operateurs-de-letat-..."   # change CHAQUE année -> ne pas figer
+    format: csv
+    schema: none
+    join_keys: [denomination, tutelle]   # SIREN souvent absent -> rapprochement à construire
+    cadence: annual
+    license: "Licence Ouverte 2.0"
+    volatility:
+      level: medium
+      notes: "Re-slug annuel ; libellés d'opérateurs en texte libre ; fusions/créations chaque PLF."
+    blast_radius: "Squelette du graphe État->opérateurs. À surveiller en priorité chaque automne (PLF)."
+    fallback: "Millésime N-1 si N non publié."
+
+  - id: annuaire_administration
+    layer: institutions
+    publisher: DILA / service-public.gouv.fr
+    description: "Organisation de l'État, hiérarchie, dirigeants, coordonnées."
+    platform: datagouv_api          # dataservice catalogué ; API dédiée via api.gouv.fr
+    discovery:
+      strategy: "search_dataservices(query='annuaire administration'); récupérer base_api_url"
+    format: json
+    schema: none
+    join_keys: [id_annuaire]
+    cadence: continuous
+    license: "Licence Ouverte 2.0"
+    volatility:
+      level: high
+      notes: "URL migrée service-public.fr -> service-public.gouv.fr (oct. 2025 ; ancienne valable jusqu'à avr. 2026). Exemple type de churn d'URL."
+    blast_radius: "Noms/hiérarchie des administrations. Garder l'URL DANS le registre, pas dans le code."
+    fallback: "Snapshot précédent + mapping manuel des entités clés."
+
+  - id: sirene_secteur_public
+    layer: institutions
+    publisher: INSEE
+    description: "Référentiel entités (État, collectivités, EP). Catégories juridiques, APE. Clé SIREN/SIRET."
+    platform: datagouv_api          # API SIRENE + fichiers stock référencés
+    discovery:
+      strategy: "search_dataservices(query='API Sirene'); + fichiers stock via search_datasets"
+    format: [api, csv_stock]
+    schema: "INSEE — nomenclature catégories juridiques (niv. III ~260 codes)"
+    join_keys: [SIREN, SIRET]
+    cadence: daily          # API ; stock mensuel
+    license: "Licence Ouverte 2.0"
+    auth: "token gratuit pour l'API complète"
+    volatility:
+      level: low
+      notes: "API stable et institutionnelle. Volumineux : filtrer sur catégories juridiques publiques."
+    blast_radius: "Référentiel pivot du graphe. Faible risque, fort impact -> traiter en source canonique des entités."
+
+  # ---- COUCHE : FINANCEMENT & BUDGET --------------------------------------
+  - id: budget_plf_lfi
+    layer: funding_state
+    publisher: Direction du budget / Ministères économiques et financiers
+    description: "Dépenses par mission/programme/action/sous-action et ministère (voté)."
+    platform: datagouv_api
+    discovery:
+      strategy: "organizations/<ministeres-economiques-et-financiers>/datasets + tag 'plf' ; sélection millésime"
+      pattern: "plf-<année>-depenses-...-selon-destination"
+    format: csv
+    schema: "LOLF (mission > programme > action > sous-action)"
+    join_keys: [code_mission, code_programme]
+    cadence: annual
+    license: "Licence Ouverte 2.0"
+    volatility:
+      level: medium
+      notes: "Re-slug annuel ; nomenclature LOLF assez stable mais programmes peuvent évoluer."
+    blast_radius: "Couche financement principale (la plus propre). Aussi miroir du portail ODS data.economie."
+    fallback: "data.economie ODS (dataset plf<aa>-depenses-...) si data.gouv indispo."
+
+  - id: budget_execution_mensuelle
+    layer: funding_state
+    publisher: DGFiP
+    description: "Situation mensuelle de l'État : solde, dépenses nettes par titre, par mission/programme (réalisé)."
+    platform: ods_explore
+    discovery:
+      strategy: "ODS dataset 'situation-mensuelle-de-l-etat' sur data.economie.gouv.fr"
+    endpoint_hint: "https://data.economie.gouv.fr/api/explore/v2.1/catalog/datasets/situation-mensuelle-de-l-etat/records"
+    format: [json, csv]
+    schema: ods_fields
+    join_keys: [code_mission, code_programme]
+    cadence: monthly
+    license: "Licence Ouverte 2.0"
+    volatility:
+      level: low
+      notes: "Dataset ODS pérenne, mis à jour mensuellement. API ODS versionnée (v2.1)."
+    blast_radius: "Apporte le 'réalisé' vs 'voté'. Cadence mensuelle -> bon candidat pour la fraîcheur."
+
+  - id: subventions
+    layer: funding_state
+    publisher: Direction du budget
+    description: "Jaune associations subventionnées, annexe subventions, Fonds vert (projets financés)."
+    platform: datagouv_api
+    discovery:
+      strategy: "search_datasets('jaune associations subventionnées' / 'annexe budgétaire subventions' / 'fonds vert projets subventionnés')"
+    format: csv
+    schema: none
+    join_keys: [SIREN_beneficiaire]   # présence variable
+    cadence: annual
+    license: "Licence Ouverte 2.0"
+    volatility:
+      level: medium
+      notes: "Plusieurs jeux distincts ; SIREN bénéficiaire pas toujours présent."
+    blast_radius: "Transferts État -> tiers (flux). Risque de double-comptage avec budget_plf_lfi."
+
+  - id: finances_locales_ofgl
+    layer: funding_local
+    publisher: OFGL (DGCL)
+    description: "Balances comptables des collectivités, retraitées (DGFiP/DGCL/INSEE). Open data depuis 2020."
+    platform: ods_explore
+    discovery:
+      strategy: "portail data.ofgl.fr -> catalogue ODS ; sélectionner jeux par niveau de collectivité"
+    endpoint_hint: "https://data.ofgl.fr/api/explore/v2.1/catalog/datasets   # à confirmer au spike"
+    format: [json, csv]
+    schema: ods_fields
+    join_keys: [SIREN, code_insee]
+    cadence: annual
+    license: "Licence Ouverte 2.0"
+    volatility:
+      level: medium
+      notes: "Comptabilité M57/M14 (≠ LOLF). Conventions méthodo nécessaires pour agréger avec l'État."
+    blast_radius: "2e univers comptable. Introduit le risque de double-comptage État<->collectivités."
+
+  - id: comptes_sociaux
+    layer: funding_social
+    publisher: DREES / ACOSS-Urssaf / DSS
+    description: "Comptes de la protection sociale, données Urssaf, LFSS par branche."
+    platform: ods_explore
+    discovery:
+      strategy: "DREES (data.drees...) dataset 'comptes de la protection sociale' ; open.urssaf en complément"
+    endpoint_hint: "https://data.drees.solidarites-sante.gouv.fr/api/explore/v2.1/   # à confirmer"
+    format: [json, csv, pdf]
+    schema: ods_fields
+    join_keys: [branche]              # logique par branche, pas par SIREN
+    cadence: annual
+    license: "Licence Ouverte 2.0"
+    volatility:
+      level: medium
+      notes: "Univers le plus autonome ; difficile à nouer au graphe d'entités. Traiter en module agrégé."
+    blast_radius: "Sphère sociale. Faible liaison -> dernière phase d'intégration."
+
+  # ---- COUCHE : ATTRIBUTIONS ----------------------------------------------
+  - id: legifrance_attributions
+    layer: attributions
+    publisher: DILA (via PISTE)
+    description: "Décrets d'attribution des ministres, statuts d'EP. LEGI consolidé depuis 1945."
+    platform: rest
+    endpoint_hint: "API Légifrance via https://piste.gouv.fr"
+    discovery:
+      strategy: "Recherche par texte (décret d'attribution) ; rattachement éditorial/NLP à l'entité"
+    format: [json, xml]
+    schema: legi
+    join_keys: [entite_cible]         # à reconstruire (texte -> entité)
+    cadence: continuous
+    license: "Licence Ouverte 2.0"
+    auth: "clé API PISTE (compte gratuit) — à provisionner AVANT cette couche"
+    volatility:
+      level: medium
+      notes: "API stable mais nécessite clé + gestion quotas. Lien texte->entité = travail NLP/éditorial."
+    blast_radius: "Couche 'pourquoi'. Non bloquante pour le MVP ; enrichissement IA à valider humainement."
+
+  # ---- COUCHE : SERVICES DÉLÉGUÉS -----------------------------------------
+  - id: decp_commande_publique
+    layer: delegated
+    publisher: DAJ / Etalab (consolidation)
+    description: "Données essentielles de la commande publique : marchés + concessions. Centralisées sur data.gouv depuis 2024."
+    platform: datagouv_api
+    discovery:
+      strategy: "search_datasets('données essentielles commande publique consolidées') ; + API DECP"
+    format: [csv, json]
+    schema:
+      ref: "https://schema.data.gouv.fr/   # schémas DECP (TableSchema) -> VALIDATION + détection de dérive"
+      validate: true
+    join_keys: [SIREN_acheteur, SIREN_titulaire]
+    cadence: continuous           # publication au fil de l'eau
+    license: "Licence Ouverte 2.0"
+    volatility:
+      level: high
+      notes: "Format a évolué (arrêté 2019 -> 2022) ; datasets historiques dépréciés (ex. decp_augmente, decp_v3). Qualité hétérogène mais en hausse."
+    blast_radius: "Maillon privé. Schéma officiel disponible -> brancher la validation ici en priorité."
+    fallback: "decp.info (exploration consolidée) pour recoupement."
+
+  - id: epl_sem_spl
+    layer: delegated
+    publisher: INSEE (repérage) / Fédération des EPL
+    description: "Sociétés d'économie mixte (SEM) & sociétés publiques locales (SPL)."
+    platform: datagouv_api
+    discovery:
+      strategy: "SIRENE : filtrer catégories juridiques SEM/SPL ; actionnariat public non consolidé en open data"
+    format: [api, csv]
+    schema: none
+    join_keys: [SIREN]
+    cadence: annual
+    license: "Licence Ouverte 2.0"
+    volatility:
+      level: medium
+      notes: "Identifiables via SIRENE ; le lien collectivité-actionnaire est à reconstruire."
+    blast_radius: "Complète le maillon délégué côté local."
+
+  # ---- COUCHE : CONTRÔLE ---------------------------------------------------
+  - id: cour_des_comptes
+    layer: oversight
+    publisher: Cour des comptes
+    description: "Rapports publiés, recommandations ; CRTC pour le local. Texte intégral ouvert depuis 2016."
+    platform: datagouv_api
+    discovery:
+      strategy: "organizations/<cour-des-comptes>/datasets ; datasets 'rapports publiés' / 'recommandations'"
+    format: [csv_metadata, pdf]
+    schema: none
+    join_keys: [entite_mentionnee]    # extraction à faire
+    cadence: continuous
+    license: "Licence Ouverte 2.0"
+    volatility:
+      level: low
+      notes: "Surtout du PDF + métadonnées. Valeur = annoter une entité ('épinglée par la Cour')."
+    blast_radius: "Couche éditoriale optionnelle. Pas un socle."
+
+# -----------------------------------------------------------------------------
+# Santé / monitoring (lu par le job de surveillance)
+# -----------------------------------------------------------------------------
+monitoring:
+  checks:
+    - reachability        # l'endpoint répond-il (200) ?
+    - freshness           # âge < staleness_alert_factor * cadence ?
+    - schema_conformity   # validation TableSchema quand schema.validate=true
+    - row_count_delta     # variation anormale du volume vs millésime précédent
+  on_failure: "alerte (e-mail/issue) + conserver le dernier snapshot valide en service"

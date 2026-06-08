@@ -1,0 +1,24 @@
+name: Data refresh
+# Scheduled ingestion -> Supabase. Sources are mostly annual (autumn PLF) / monthly.
+# Supabase Pro doesn't pause, so a monthly run is enough (no keep-alive needed).
+on:
+  schedule:
+    - cron: "0 6 1 * *"   # 1st of each month, 06:00 UTC
+  workflow_dispatch:
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v3
+      - run: uv sync --all-packages
+      # NOTE: `refresh` is currently a stub that only reports discovery strategies.
+      # Switch to `ingest` (discover -> extract -> validate -> snapshot -> stage) once
+      # connectors land; only then does curated data actually reach Supabase.
+      - name: Discover latest millésimes (stub — no Supabase load yet)
+        run: uv run python -m ingestion.cli refresh
+      # Vercel auto-deploys the frontend from GitHub; no deploy step needed here.
+      # Store raw/heavy extracts as Parquet artifacts (Supabase Storage / release), not in git.

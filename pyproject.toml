@@ -1,0 +1,27 @@
+[project]
+name = "cartographie-fonds-publics"
+version = "0.0.0"
+description = "Interactive map of French public institutions, funding flows, mandates and delegated services."
+requires-python = ">=3.11"
+license = "AGPL-3.0-or-later"
+readme = "README.md"
+
+[tool.uv.workspace]
+members = ["packages/ingestion", "packages/core"]
+
+[tool.uv.sources]
+ingestion = { workspace = true }
+core = { workspace = true }
+
+[dependency-groups]
+dev = ["ruff==0.6.9", "pytest>=8", "mypy>=1.11", "types-PyYAML>=6"]  # ruff pinned to the pre-commit hook rev
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.pytest.ini_options]
+addopts = "-q"
+testpaths = ["packages", "spikes"]
