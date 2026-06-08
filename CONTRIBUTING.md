@@ -33,12 +33,14 @@ make up           # optional: local Postgres + Redis (prod uses Supabase)
 stages automatically — no separate step. On every commit the hooks:
 
 - **commit message** → commitlint enforces Conventional Commits;
-- **staged Python** → ruff lint (`--fix`) + ruff format;
-- **staged web files** (`packages/web`) → ESLint + Prettier;
-- **all files** → gitleaks secret scan (blocks committing secrets).
+- **staged Python** → ruff lint (`--fix`) + ruff format (staged files only);
+- **web** → when any `packages/web` file is staged, ESLint + Prettier lint the **whole**
+  `packages/web` package (not just the staged files), matching web CI;
+- **all staged changes** (any file type) → gitleaks secret scan (blocks committing secrets).
 
-`pre-commit` runs only on staged files. If you ever need to bootstrap hooks manually, run
-`uv run pre-commit install`.
+Hooks fire based on the staged file set; the ruff and gitleaks checks operate on the staged
+changes themselves, while the web check runs across the package. If you ever need to bootstrap
+hooks manually, run `uv run pre-commit install`.
 
 ## Adding or fixing a data source
 

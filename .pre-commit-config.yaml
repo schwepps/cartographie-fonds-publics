@@ -32,8 +32,9 @@ repos:
       - id: commitlint
         stages: [commit-msg]
         additional_dependencies: ["@commitlint/config-conventional"]
-  # Lint staged web files with the web package's own pinned eslint/prettier. Fires only when
-  # packages/web files are staged; lints the (small) package so behaviour matches web CI.
+  # Web lint/format using the web package's own pinned eslint/prettier. The hook fires only
+  # when packages/web files are staged, but (pass_filenames: false) it lints the whole
+  # packages/web package rather than just the staged files — matching web CI behaviour.
   - repo: local
     hooks:
       - id: web-eslint
