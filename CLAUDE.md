@@ -75,7 +75,8 @@ uv (Python), pnpm (web). Ruff, mypy, pytest. Full table in ARCHITECTURE.md.
    strategy**, schema ref, cadence, license, join keys, volatility).
 2. Reuse or implement a `Connector` (`packages/ingestion/src/ingestion/connectors/`).
 3. Point `schema` at the Table Schema when one exists (enables validation + drift detection).
-4. Add a contract test with a small fixture.
+4. Add a contract test with a small fixture — follow the offline harness + template in
+   `packages/ingestion/tests/connectors/README.md`.
 5. `make ingest`; verify snapshot + validation + the SIREN match impact; load curated rows to Supabase.
 
 ## Domain glossary

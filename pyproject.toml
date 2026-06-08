@@ -14,7 +14,7 @@ ingestion = { workspace = true }
 core = { workspace = true }
 
 [dependency-groups]
-dev = ["ruff==0.15.16", "pytest>=8", "mypy>=1.11", "types-PyYAML>=6"]  # ruff pinned to the pre-commit hook rev
+dev = ["ruff==0.15.16", "pytest>=8", "mypy>=1.11", "types-PyYAML>=6", "respx>=0.21"]  # ruff pinned to the pre-commit hook rev; respx mocks httpx for offline connector tests
 
 [tool.ruff]
 line-length = 100
