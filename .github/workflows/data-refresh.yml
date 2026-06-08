@@ -47,6 +47,13 @@ jobs:
               `- Commit: ${context.sha}`,
             ].join('\n');
             const { owner, repo } = context.repo;
+            // Ensure the label exists first, so issues.create({ labels }) can't 422 on a fresh repo.
+            try {
+              await github.rest.issues.getLabel({ owner, repo, name: label });
+            } catch (error) {
+              if (error.status !== 404) throw error;
+              await github.rest.issues.createLabel({ owner, repo, name: label, color: 'b60205', description: 'A scheduled data-refresh run failed' });
+            }
             const open = await github.rest.issues.listForRepo({ owner, repo, state: 'open', labels: label });
             if (open.data.length > 0) {
               await github.rest.issues.createComment({ owner, repo, issue_number: open.data[0].number, body });
