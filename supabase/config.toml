@@ -22,8 +22,8 @@ max_rows = 1000
 # Direct Postgres for migrations + ingestion: postgresql://postgres:postgres@127.0.0.1:54322/postgres
 port = 54322
 shadow_port = 54320
-# Must match the remote (prod) database's major version. Run `SHOW server_version;` on prod
-# and align this if it differs. 17 is the current Supabase default for new projects.
+# Must match the remote (prod) database's major version. Confirmed: prod runs Postgres 17.x
+# (`SHOW server_version;` → 17.6), so 17 matches. Re-check if prod is ever upgraded.
 # (CI runs the RLS shim check against a separate bare postgres:16 — see .github/workflows/ci.yml.)
 major_version = 17
 
