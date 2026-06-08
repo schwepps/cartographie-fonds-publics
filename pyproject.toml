@@ -5,6 +5,10 @@ description = "Interactive map of French public institutions, funding flows, man
 requires-python = ">=3.11"
 license = "AGPL-3.0-or-later"
 readme = "README.md"
+# Depend on the workspace members so `uv sync` installs them (and their deps)
+# editably into the single venv — otherwise they stay virtual and `make test` /
+# `make typecheck` can't import `core` / `ingestion`. Resolved via [tool.uv.sources].
+dependencies = ["core", "ingestion"]
 
 [tool.uv.workspace]
 members = ["packages/ingestion", "packages/core"]
