@@ -1,7 +1,8 @@
 """Connector contract + self-registering factory.
 
-Append-only public surface: connector modules import ``register`` from
-``ingestion.connectors.factory`` and never edit this file.
+Public surface for connectors: a connector module imports ``Connector`` and ``register``
+from ``ingestion.connectors`` (this package) and self-registers — it never edits this file.
+The re-export list below is append-only.
 """
 
 from .base import Connector

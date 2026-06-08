@@ -80,10 +80,10 @@ def _discover_connectors(package_name: str = __package__) -> None:
 def get_connector(source: Source) -> Connector:
     """Instantiate the connector registered for ``source.platform``; fail loud if none."""
     _discover_connectors()
-    platform = source.platform
-    if not isinstance(platform, str) or not platform:
+    platform = source.platform  # always str (Source.platform coerces); "" means missing/invalid
+    if not platform:
         raise UnknownPlatformError(
-            f"Source id={source.id!r} declares no usable platform (got {platform!r}); "
+            f"Source id={source.id!r} declares no usable platform; "
             f"every registry entry must set a non-empty string 'platform'."
         )
     cls = _REGISTRY.get(platform)

@@ -36,7 +36,11 @@ class Source:
 
     @property
     def platform(self) -> str:
-        return self.raw.get("platform", "")
+        # Coerce to str so the annotation is honest: raw is dict[str, Any] and a malformed
+        # registry entry could hold a non-string. A non-str/absent value becomes "", which
+        # get_connector rejects loudly.
+        value = self.raw.get("platform")
+        return value if isinstance(value, str) else ""
 
 
 def load_registry(path: Path | str = REGISTRY_PATH) -> dict[str, Any]:
