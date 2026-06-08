@@ -1,11 +1,24 @@
-"""Canonical domain model. SIREN is the primary join key across all layers."""
+"""Frozen Phase-1 domain model. SIREN is the primary join key across all layers.
+
+This module is the **stable contract** that every downstream connector and the Supabase
+loader build against. It mirrors the business columns of ``supabase/migrations/0001_init.sql``
+(entities, edges, budget_facts, contracts, attributions, mentions); the DB-generated ``id``
+uuid primary keys are intentionally excluded (not a domain concern). Its enum vocabulary
+mirrors the SQL ``CHECK`` constraints (``Level``, ``EdgeType``, ``Nature``).
+
+**Frozen** means: do not edit field names, types, or enum values here as a one-off to make a
+connector pass. Connectors consume this model read-only. A genuine schema change is a
+coordinated change — a new numbered migration in ``supabase/migrations`` **and** a matching
+update here in the same PR — never an ad-hoc edit on one side. All unknown fields are
+rejected (``extra="forbid"``) so drift fails loud at construction.
+"""
 
 from __future__ import annotations
 
 from enum import StrEnum
 from typing import Annotated
 
-from pydantic import BaseModel, BeforeValidator
+from pydantic import BaseModel, BeforeValidator, ConfigDict
 
 from .resolve import normalize_siren
 
@@ -44,7 +57,18 @@ class EdgeType(StrEnum):
     delegates = "delegates"  # public service delegation / contract
 
 
-class Entity(BaseModel):
+class Nature(StrEnum):
+    marche = "marche"  # marché public
+    concession = "concession"  # concession / DSP
+
+
+class _FrozenModel(BaseModel):
+    """Base for the frozen domain model: unknown fields fail loud."""
+
+    model_config = ConfigDict(extra="forbid")
+
+
+class Entity(_FrozenModel):
     siren: OptionalSiren  # canonical key; may be None until resolved
     name: str
     level: Level
@@ -52,7 +76,7 @@ class Entity(BaseModel):
     parent_siren: OptionalSiren = None
 
 
-class Edge(BaseModel):
+class Edge(_FrozenModel):
     source_siren: RequiredSiren
     target_siren: RequiredSiren
     type: EdgeType
@@ -61,7 +85,7 @@ class Edge(BaseModel):
     provenance: str | None = None  # source id from the registry
 
 
-class BudgetFact(BaseModel):
+class BudgetFact(_FrozenModel):
     entity_siren: OptionalSiren
     exercice: int
     mission: str | None = None
@@ -71,15 +95,15 @@ class BudgetFact(BaseModel):
     executed: bool = False  # voted (False) vs executed (True)
 
 
-class Contract(BaseModel):
+class Contract(_FrozenModel):
     acheteur_siren: OptionalSiren
     titulaire_siren: OptionalSiren
     montant_eur: float | None = None
-    nature: str | None = None  # marche | concession
+    nature: Nature | None = None
     exercice: int | None = None
 
 
-class Attribution(BaseModel):
+class Attribution(_FrozenModel):
     """Legal mandate / competence attributed to an entity (table: attributions)."""
 
     entity_siren: OptionalSiren = None
@@ -87,7 +111,7 @@ class Attribution(BaseModel):
     txt: str | None = None
 
 
-class Mention(BaseModel):
+class Mention(_FrozenModel):
     """Free-text mention of an entity in a report or document (table: mentions)."""
 
     entity_siren: OptionalSiren = None

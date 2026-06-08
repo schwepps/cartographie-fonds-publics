@@ -1,5 +1,15 @@
 import pytest
-from core.models import Attribution, Edge, EdgeType, Entity, Level, Mention
+from core.models import (
+    Attribution,
+    BudgetFact,
+    Contract,
+    Edge,
+    EdgeType,
+    Entity,
+    Level,
+    Mention,
+    Nature,
+)
 from core.resolve import match_rate, normalize_siren
 from pydantic import ValidationError
 
@@ -50,3 +60,36 @@ def test_edge_requires_valid_sirens():
 def test_attribution_and_mention_construct():
     assert Attribution(legal_ref="L.123", txt="competence").legal_ref == "L.123"
     assert Mention(report_ref="CdC-2025", note="cited").note == "cited"
+
+
+def test_enum_vocabulary_matches_sql_check_constraints():
+    # Pins the frozen contract: these value sets must equal the CHECK constraints in
+    # supabase/migrations/0001_init.sql. A typo here (or there) fails loud.
+    assert {n.value for n in Level} == {"state", "local", "social", "delegated"}
+    assert {t.value for t in EdgeType} == {"tutelle", "participation", "funds", "delegates"}
+    assert {n.value for n in Nature} == {"marche", "concession"}
+
+
+def test_contract_nature_enum():
+    c = Contract(acheteur_siren="180089013", titulaire_siren=None, nature=Nature.marche)
+    assert c.nature == Nature.marche
+    assert c.nature == "marche"  # StrEnum round-trips to the SQL CHECK value
+    assert Contract(acheteur_siren=None, titulaire_siren=None).nature is None  # nullable
+
+
+def test_contract_rejects_invalid_nature():
+    with pytest.raises(ValidationError):
+        Contract(acheteur_siren=None, titulaire_siren=None, nature="bail")
+
+
+def test_budget_fact_requires_exercice_and_defaults_executed():
+    fact = BudgetFact(entity_siren="180089013", exercice=2025)
+    assert fact.exercice == 2025
+    assert fact.executed is False  # voted, not executed, by default
+    with pytest.raises(ValidationError):
+        BudgetFact(entity_siren="180089013")  # exercice is required (NOT NULL in SQL)
+
+
+def test_models_forbid_unknown_fields():
+    with pytest.raises(ValidationError):
+        Entity(siren=None, name="X", level=Level.state, foo="stray")
