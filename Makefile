@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-.PHONY: help install up down lint format typecheck test spike ingest refresh db-migrate web
+.PHONY: help install up down lint format typecheck test spike ingest refresh db-migrate db-verify web
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-12s\033[0m %s\n",$$1,$$2}'
@@ -35,8 +35,14 @@ ingest: ## Run the ingestion pipeline (reads data/registry, writes Supabase)
 refresh: ## Discover latest millésimes for all sources
 	uv run python -m ingestion.cli refresh
 
-db-migrate: ## Apply Supabase SQL migrations to $$DATABASE_URL
-	psql "$$DATABASE_URL" -f supabase/migrations/0001_init.sql -f supabase/migrations/0002_graph_functions.sql
+db-migrate: ## Apply Supabase SQL migrations (in order) to $$DATABASE_URL
+	@for f in supabase/migrations/*.sql; do \
+		echo "→ applying $$f"; \
+		psql "$$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$$f" || exit 1; \
+	done
+
+db-verify: ## Verify RLS posture (anon can read + call RPC, cannot write)
+	psql "$$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/tests/rls_checks.sql
 
 web: ## Run the web frontend locally (reads Supabase)
 	cd packages/web && pnpm dev

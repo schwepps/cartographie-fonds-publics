@@ -43,6 +43,10 @@ See [CLAUDE.md](CLAUDE.md) for the golden rules and the full step list.
 `make test` runs pytest across packages and the spike. New behaviour needs a test;
 connectors need a contract test against a fixture (don't hit the network in unit tests).
 
+Touching the schema? Follow the migration-numbering convention in
+[`supabase/README.md`](supabase/README.md) (each ticket claims the next `NNNN_` file) and run
+`make db-verify` to confirm the public-read RLS posture still holds.
+
 ## Reporting issues
 
 Use the templates: **bug**, **feature**, or **data source** (when a source's URL, schema, or

@@ -20,3 +20,28 @@ jobs:
         run: uv run mypy packages
       - name: Tests
         run: uv run pytest -q
+
+  database:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres
+    steps:
+      - uses: actions/checkout@v6
+      - name: Supabase compatibility shim (roles + grants)
+        run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/tests/supabase_roles.sql
+      - name: Migrate a fresh database
+        run: make db-migrate
+      - name: Verify RLS posture
+        run: make db-verify
