@@ -248,7 +248,9 @@ sources:
       strategy: "search_datasets('données essentielles commande publique consolidées') ; + API DECP"
     format: [csv, json]
     schema:
-      ref: "https://schema.data.gouv.fr/   # schémas DECP (TableSchema) -> VALIDATION + détection de dérive"
+      # schémas DECP (TableSchema) -> VALIDATION + détection de dérive (FSC-16)
+      # TODO(FSC-16 follow-up): point `ref` at the raw DECP TableSchema JSON, not the portal root.
+      ref: "https://schema.data.gouv.fr/"
       validate: true
     join_keys: [SIREN_acheteur, SIREN_titulaire]
     cadence: continuous           # publication au fil de l'eau

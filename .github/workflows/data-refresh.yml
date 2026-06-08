@@ -8,6 +8,10 @@ on:
 jobs:
   refresh:
     runs-on: ubuntu-latest
+    # Least privilege: read the repo, plus open/update the failure-alert issue (see below).
+    permissions:
+      contents: read
+      issues: write
     env:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
@@ -22,3 +26,29 @@ jobs:
         run: uv run python -m ingestion.cli refresh
       # Vercel auto-deploys the frontend from GitHub; no deploy step needed here.
       # Store raw/heavy extracts as Parquet artifacts (Supabase Storage / release), not in git.
+
+      # FSC-16 AC4: a failed scheduled run surfaces an alert (red CI + a GitHub issue → email).
+      # Armed now; a SchemaValidationError will only travel through here once `ingest` (with
+      # connectors) replaces the `refresh` stub above. Idempotent: one open tracking issue,
+      # commented — never spammed.
+      - name: Alert on ingestion failure
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const label = 'ingestion-failure';
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const body = [
+              'A scheduled **data-refresh** run failed.',
+              '',
+              `- Workflow: \`${context.workflow}\``,
+              `- Run: ${runUrl}`,
+              `- Commit: ${context.sha}`,
+            ].join('\n');
+            const { owner, repo } = context.repo;
+            const open = await github.rest.issues.listForRepo({ owner, repo, state: 'open', labels: label });
+            if (open.data.length > 0) {
+              await github.rest.issues.createComment({ owner, repo, issue_number: open.data[0].number, body });
+            } else {
+              await github.rest.issues.create({ owner, repo, title: '🚨 Ingestion failure (data-refresh)', labels: [label], body });
+            }

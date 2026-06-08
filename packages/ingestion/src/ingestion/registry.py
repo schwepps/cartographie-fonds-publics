@@ -42,6 +42,23 @@ class Source:
         value = self.raw.get("platform")
         return value if isinstance(value, str) else ""
 
+    @property
+    def schema_ref(self) -> str | None:
+        # `schema` is a *mapping* (``{ref, validate}``) only for sources that declare one (DECP);
+        # most entries set it to the bare string ``none``/``ods_fields``/``legi`` or omit it. Guard
+        # so this never AttributeErrors on the non-dict shape.
+        schema = self.raw.get("schema")
+        ref = schema.get("ref") if isinstance(schema, dict) else None
+        return ref if isinstance(ref, str) and ref.strip() else None
+
+    @property
+    def schema_validate(self) -> bool:
+        # Validation runs only when the source explicitly opts in (``schema.validate: true``)
+        # *and* a usable ref exists. Default off — a missing/string ``schema`` means "no schema".
+        schema = self.raw.get("schema")
+        opted_in = bool(schema.get("validate")) if isinstance(schema, dict) else False
+        return opted_in and self.schema_ref is not None
+
 
 def load_registry(path: Path | str = REGISTRY_PATH) -> dict[str, Any]:
     with open(path, encoding="utf-8") as fh:
