@@ -146,7 +146,7 @@ between two entities — what makes this a *graph*, not a budget table. Mirrored
 | Frontend host | **Vercel** (Hobby, free) | git-push deploys, great DX | Netlify / Cloudflare Pages |
 | Graph viz | Sigma.js + graphology | Large graphs in WebGL | Cytoscape.js |
 | Flow viz | D3 (Sankey) | Best-in-class flows | — |
-| UI system | @gouvfr/dsfr | Official French State design system | plain CSS |
+| UI system | @codegouvfr/react-dsfr (over @gouvfr/dsfr) | Official French State design system, typed React layer ([ADR-0006](docs/adr/0006-react-dsfr-web-layer.md)) | plain @gouvfr/dsfr CSS |
 | Cache | Redis (optional) | Cache heavy RPCs | — |
 | Orchestration | GitHub Actions cron | Free; matches data cadence | Prefect |
 | Server logic (future) | Vercel Functions | Serverless; only if ever needed | — |

@@ -1,14 +1,18 @@
-import { supabase } from "./lib/supabase";
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import { Layout } from "./app/Layout";
+import { NotFound } from "./app/NotFound";
+import { featureRouteObjects } from "./app/routes";
 
-// Example reads (no API server): data comes straight from Supabase.
-//   const { data } = await supabase.from("entities").select("*").eq("level", "state");
-//   const { data } = await supabase.rpc("graph_neighbors", { p_siren: "180089013", p_depth: 1 });
+// FROZEN (FSC-22): the app shell. Do NOT add feature imports here — register a
+// feature in src/app/routes.tsx and it appears automatically. See src/features/README.md.
+const router = createBrowserRouter([
+  {
+    path: "/",
+    Component: Layout,
+    children: [...featureRouteObjects, { path: "*", Component: NotFound }],
+  },
+]);
+
 export function App() {
-  void supabase; // wired; TODO: Sigma.js graph + D3 Sankey, styled with DSFR.
-  return (
-    <main style={{ fontFamily: "Marianne, sans-serif", padding: 24 }}>
-      <h1>Cartographie des Fonds Publics</h1>
-      <p>Frontend scaffold — reads Supabase directly (PostgREST + RPC).</p>
-    </main>
-  );
+  return <RouterProvider router={router} />;
 }
