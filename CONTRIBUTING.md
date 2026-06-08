@@ -42,6 +42,8 @@ See [CLAUDE.md](CLAUDE.md) for the golden rules and the full step list.
 
 `make test` runs pytest across packages and the spike. New behaviour needs a test;
 connectors need a contract test against a fixture (don't hit the network in unit tests).
+Follow the offline harness and template in
+[`packages/ingestion/tests/connectors/README.md`](packages/ingestion/tests/connectors/README.md).
 
 ## Reporting issues
 
