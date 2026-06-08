@@ -66,7 +66,9 @@ uv (Python), pnpm (web). Ruff, mypy, pytest. Full table in ARCHITECTURE.md.
 - Code typed; `make lint format typecheck test` green.
 - New behaviour covered by tests (connectors: contract tests against a fixture, no network).
 - Source added/changed → only the registry edited; a schema ref set; a test exists.
-- New curated table → matching migration in `supabase/migrations` with an RLS public-read policy.
+- New curated table → next-numbered migration in `supabase/migrations` (see the conventions in
+  `supabase/README.md`) with an RLS public-read policy; added to `tests/rls_checks.sql` and
+  `make db-verify` passes.
 - Docs/CHANGELOG updated when relevant. PR title is a Conventional Commit.
 
 ## How to add a new data source

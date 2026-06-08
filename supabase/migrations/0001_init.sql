@@ -61,6 +61,8 @@ begin
   foreach t in array array['entities','edges','budget_facts','contracts','attributions','mentions']
   loop
     execute format('alter table %I enable row level security;', t);
+    -- idempotent: re-applying the migration must not error (policies have no IF NOT EXISTS).
+    execute format($p$drop policy if exists "public read" on %I;$p$, t);
     execute format($p$create policy "public read" on %I for select to anon, authenticated using (true);$p$, t);
   end loop;
 end $$;

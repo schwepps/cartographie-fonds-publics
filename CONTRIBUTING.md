@@ -45,6 +45,10 @@ connectors need a contract test against a fixture (don't hit the network in unit
 Follow the offline harness and template in
 [`packages/ingestion/tests/connectors/README.md`](packages/ingestion/tests/connectors/README.md).
 
+Touching the schema? Follow the migration-numbering convention in
+[`supabase/README.md`](supabase/README.md) (each ticket claims the next `NNNN_` file) and run
+`make db-verify` to confirm the public-read RLS posture still holds.
+
 ## Reporting issues
 
 Use the templates: **bug**, **feature**, or **data source** (when a source's URL, schema, or
