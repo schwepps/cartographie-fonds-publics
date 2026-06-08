@@ -1,8 +1,8 @@
 .DEFAULT_GOAL := help
-.PHONY: help install up down lint format typecheck test spike ingest refresh db-migrate db-verify web
+.PHONY: help install up down supabase-up supabase-down supabase-reset lint format typecheck test spike ingest refresh db-migrate db-verify web
 
 help: ## Show this help
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-12s\033[0m %s\n",$$1,$$2}'
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-16s\033[0m %s\n",$$1,$$2}'
 
 install: ## Install deps (Python via uv, web via pnpm) + git hooks
 	uv sync
@@ -10,11 +10,20 @@ install: ## Install deps (Python via uv, web via pnpm) + git hooks
 	git config core.hooksPath .githooks   # committed, worktree-relative hooks (Conductor-safe)
 	uv run pre-commit install-hooks       # pre-build hook envs (does not touch .git/hooks)
 
-up: ## Start optional local services (Postgres + Redis)
+up: ## Start optional local Redis (cache)
 	docker compose up -d
 
-down: ## Stop local services
+down: ## Stop local Redis
 	docker compose down
+
+supabase-up: ## Start the local dev Supabase stack (Postgres + PostgREST + Auth + Studio)
+	supabase start
+
+supabase-down: ## Stop the local dev Supabase stack
+	supabase stop
+
+supabase-reset: ## Reset the local dev DB and re-apply supabase/migrations/*.sql
+	supabase db reset
 
 lint: ## Lint Python
 	uv run ruff check .

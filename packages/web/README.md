@@ -20,14 +20,15 @@ self-contained folder under `src/features/<name>/`, registered with one line in
 
 ```bash
 pnpm install
-cp .env.example .env        # then set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY
+cp .env.example .env        # ships local-dev defaults (local Supabase URL + demo anon key)
 pnpm dev                    # http://localhost:5173
 ```
 
-Point the two `VITE_SUPABASE_*` variables at a Supabase project that has the migrations in
-[`supabase/migrations`](../../supabase/migrations) applied (see the repo
-[DEPLOYMENT.md](../../DEPLOYMENT.md)). The `anon` key is safe to expose; never put the
-`service-role` key in the frontend.
+`.env.example` targets the **local dev** Supabase stack (`make supabase-up` from the repo root;
+see [DEPLOYMENT.md → Local development](../../DEPLOYMENT.md)). For production, set
+`VITE_SUPABASE_URL` + `VITE_SUPABASE_ANON_KEY` in the **Vercel** project env, pointing at the
+prod project. The `anon` key is safe to expose; never put the `service-role` key in the
+frontend.
 
 ## Scripts
 

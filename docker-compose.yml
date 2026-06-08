@@ -1,23 +1,9 @@
-# Optional LOCAL services only. Production uses Supabase (DB+API) + Vercel (frontend).
-# Use this if you prefer local dev to a Supabase dev project; otherwise you can ignore it.
+# Optional LOCAL Redis only (cache for heavy RPCs / ingestion coordination).
+# The dev database is the Supabase CLI stack — run `make supabase-up` (`supabase start`),
+# which gives a full local Supabase (Postgres + PostgREST + Studio). See DEPLOYMENT.md.
+# Production uses Supabase (DB+API) + Vercel (frontend).
 services:
-  db:
-    image: postgres:16
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER:-cfp}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in your .env}
-      POSTGRES_DB: ${POSTGRES_DB:-cfp}
-    # Bind to loopback only — never expose the dev DB to the local network.
-    ports: ["127.0.0.1:5432:5432"]
-    volumes: ["pgdata:/var/lib/postgresql/data"]
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-cfp}"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
   redis:
     image: redis:7
     command: ["redis-server", "--requirepass", "${REDIS_PASSWORD:?set REDIS_PASSWORD in your .env}"]
     ports: ["127.0.0.1:6379:6379"]
-volumes:
-  pgdata:

@@ -35,11 +35,13 @@ by discovery. Full design in **[ARCHITECTURE.md](ARCHITECTURE.md)**.
 ```bash
 make install                         # Python (uv) + web (pnpm) deps
 make spike                           # Phase-0 SIREN-match proof (offline, no network)
-make db-migrate                      # apply supabase/migrations to your $DATABASE_URL
-cd packages/web && cp .env.example .env && pnpm dev   # frontend reads Supabase
+make supabase-up                     # local DEV Supabase in Docker (applies migrations on first start)
+cd packages/web && cp .env.example .env && pnpm dev   # frontend reads the local stack
 ```
 
-Frontend dev server runs on `:5173`. The "API" is your Supabase project (PostgREST + RPC).
+Frontend dev server runs on `:5173`; the "API" is the local Supabase stack (PostgREST + RPC) at
+`127.0.0.1:54321` — a full Supabase in Docker, isolated from prod. Setup + the dev↔prod
+boundary: [DEPLOYMENT.md → Local development](DEPLOYMENT.md).
 
 ## Stack
 
