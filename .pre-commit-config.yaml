@@ -1,3 +1,7 @@
+# Single git-hook manager for the repo. `pre-commit install` (run by `make install`)
+# wires both the pre-commit and commit-msg stages — see default_install_hook_types.
+default_install_hook_types: [pre-commit, commit-msg]
+
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.15.16
@@ -13,4 +17,34 @@ repos:
       - id: check-yaml
       - id: check-added-large-files
         args: [--maxkb=2048]
-      - id: detect-private-key
+  # Secret scanning — supersedes the old detect-private-key stopgap. Also runs in CI.
+  # gitleaks builds from source; pin a Go toolchain so it works regardless of system Go.
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.30.1
+    hooks:
+      - id: gitleaks
+        language_version: "1.24.11"
+  # Conventional Commits enforcement on the commit message (isolated node env; no root
+  # package.json needed). Config lives in .commitlintrc.yaml.
+  - repo: https://github.com/alessandrojcm/commitlint-pre-commit-hook
+    rev: v9.25.0
+    hooks:
+      - id: commitlint
+        stages: [commit-msg]
+        additional_dependencies: ["@commitlint/config-conventional"]
+  # Lint staged web files with the web package's own pinned eslint/prettier. Fires only when
+  # packages/web files are staged; lints the (small) package so behaviour matches web CI.
+  - repo: local
+    hooks:
+      - id: web-eslint
+        name: eslint (web)
+        entry: bash -c 'cd packages/web && pnpm exec eslint .'
+        language: system
+        files: ^packages/web/.*\.(ts|tsx)$
+        pass_filenames: false
+      - id: web-prettier
+        name: prettier --check (web)
+        entry: bash -c 'cd packages/web && pnpm exec prettier --check .'
+        language: system
+        files: ^packages/web/.*\.(ts|tsx|json|css|md)$
+        pass_filenames: false

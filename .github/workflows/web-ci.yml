@@ -18,6 +18,8 @@ jobs:
       - uses: actions/setup-node@v6
         with: { node-version: 22, cache: pnpm, cache-dependency-path: packages/web/pnpm-lock.yaml }
       - run: pnpm install --frozen-lockfile
+      # Block on high/critical advisories; lower severities are surfaced by Dependabot.
+      - run: pnpm audit --audit-level=high
       - run: pnpm lint
       - run: pnpm format:check
       - run: pnpm typecheck
