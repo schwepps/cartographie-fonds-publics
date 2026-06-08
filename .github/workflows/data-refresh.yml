@@ -12,9 +12,6 @@ jobs:
     permissions:
       contents: read
       issues: write
-    env:
-      DATABASE_URL: ${{ secrets.DATABASE_URL }}
-      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
     steps:
       - uses: actions/checkout@v6
       - uses: astral-sh/setup-uv@v7
@@ -22,7 +19,11 @@ jobs:
       # NOTE: `refresh` is currently a stub that only reports discovery strategies.
       # Switch to `ingest` (discover -> extract -> validate -> snapshot -> stage) once
       # connectors land; only then does curated data actually reach Supabase.
+      # Secrets are scoped to this step only — they never reach the third-party github-script below.
       - name: Discover latest millésimes (stub — no Supabase load yet)
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: uv run python -m ingestion.cli refresh
       # Vercel auto-deploys the frontend from GitHub; no deploy step needed here.
       # Store raw/heavy extracts as Parquet artifacts (Supabase Storage / release), not in git.

@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 from ingestion import snapshot
-from ingestion.errors import SnapshotError
+from ingestion.errors import SnapshotError, UnsupportedFormatError
 from ingestion.snapshot import read_provenance, write_snapshot
 
 _AT = "2026-06-08T12:00:00Z"
@@ -81,6 +81,35 @@ def test_parquet_is_queryable_and_preserves_text(tmp_path: Path) -> None:
     assert rows == [("010089013",)]
 
 
-def test_unsupported_format_raises(tmp_path: Path) -> None:
+def test_pointer_write_failure_keeps_last_valid_and_no_orphan(tmp_path: Path, monkeypatch) -> None:
+    src_dir = tmp_path / "decp"
+    v1 = write_snapshot(b"a,b\n1,x\n", source_id="decp", extracted_at=_AT, root=tmp_path)
+    pointer_before = (src_dir / "latest.json").read_text()
+    parquets_before = sorted(p.name for p in src_dir.glob("*.parquet"))
+
+    def boom(*args, **kwargs):
+        raise OSError("pointer write failed")
+
+    monkeypatch.setattr(snapshot, "_write_pointer", boom)
+
     with pytest.raises(SnapshotError):
+        write_snapshot(
+            b"a,b\n9,z\n", source_id="decp", extracted_at="2026-06-08T13:00:00Z", root=tmp_path
+        )
+
+    # Pointer unchanged AND the promoted parquet was rolled back -> no orphan, no temp leak.
+    assert (src_dir / "latest.json").read_text() == pointer_before
+    assert sorted(p.name for p in src_dir.glob("*.parquet")) == parquets_before
+    assert not list(src_dir.glob("*.tmp"))
+    assert v1.exists()
+
+
+@pytest.mark.parametrize("bad", ["../evil", "a/b", "a\\b", "", ".", "..", "/abs"])
+def test_unsafe_source_id_rejected(tmp_path: Path, bad: str) -> None:
+    with pytest.raises(SnapshotError):
+        write_snapshot(b"a,b\n1,x\n", source_id=bad, extracted_at=_AT, root=tmp_path)
+
+
+def test_unsupported_format_raises(tmp_path: Path) -> None:
+    with pytest.raises(UnsupportedFormatError):
         write_snapshot(b"{}", source_id="decp", extracted_at=_AT, fmt="json", root=tmp_path)

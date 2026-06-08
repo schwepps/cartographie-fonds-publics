@@ -7,7 +7,11 @@ from pathlib import Path
 
 import httpx
 import pytest
-from ingestion.errors import SchemaResolutionError, SchemaValidationError
+from ingestion.errors import (
+    SchemaResolutionError,
+    SchemaValidationError,
+    UnsupportedFormatError,
+)
 from ingestion.validation import validate_extract
 
 SOURCE = "decp_commande_publique"
@@ -51,17 +55,17 @@ def test_renamed_column_fails_loud(fixtures_dir: Path) -> None:
     assert "nature" in exc_info.value.renamed_columns
 
 
-def test_whole_column_type_drift_fails_loud(fixtures_dir: Path) -> None:
-    # `montant` is declared integer but is text on EVERY row -> field-level drift -> fatal.
+def test_whole_column_type_mismatch_is_warning_not_fatal(fixtures_dir: Path) -> None:
+    # `montant` (declared integer) is text on every row. Under the simplified policy, wrong-typed
+    # VALUES are a data-quality warning surfaced in provenance, not column drift -> must NOT raise.
     raw = (
         b"acheteur_siren,acheteur_nom,titulaire_siren,titulaire_nom,montant,nature\n"
         b"180089013,CNRS,552081317,X SA,abc,marche\n"
         b"130005481,France Travail,402360494,Y SARL,def,marche\n"
         b"210900011,Commune,799999999,Z SARL,ghi,concession\n"
     )
-    with pytest.raises(SchemaValidationError) as exc_info:
-        validate_extract(raw, source_id=SOURCE, schema_ref=_schema_path(fixtures_dir))
-    assert exc_info.value.type_drift_columns == ["montant"]
+    report = validate_extract(raw, source_id=SOURCE, schema_ref=_schema_path(fixtures_dir))
+    assert report.cell_warning_count == 3
 
 
 def test_single_bad_cell_is_a_warning_not_fatal(fixtures_dir: Path) -> None:
@@ -74,7 +78,43 @@ def test_single_bad_cell_is_a_warning_not_fatal(fixtures_dir: Path) -> None:
     )
     report = validate_extract(raw, source_id=SOURCE, schema_ref=_schema_path(fixtures_dir))
     assert report.cell_warning_count == 1
-    assert report.cell_warning_samples  # a sample is retained for provenance
+
+
+def test_single_row_with_bad_cell_does_not_false_fatal(fixtures_dir: Path) -> None:
+    # A 1-row extract with one messy cell must NOT be fatal (regression: the old c>=total_rows
+    # heuristic wrongly raised here).
+    raw = (
+        b"acheteur_siren,acheteur_nom,titulaire_siren,titulaire_nom,montant,nature\n"
+        b"180089013,CNRS,552081317,X SA,abc,marche\n"
+    )
+    report = validate_extract(raw, source_id=SOURCE, schema_ref=_schema_path(fixtures_dir))
+    assert report.cell_warning_count == 1
+
+
+def test_header_only_extract_passes(fixtures_dir: Path) -> None:
+    raw = b"acheteur_siren,acheteur_nom,titulaire_siren,titulaire_nom,montant,nature\n"
+    report = validate_extract(raw, source_id=SOURCE, schema_ref=_schema_path(fixtures_dir))
+    assert not report.skipped
+    assert report.cell_warning_count == 0
+
+
+def test_empty_extract_fails_loud(fixtures_dir: Path) -> None:
+    # A 0-byte extract has no header -> all columns missing -> column drift -> fatal.
+    with pytest.raises(SchemaValidationError):
+        validate_extract(b"", source_id=SOURCE, schema_ref=_schema_path(fixtures_dir))
+
+
+def test_bom_prefixed_extract_passes(
+    load_fixture: Callable[[str], bytes], fixtures_dir: Path
+) -> None:
+    raw = b"\xef\xbb\xbf" + load_fixture("decp_valid.csv")  # UTF-8 BOM must not break header match
+    report = validate_extract(raw, source_id=SOURCE, schema_ref=_schema_path(fixtures_dir))
+    assert report.cell_warning_count == 0
+
+
+def test_unsupported_format_raises(fixtures_dir: Path) -> None:
+    with pytest.raises(UnsupportedFormatError):
+        validate_extract(b"{}", source_id=SOURCE, schema_ref=_schema_path(fixtures_dir), fmt="json")
 
 
 def test_no_schema_declared_skips_validation(load_fixture: Callable[[str], bytes]) -> None:

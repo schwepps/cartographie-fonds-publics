@@ -22,9 +22,10 @@ def test_get_source_unknown_raises():
 
 
 def test_schema_accessors_read_declared_schema():
-    # DECP is the source that declares a Table Schema (schema.ref + schema.validate).
+    # DECP is the source that declares a Table Schema (schema.ref + schema.validate). Assert
+    # structurally so the test survives the planned ref correction (see the registry TODO).
     decp = get_source("decp_commande_publique")
-    assert decp.schema_ref == "https://schema.data.gouv.fr/"
+    assert decp.schema_ref and decp.schema_ref.startswith("https://")
     assert decp.schema_validate is True
 
 

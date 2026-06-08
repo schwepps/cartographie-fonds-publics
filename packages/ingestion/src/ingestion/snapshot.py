@@ -24,7 +24,7 @@ from pathlib import Path
 import duckdb
 from pydantic import BaseModel, ConfigDict
 
-from .errors import SnapshotError
+from .errors import SnapshotError, UnsupportedFormatError
 
 # Default root mirrors registry.REGISTRY_PATH resolution; env override for installed envs.
 _DEFAULT_SNAPSHOT_ROOT = Path(__file__).resolve().parents[4] / "data" / "snapshots"
@@ -75,7 +75,16 @@ def write_snapshot(
     snapshot (and pointer) untouched. Raises ``SnapshotError`` on failure.
     """
     if fmt != "csv":
-        raise SnapshotError(f"Unsupported snapshot format {fmt!r} (only 'csv' is supported).")
+        raise UnsupportedFormatError(f"Cannot snapshot format {fmt!r} yet (only 'csv').")
+    # source_id becomes a directory name — reject anything that isn't a single safe segment, so a
+    # malformed registry id can never escape SNAPSHOT_ROOT or reach the COPY path interpolation.
+    if (
+        "/" in source_id
+        or "\\" in source_id
+        or os.path.isabs(source_id)
+        or source_id in ("", ".", "..")
+    ):
+        raise SnapshotError(f"Unsafe source_id {source_id!r}: must be a single path segment.")
 
     target_dir = Path(root) / source_id
     target_dir.mkdir(parents=True, exist_ok=True)
@@ -124,7 +133,13 @@ def write_snapshot(
         final_path = target_dir / f"{_safe_stamp(extracted_at)}-{content_sha256[:8]}.parquet"
         os.replace(parquet_tmp, final_path)  # atomic within target_dir (same filesystem)
         parquet_tmp = None  # consumed — don't unlink in finally
-        _write_pointer(target_dir / _LATEST_POINTER, final_path.name)
+        try:
+            _write_pointer(target_dir / _LATEST_POINTER, final_path.name)
+        except Exception:
+            # Roll back the just-promoted file so a pointer failure leaves only the previous
+            # valid snapshot (and its pointer) — never an orphaned, unreferenced parquet.
+            _silent_unlink(final_path)
+            raise
         return final_path
     except SnapshotError:
         raise
