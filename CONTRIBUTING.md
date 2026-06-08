@@ -16,7 +16,8 @@ cd cartographie-fonds-publics
 cp .env.example .env          # ships working local-dev defaults (no secrets to fill in)
 make install
 make spike            # sanity check: runs offline, prints a SIREN match rate
-make supabase-up      # start the local dev Supabase stack (Docker) + apply migrations
+make supabase-up      # start the local dev Supabase stack (Docker); applies migrations on
+                      # first start (use `make supabase-reset` after adding one)
 make up               # optional: local Redis cache (prod uses Supabase)
 ```
 

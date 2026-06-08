@@ -35,7 +35,7 @@ by discovery. Full design in **[ARCHITECTURE.md](ARCHITECTURE.md)**.
 ```bash
 make install                         # Python (uv) + web (pnpm) deps
 make spike                           # Phase-0 SIREN-match proof (offline, no network)
-make supabase-up                     # local DEV Supabase in Docker (+ applies migrations)
+make supabase-up                     # local DEV Supabase in Docker (applies migrations on first start)
 cd packages/web && cp .env.example .env && pnpm dev   # frontend reads the local stack
 ```
 

@@ -2,7 +2,7 @@
 .PHONY: help install up down supabase-up supabase-down supabase-reset lint format typecheck test spike ingest refresh db-migrate db-verify web
 
 help: ## Show this help
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-14s\033[0m %s\n",$$1,$$2}'
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-16s\033[0m %s\n",$$1,$$2}'
 
 install: ## Install deps (Python via uv, web via pnpm) + git hooks
 	uv sync

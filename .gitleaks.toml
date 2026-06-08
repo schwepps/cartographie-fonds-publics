@@ -1,8 +1,8 @@
 # gitleaks config — extends the default ruleset (does not replace it).
-# Sole purpose: allow the PUBLIC Supabase local-dev demo JWTs that ship in the .env.example
+# Sole purpose: allow the two PUBLIC Supabase local-dev demo JWTs that ship in the .env.example
 # files. These keys are issued by "supabase-demo", are identical on every machine, and are
-# only valid against the local CLI stack (127.0.0.1) — they are NOT secrets. Any other JWT
-# (e.g. a real production anon/service-role key, which has a different issuer + signature) is
+# only valid against the local CLI stack (127.0.0.1) — they are NOT secrets. They are pinned
+# here as EXACT literals, so any other JWT (e.g. a real production anon/service-role key) is
 # still detected and blocked. See SECURITY.md → "Secrets & environments".
 title = "cartographie-fonds-publics gitleaks config"
 
@@ -10,7 +10,8 @@ title = "cartographie-fonds-publics gitleaks config"
 useDefault = true
 
 [allowlist]
-description = "Public Supabase local demo JWTs (issuer supabase-demo, localhost-only) — not secrets"
+description = "The two exact public Supabase local demo JWTs (localhost-only) — not secrets"
 regexes = [
-  '''eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\.eyJpc3MiOiJzdXBhYmFzZS1kZW1v[A-Za-z0-9_.\-]+''',
+  '''eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9\.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0''',
+  '''eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0\.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU''',
 ]

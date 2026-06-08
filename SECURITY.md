@@ -8,7 +8,9 @@ Include details and steps to reproduce. We aim to acknowledge within 5 business 
 
 ## Scope & data
 - This project only ingests **public open data** (Licence Ouverte / Etalab 2.0).
-- No secrets are committed. Credentials live in `.env` (gitignored) or CI secrets.
+- No **production** secrets are committed (the only committed keys are the public local-dev
+  demo JWTs — see *Secrets & environments* below). Credentials live in `.env` (gitignored) or
+  CI secrets.
 - Raw data snapshots are never committed (see `.gitignore`).
 
 ## Secrets & environments
@@ -38,8 +40,9 @@ Rules:
   file or a local `.env`.
 - **Local demo keys are not secrets.** The `anon`/`service_role` JWTs the CLI mints (issuer
   `supabase-demo`) are public, identical on every machine, and valid only against the local
-  stack. They ship in the `.env.example` files; `.gitleaks.toml` allowlists *only* that
-  `supabase-demo` JWT family, so any real key is still blocked by secret scanning.
+  stack. They ship in the `.env.example` files; `.gitleaks.toml` allowlists *only* those two
+  exact demo tokens, so any other key — including a real one — is still blocked by secret
+  scanning.
 - **Never `supabase link` / `supabase db push` the prod project for routine dev.** Prod
   migrations go through `make db-migrate` against the prod `DATABASE_URL`.
 - If a prod key is ever exposed, **rotate it in the Supabase dashboard** and update the GitHub

@@ -24,6 +24,7 @@ port = 54322
 shadow_port = 54320
 # Must match the remote (prod) database's major version. Run `SHOW server_version;` on prod
 # and align this if it differs. 17 is the current Supabase default for new projects.
+# (CI runs the RLS shim check against a separate bare postgres:16 — see .github/workflows/ci.yml.)
 major_version = 17
 
 [db.migrations]

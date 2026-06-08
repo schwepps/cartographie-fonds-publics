@@ -15,8 +15,10 @@ make supabase-reset      # supabase db reset — drops local DB and re-applies a
 make db-migrate          # applies every migrations/*.sql against $DATABASE_URL
 ```
 
-Dev and prod stay in parity because both paths run the **same** `migrations/*.sql` in lexical
-order. Dev = local stack (see [config.toml](config.toml)); prod = the Supabase Pro project.
+Dev and prod stay in **schema** parity because both paths run the **same** `migrations/*.sql`
+in lexical order. Dev = local stack (see [config.toml](config.toml)); prod = the Supabase Pro
+project. (Parity is about the migrations, not the engine version: set `[db] major_version` in
+`config.toml` to match prod; CI runs the RLS shim check against a bare `postgres:16`.)
 
 ## Migration conventions
 
