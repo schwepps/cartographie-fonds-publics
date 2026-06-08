@@ -1,0 +1,45 @@
+{
+  "data": [
+    {
+      "id": "5d2a0b1f7c3e2d0f8b6c5a10",
+      "title": "PLF 2024 - Jaune budgétaire - Opérateurs de l'État",
+      "slug": "plf-2024-jaune-operateurs-de-letat",
+      "page": "https://www.data.gouv.fr/fr/datasets/plf-2024-jaune-operateurs-de-letat/",
+      "tags": ["plf", "operateurs", "millesime-2024"],
+      "resources": [
+        {
+          "id": "f6e5d4c3-b2a1-4f0e-9d8c-7b6a5f4e3d2c",
+          "title": "Liste des opérateurs 2024 (CSV)",
+          "format": "csv",
+          "url": "https://www.data.gouv.fr/fr/datasets/r/op-2024-csv",
+          "filesize": 47011,
+          "last_modified": "2023-10-12T08:00:00+00:00"
+        }
+      ],
+      "last_update": "2023-10-12T08:00:00+00:00"
+    },
+    {
+      "id": "5e3b1c2a8b4c1f0e9a7d6b21",
+      "title": "PLF 2025 - Jaune budgétaire - Opérateurs de l'État",
+      "slug": "plf-2025-jaune-operateurs-de-letat",
+      "page": "https://www.data.gouv.fr/fr/datasets/plf-2025-jaune-operateurs-de-letat/",
+      "tags": ["plf", "operateurs", "millesime-2025"],
+      "resources": [
+        {
+          "id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+          "title": "Liste des opérateurs 2025 (CSV)",
+          "format": "csv",
+          "url": "https://www.data.gouv.fr/fr/datasets/r/op-2025-csv",
+          "filesize": 48213,
+          "last_modified": "2024-10-10T08:00:00+00:00"
+        }
+      ],
+      "last_update": "2024-10-10T08:00:00+00:00"
+    }
+  ],
+  "next_page": null,
+  "previous_page": null,
+  "page": 1,
+  "page_size": 20,
+  "total": 2
+}
