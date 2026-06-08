@@ -1,6 +1,8 @@
 # Python
 __pycache__/
 *.py[cod]
+# Track the uv lockfile for reproducible installs (some users' global gitignore has *.lock)
+!uv.lock
 .venv/
 venv/
 .uv/
