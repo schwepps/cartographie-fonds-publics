@@ -77,8 +77,9 @@ the CLI body above.
 
 ### Git hooks
 
-`make install` runs `pre-commit install`, which wires both the `pre-commit` and `commit-msg`
-stages automatically — no separate step. On every commit the hooks:
+`make install` points `core.hooksPath` at the committed `.githooks/` directory and pre-builds
+the pre-commit environments. The hooks in `.githooks/` (`pre-commit`, `commit-msg`) hand off to
+the `pre-commit` framework using `.pre-commit-config.yaml`. On every commit the hooks:
 
 - **commit message** → commitlint enforces Conventional Commits;
 - **staged Python** → ruff lint (`--fix`) + ruff format (staged files only);
@@ -87,8 +88,16 @@ stages automatically — no separate step. On every commit the hooks:
 - **all staged changes** (any file type) → gitleaks secret scan (blocks committing secrets).
 
 Hooks fire based on the staged file set; the ruff and gitleaks checks operate on the staged
-changes themselves, while the web check runs across the package. If you ever need to bootstrap
-hooks manually, run `uv run pre-commit install`.
+changes themselves, while the web check runs across the package.
+
+**Why committed hooks (not `pre-commit install`)?** This repo is developed with parallel git
+worktrees (e.g. Conductor), which all share one `.git/hooks`. `pre-commit install` bakes an
+absolute interpreter path into that shared dir, so whichever worktree installs last leaves the
+others pointing at a venv that may not exist — commits then fail with
+`` `pre-commit` not found ``. The committed `.githooks/` are wired via a **relative**
+`core.hooksPath`, which git resolves against each worktree's own root, so every worktree uses
+its own `.venv`. If hooks ever stop firing, re-run `make install` (or just
+`git config core.hooksPath .githooks`).
 
 ## Adding or fixing a data source
 

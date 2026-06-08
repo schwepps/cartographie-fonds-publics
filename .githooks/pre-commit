@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# Workspace-agnostic git hook. See CONTRIBUTING.md → "Git hooks".
+#
+# Conductor runs each branch in its own worktree, all sharing ONE .git dir (and thus
+# one .git/hooks). `pre-commit install` bakes an absolute interpreter path into those
+# shared hooks — whichever worktree installed last wins, leaving every other worktree
+# pointing at a venv that may not exist. We avoid that by committing the hooks here and
+# wiring them with a *relative* core.hooksPath (set by `make install`), which git
+# resolves against each worktree's own root — so the interpreter below is always THIS
+# worktree's venv.
+set -euo pipefail
+
+ROOT="$(git rev-parse --show-toplevel)"
+ARGS=(hook-impl --config=.pre-commit-config.yaml --hook-type=pre-commit --hook-dir "$ROOT/.githooks" -- "$@")
+
+PY="$ROOT/.venv/bin/python"
+if [ -x "$PY" ]; then
+  exec "$PY" -m pre_commit "${ARGS[@]}"
+elif command -v pre-commit >/dev/null 2>&1; then
+  exec pre-commit "${ARGS[@]}"
+elif command -v uv >/dev/null 2>&1; then
+  exec uv run --project "$ROOT" pre-commit "${ARGS[@]}"
+else
+  echo 'pre-commit unavailable — run `make install` in this workspace.' >&2
+  exit 1
+fi
