@@ -2,34 +2,38 @@
 
 Proves the two riskiest assumptions before any real build:
 
-1. We can **discover** the latest "jaune opérateurs" dataset via the data.gouv.fr `/api/1`
-   catalog with **no hardcoded slug** (registry-driven).
-2. **SIREN works as a join key** between State operators and public buyers in the
-   procurement data (DECP). The headline metric is the **SIREN match rate** — the go/no-go
-   signal for the institutional graph.
+1. We can **discover** the latest "jaune opérateurs" and DECP datasets via the data.gouv.fr
+   `/api/1` catalog with **no hardcoded slug** (registry-driven).
+2. **SIREN works as a join key** between State operators and public buyers/suppliers in the
+   procurement data (DECP). The headline metrics are operator **SIREN coverage** and the
+   **SIREN match rate** — the go/no-go signal for the institutional graph.
 
 ## Run
 
 ```bash
 # Offline — always works, no network (default for `make spike`):
-python spike.py --sample
+make spike            # python spike.py --sample
 
-# Live — discovery against data.gouv.fr (needs internet):
-python spike.py
+# Live, end-to-end — discover, download, validate, snapshot, then MATCH (needs internet):
+make spike-live       # python spike.py
 ```
 
-Only dependency: `pip install -r requirements.txt` (PyYAML).
+Offline mode needs only PyYAML + the stdlib. **Live mode reuses the workspace packages**
+(`core.resolve`, `ingestion.validation`, `ingestion.snapshot`) and so runs through the uv
+workspace venv — use `make spike-live`, not a bare `python`.
 
 ## What success looks like
 
 `--sample` prints a SIREN match rate and writes a tiny real graph
-(`out/phase0_graph.json`: operator → contract → private supplier, keyed on SIREN). Exit code
-is `0` when the match rate ≥ 50 %. The fixtures are illustrative; the live data will set the
-true rate — improving SIREN coverage on the operators list is the first Phase-1 task if it's low.
+(`out/phase0_graph.json`: operator → contract → private supplier, keyed on SIREN); exit `0` when
+the rate ≥ 50 %. Live mode discovers both datasets, snapshots the raw extracts to
+`data/snapshots/`, computes operator coverage + the match rate against a bounded DECP head sample,
+and writes a machine summary to `out/phase0_live_summary.json`. The recorded go/no-go lives in
+[`docs/phase0-siren-match-results.md`](../../docs/phase0-siren-match-results.md).
 
 ## Files
 
-- `spike.py` — the spike (stdlib + PyYAML).
-- `fixtures/operateurs_sample.csv` — sample State operators (one intentionally without a SIREN).
-- `fixtures/decp_sample.csv` — sample public contracts (buyers + suppliers).
-- `out/` — generated graph (gitignored).
+- `spike.py` — the spike (offline `--sample` + live pipeline).
+- `fixtures/` — sample operators + contracts for offline mode.
+- `tests/` — offline respx tests (mock the catalog + downloads; no network).
+- `out/` — generated graph + live summary (gitignored).

@@ -1,0 +1,43 @@
+{
+  "data": [
+    {
+      "id": "6a1c2d3e4f5a6b7c8d9e0f12",
+      "title": "Données essentielles de la commande publique consolidées (format tabulaire) 2024",
+      "slug": "decp-consolidees-2024",
+      "page": "https://www.data.gouv.fr/fr/datasets/decp-consolidees-2024/",
+      "tags": ["decp", "commande-publique", "consolide"],
+      "resources": [
+        {
+          "id": "annex-0000-0000-0000-000000000001",
+          "title": "probabilites-naf-cpv.csv",
+          "format": "csv",
+          "url": "https://static.data.gouv.fr/resources/decp/decp-annex-csv",
+          "filesize": 566787,
+          "last_modified": "2025-01-02T08:00:00+00:00"
+        },
+        {
+          "id": "main-0000-0000-0000-000000000002",
+          "title": "decp.csv",
+          "format": "csv",
+          "url": "https://static.data.gouv.fr/resources/decp/decp-main-csv",
+          "filesize": 80000000,
+          "last_modified": "2025-01-01T08:00:00+00:00"
+        },
+        {
+          "id": "json-0000-0000-0000-000000000003",
+          "title": "decp.json",
+          "format": "json",
+          "url": "https://static.data.gouv.fr/resources/decp/decp-json",
+          "filesize": 120000000,
+          "last_modified": "2025-01-01T08:00:00+00:00"
+        }
+      ],
+      "last_update": "2025-01-02T08:00:00+00:00"
+    }
+  ],
+  "next_page": null,
+  "previous_page": null,
+  "page": 1,
+  "page_size": 20,
+  "total": 1
+}

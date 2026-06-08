@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-.PHONY: help install up down supabase-up supabase-down supabase-reset lint format typecheck test spike ingest refresh db-migrate db-verify web
+.PHONY: help install up down supabase-up supabase-down supabase-reset lint format typecheck test spike spike-live ingest refresh db-migrate db-verify web
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-16s\033[0m %s\n",$$1,$$2}'
@@ -39,6 +39,9 @@ test: ## Run Python tests
 
 spike: ## Run the Phase-0 SIREN-match spike (offline sample)
 	uv run python spikes/phase0_siren_match/spike.py --sample
+
+spike-live: ## Run the Phase-0 spike LIVE (discover+download+validate+snapshot+match, FSC-19)
+	uv run python spikes/phase0_siren_match/spike.py
 
 ingest: ## Run the ingestion pipeline (reads data/registry, writes Supabase)
 	uv run python -m ingestion.cli ingest

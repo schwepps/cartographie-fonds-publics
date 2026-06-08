@@ -1,1 +1,7 @@
+# Offline `--sample` mode needs only PyYAML and the stdlib.
 PyYAML>=6
+
+# Live mode (FSC-19) reuses the workspace packages end-to-end (core + ingestion: httpx,
+# frictionless, duckdb, pydantic, ...). Run it through the uv workspace venv:
+#     make spike-live        # or: uv run python spikes/phase0_siren_match/spike.py
+# This file is kept only for documentation; the spike is not a standalone install target.
