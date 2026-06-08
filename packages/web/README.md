@@ -1,9 +1,20 @@
 # web
 
-React + Vite + TypeScript frontend. Graph via **Sigma.js/graphology**, flows via **D3** (Sankey),
-UI via the French State Design System (**@gouvfr/dsfr**). It reads **Supabase directly** —
-PostgREST for tables and the `graph_neighbors` RPC for graph traversal, under Row Level Security
-(public read). There is no bespoke API server.
+React + Vite + TypeScript frontend. Routing via **react-router**, graph via
+**Sigma.js/graphology**, flows via **D3** (Sankey), UI via the French State Design System
+(**@codegouvfr/react-dsfr**, the typed React layer over `@gouvfr/dsfr`). It reads **Supabase
+directly** — PostgREST for tables and the `graph_neighbors` RPC for graph traversal, under Row
+Level Security (public read). There is no bespoke API server.
+
+## App shell & feature folders
+
+The app shell (`src/App.tsx` + `src/app/Layout.tsx`) is **frozen**. Every feature is a
+self-contained folder under `src/features/<name>/`, registered with one line in
+`src/app/routes.tsx` — so feature lanes progress in parallel. See
+[`src/features/README.md`](src/features/README.md) for the convention.
+
+> DSFR assets are copied into `public/dsfr/` (gitignored) by `copy-dsfr-to-public`, which runs
+> automatically on `postinstall`, `dev`, and `build`.
 
 ## Quickstart
 
