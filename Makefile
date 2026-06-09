@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-.PHONY: help install up down supabase-up supabase-down supabase-reset lint format typecheck test spike spike-live spike-resolve spike-resolve-live ingest refresh db-migrate db-verify web
+.PHONY: help install up down supabase-up supabase-down supabase-reset lint format typecheck test spike spike-live spike-resolve spike-resolve-live resolve resolve-seed ingest refresh db-migrate db-verify web
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-16s\033[0m %s\n",$$1,$$2}'
@@ -48,6 +48,12 @@ spike-resolve: ## Run the Phase-0.5 operator name->SIREN resolution spike (offli
 
 spike-resolve-live: ## Run the Phase-0.5 resolution spike LIVE (~430 operators via recherche-entreprises)
 	uv run python spikes/phase0_siren_match/resolve_spike.py
+
+resolve: ## Resolve the offline operator sample via the crosswalk (report + match rate, FSC-23)
+	uv run python -m ingestion.cli resolve --operators spikes/phase0_siren_match/fixtures/operateurs_resolve_sample.csv
+
+resolve-seed: ## Regenerate the crosswalk from the spike CSV (merge-aware; run a spike-resolve first)
+	uv run python -m ingestion.cli resolve-seed --resolution-csv spikes/phase0_siren_match/out/operator_resolution.csv
 
 ingest: ## Run the ingestion pipeline (reads data/registry, writes Supabase)
 	uv run python -m ingestion.cli ingest

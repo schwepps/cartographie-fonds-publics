@@ -43,6 +43,9 @@ data/snapshots/*
 # Generated spike output
 spikes/**/out/
 
+# Generated resolution reports (the crosswalk under data/crosswalk/ stays tracked)
+/out/
+
 # Local agent/workspace tooling (not part of the project)
 .conductor/
 scripts/conductor-setup.sh
