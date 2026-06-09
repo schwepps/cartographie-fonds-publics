@@ -88,6 +88,7 @@ def build(headers: list[str], rows: list[dict[str, str]]) -> TransformResult:
             amount_ae_eur=acc.ae,
             amount_cp_eur=acc.cp,
             executed=False,
+            provenance=SOURCE_ID,
         )
         for (exercice, mission, programme), acc in sorted(
             groups.items(), key=lambda kv: (kv[0][0], kv[0][1] or "", kv[0][2] or "")

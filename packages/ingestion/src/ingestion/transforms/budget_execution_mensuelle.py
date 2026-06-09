@@ -94,6 +94,7 @@ def build(headers: list[str], rows: list[dict[str, str]]) -> TransformResult:
             amount_ae_eur=ae,
             amount_cp_eur=cp,
             executed=True,
+            provenance=SOURCE_ID,
         )
         for (exercice, mission, programme), (_period, ae, cp) in sorted(
             winners.items(), key=lambda kv: (kv[0][0], kv[0][1] or "", kv[0][2] or "")

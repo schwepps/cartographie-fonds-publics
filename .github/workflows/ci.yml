@@ -67,9 +67,50 @@ jobs:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres
     steps:
       - uses: actions/checkout@v6
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+      - name: Sync deps
+        run: uv sync --all-packages
       - name: Supabase compatibility shim (roles + grants)
         run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/tests/supabase_roles.sql
       - name: Migrate a fresh database
         run: make db-migrate
       - name: Verify RLS posture
         run: make db-verify
+      - name: Load the curated graph + assert idempotency and RPC visibility (FSC-35)
+        env:
+          CFP_SNAPSHOT_ROOT: ${{ runner.temp }}/snapshots
+        run: |
+          set -euo pipefail
+          # Build a snapshot per État-central source from the committed offline fixtures (no network).
+          uv run python -c "
+          from pathlib import Path
+          from ingestion.snapshot import write_snapshot, SNAPSHOT_ROOT
+          fixtures = {
+              'operateurs_etat': 'spikes/phase0_siren_match/fixtures/operateurs_resolve_sample.csv',
+              'budget_plf_lfi': 'packages/ingestion/tests/fixtures/plf_depenses_sample.csv',
+              'budget_execution_mensuelle': 'packages/ingestion/tests/fixtures/ods_situation_mensuelle.csv',
+          }
+          for source_id, path in fixtures.items():
+              write_snapshot(Path(path).read_bytes(), source_id=source_id, extracted_at='2026-06-09T00:00:00+00:00', root=SNAPSHOT_ROOT)
+          print('snapshots written to', SNAPSHOT_ROOT)
+          "
+          counts() { psql "$DATABASE_URL" -tA -c \
+            "select count(*) from entities union all select count(*) from edges union all select count(*) from budget_facts"; }
+          make load
+          before="$(counts)"
+          make load  # re-run: a provenance-scoped reload must not change row counts
+          after="$(counts)"
+          test "$before" = "$after" || { echo "load is NOT idempotent: [$before] vs [$after]"; exit 1; }
+          # Sibling-provenance survival: a row from a DIFFERENT source (e.g. a future DECP delegates
+          # edge) must survive a load — the per-table provenance scope must not touch it.
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c \
+            "insert into edges (source_siren, target_siren, type, provenance) values ('111111111','222222222','delegates','decp_sentinel')"
+          make load
+          survived="$(psql "$DATABASE_URL" -tA -c "select count(*) from edges where provenance = 'decp_sentinel'")"
+          test "${survived:-0}" -eq 1 || { echo "load wiped a sibling provenance's rows (decp_sentinel)"; exit 1; }
+          # The loaded tutelle edges are reachable through the graph_neighbors RPC the UI calls.
+          neighbours="$(psql "$DATABASE_URL" -tA -c \
+            "select count(*) from graph_neighbors((select source_siren from edges where provenance = 'operateurs_etat' limit 1), 1)")"
+          test "${neighbours:-0}" -ge 1 || { echo "graph_neighbors returned no rows"; exit 1; }
+          echo "load idempotent (entities/edges/budget_facts = $(echo "$before" | paste -sd/ -)); sibling provenance preserved; graph_neighbors ok ($neighbours rows)"
