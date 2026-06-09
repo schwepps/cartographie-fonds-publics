@@ -13,7 +13,7 @@ export default function SearchPage() {
           plein-texte / RPC).
         </p>
       ) : (
-        <p className="fr-text--lead">Saisissez un terme dans la barre de recherche.</p>
+        <p className="fr-lead">Saisissez un terme dans la barre de recherche.</p>
       )}
     </section>
   );

@@ -1,4 +1,5 @@
 import Graph from "graphology";
+import { levelMeta } from "../../lib/levels";
 
 /** A graph node — one institution. The SIREN is the node key (canonical join key). */
 export interface GraphNode {
@@ -24,21 +25,15 @@ export interface GraphNeighbourRow {
   hop: number;
 }
 
-// DSFR-aligned palette per administrative level; unknown/expanded-but-unfetched nodes fall back.
-const LEVEL_COLOR: Record<string, string> = {
-  state: "#000091", // bleu France
-  local: "#18753c",
-  social: "#a558a0",
-  delegated: "#b34000",
-};
-const DEFAULT_COLOR = "#929292";
-
 // Node radius scales with degree so hubs (ministries with many operators) read larger.
 const NODE_BASE_SIZE = 6;
 const NODE_SIZE_PER_DEGREE = 2;
 
+// Categorical colour per administrative level, from the shared `LEVELS` SSOT (`src/lib/levels.ts`):
+// the colour-blind-safe Okabe–Ito palette, so graph nodes match the badges/legend. Unknown or
+// expanded-but-unfetched nodes fall back to the neutral "unresolved" grey.
 function colorForLevel(level: string | null): string {
-  return (level && LEVEL_COLOR[level]) || DEFAULT_COLOR;
+  return levelMeta(level).color;
 }
 
 /** Stable edge identity so the same (source, target, type) is never added twice. */

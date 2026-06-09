@@ -5,7 +5,7 @@ const route: FeatureRoute = {
   path: "",
   index: true,
   Component: lazy(() => import("./HomePage")),
-  nav: { label: "Accueil" },
+  nav: { label: "Accueil", icon: "Home" },
   order: 0,
 };
 

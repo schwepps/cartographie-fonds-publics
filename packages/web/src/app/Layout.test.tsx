@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createMemoryRouter, RouterProvider } from "react-router-dom";
 import { Layout } from "./Layout";
@@ -21,27 +21,54 @@ function renderAt(initialPath: string) {
 }
 
 describe("Layout shell", () => {
-  it("renders the DSFR header and the home page at /", async () => {
+  it("renders the Marianne header and the home page at /", async () => {
     renderAt("/");
     expect(screen.getByRole("banner")).toBeInTheDocument();
+    expect(screen.getByRole("contentinfo")).toBeInTheDocument();
     expect(
-      await screen.findByRole("heading", {
-        level: 1,
-        name: /Cartographie des Fonds Publics/i,
-      }),
+      await screen.findByRole("heading", { level: 1, name: /Cartographie des Fonds Publics/i }),
     ).toBeInTheDocument();
   });
 
-  it("navigates to the search feature from the header search bar", async () => {
+  it("renders the registry-driven nav in the design order", () => {
+    renderAt("/");
+    const nav = screen.getByRole("navigation", { name: /Menu principal/i });
+    const labels = within(nav)
+      .getAllByRole("link")
+      .map((link) => link.getAttribute("aria-label"));
+    expect(labels).toEqual([
+      "Accueil",
+      "Graphe institutionnel",
+      "Recherche",
+      "Flux de financement",
+      "Données & licences",
+    ]);
+  });
+
+  it("marks the active nav item with aria-current", async () => {
+    renderAt("/sources");
+    const nav = screen.getByRole("navigation", { name: /Menu principal/i });
+    const active = within(nav).getByRole("link", { name: "Données & licences" });
+    expect(active).toHaveAttribute("aria-current", "page");
+  });
+
+  it("navigates to the search feature from the header tool link", async () => {
     const user = userEvent.setup();
     renderAt("/");
-    // DSFR's Header renders the search input twice (desktop + mobile modal); the
-    // first is the visible desktop one.
-    const [input] = await screen.findAllByRole("searchbox");
-    await user.type(input, "ademe");
-    await user.keyboard("{Enter}");
-    expect(await screen.findByText(/Résultats pour/i)).toBeInTheDocument();
-    expect(screen.getByText(/ademe/i)).toBeInTheDocument();
+    await user.click(screen.getByRole("link", { name: "Rechercher" }));
+    expect(
+      await screen.findByRole("heading", { level: 1, name: /Recherche/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("resolves the Flux nav entry to its placeholder screen (no 404)", async () => {
+    const user = userEvent.setup();
+    renderAt("/");
+    const nav = screen.getByRole("navigation", { name: /Menu principal/i });
+    await user.click(within(nav).getByRole("link", { name: "Flux de financement" }));
+    expect(
+      await screen.findByRole("heading", { level: 1, name: /Flux de financement/i }),
+    ).toBeInTheDocument();
   });
 
   it("shows the 404 page inside the layout for an unknown route", async () => {

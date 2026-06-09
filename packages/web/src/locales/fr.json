@@ -3,7 +3,23 @@
     "tagline": "Comprendre l'usage des fonds publics",
     "footer": "Données ouvertes (Licence Ouverte / Etalab 2.0). Code sous AGPL-3.0.",
     "skipToContent": "Aller au contenu",
-    "loading": "Chargement…"
+    "loading": "Chargement…",
+    "homeTitle": "Accueil — Cartographie des Fonds Publics",
+    "search": "Rechercher",
+    "data": "Données",
+    "openMenu": "Ouvrir le menu",
+    "closeMenu": "Fermer le menu",
+    "mainMenu": "Menu principal",
+    "footerDescription": "Cartographie des Fonds Publics réutilise des données publiques ouvertes pour rendre lisibles les liens, les financements et les mandats des institutions françaises.",
+    "footerLinksLabel": "Liens de pied de page",
+    "methodology": "Méthodologie",
+    "openLicense": "Licence Ouverte 2.0",
+    "accessibilityPartial": "Accessibilité : partiellement conforme",
+    "sourceCode": "Code source (AGPL-3.0)",
+    "legalNotice": "Mentions légales",
+    "personalData": "Données personnelles",
+    "cookies": "Gestion des cookies",
+    "copyright": "© République Française {{year}} — Sauf mention contraire, contenus sous Licence Ouverte 2.0"
   },
   "provenance": {
     "millesime": "Millésime",
@@ -91,5 +107,10 @@
   },
   "fallback": {
     "label": "Équivalent tabulaire"
+  },
+  "flux": {
+    "title": "Flux de financement",
+    "intro": "Visualisation des flux de financement (diagramme de Sankey).",
+    "comingSoon": "Cet écran arrive prochainement. Il cartographiera les flux de financement entre institutions et opérateurs."
   }
 }

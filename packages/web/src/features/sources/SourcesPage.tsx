@@ -14,11 +14,11 @@ export default function SourcesPage() {
   return (
     <section>
       <h1 className="fr-h1">{t("sources.title")}</h1>
-      <p className="fr-text--lead">{t("sources.intro")}</p>
-      <p className="fr-text--sm">{t("sources.updatedAt", { date: registryUpdatedAt })}</p>
+      <p className="fr-lead">{t("sources.intro")}</p>
+      <p className="fr-sm">{t("sources.updatedAt", { date: registryUpdatedAt })}</p>
 
-      <div className="fr-table">
-        <table>
+      <div className="table-wrap">
+        <table className="fr-table">
           <caption>{t("sources.tableCaption")}</caption>
           <thead>
             <tr>
@@ -41,7 +41,7 @@ export default function SourcesPage() {
         </table>
       </div>
 
-      <p className="fr-text--sm">{t("sources.attribution")}</p>
+      <p className="fr-sm">{t("sources.attribution")}</p>
     </section>
   );
 }

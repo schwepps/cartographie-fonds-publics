@@ -51,7 +51,7 @@ export default function GraphPage() {
     return (
       <section>
         <h1 className="fr-h1">{t("graph.title")}</h1>
-        <p className="fr-text--lead">{t("graph.loading")}</p>
+        <p className="fr-lead">{t("graph.loading")}</p>
       </section>
     );
   }
@@ -59,7 +59,7 @@ export default function GraphPage() {
     return (
       <section>
         <h1 className="fr-h1">{t("graph.title")}</h1>
-        <p role="alert" className="fr-text-default--error">
+        <p role="alert" className="text-error">
           {t("graph.error")}
         </p>
       </section>
@@ -102,12 +102,12 @@ export default function GraphPage() {
   return (
     <section>
       <h1 className="fr-h1">{t("graph.title")}</h1>
-      <p className="fr-text--sm">{t("graph.expandHint")}</p>
+      <p className="fr-sm">{t("graph.expandHint")}</p>
       {state.truncated ? (
-        <p className="fr-text--sm">{t("graph.limitNotice", { limit: NODE_LIMIT })}</p>
+        <p className="fr-sm">{t("graph.limitNotice", { limit: NODE_LIMIT })}</p>
       ) : null}
       {state.expandError ? (
-        <p role="alert" className="fr-text-default--error fr-text--sm">
+        <p role="alert" className="text-error fr-sm">
           {t("graph.expandError")}
         </p>
       ) : null}
@@ -119,8 +119,12 @@ export default function GraphPage() {
       />
 
       {selectedNode ? (
-        <aside className="fr-mt-2w" aria-label={t("graph.selectedLabel")}>
-          <p className="fr-text--bold fr-mb-1v">{selectedNode.name}</p>
+        <aside
+          className="stack"
+          style={{ marginTop: "var(--sp-5)" }}
+          aria-label={t("graph.selectedLabel")}
+        >
+          <p className="text-bold">{selectedNode.name}</p>
           <Link className="fr-link" to={`/entity/${selectedNode.siren}`}>
             {t("graph.openSheet")}
           </Link>

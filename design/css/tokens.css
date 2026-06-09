@@ -1,0 +1,140 @@
+/* ============================================================================
+   Cartographie des Fonds Publics — Design tokens
+   Foundation: DSFR (Système de Design de l'État). Values mirror the official
+   DSFR light theme. The data-viz palette is a SEPARATE colour-blind-safe
+   (Okabe–Ito) scale, intentionally distinct from the Bleu France chrome.
+   ============================================================================ */
+
+@font-face {
+  font-family: "Marianne";
+  src: url("../fonts/Marianne-Light.woff2") format("woff2");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Marianne";
+  src: url("../fonts/Marianne-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Marianne";
+  src: url("../fonts/Marianne-Medium.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Marianne";
+  src: url("../fonts/Marianne-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Marianne";
+  src: url("../fonts/Marianne-Bold_Italic.woff2") format("woff2");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+
+:root {
+  /* — Brand / chrome — */
+  --blue-france: #000091;
+  --blue-france-hover: #1212ff;
+  --blue-france-active: #2323ff;
+  --blue-france-925: #e3e3fd;   /* open / low action bg */
+  --blue-france-950: #ececfe;
+  --blue-france-975: #f5f5fe;   /* alt bg */
+  --blue-france-main-525: #6a6af4;
+  --blue-france-850: #cacafb;
+  --red-marianne: #e1000f;
+  --red-marianne-text: #c9191e;
+  --red-marianne-925: #fddede;
+  --red-marianne-975: #fef4f4;
+
+  /* — Greys — */
+  --grey-title: #161616;   /* headings, strong text */
+  --grey-text: #3a3a3a;    /* body */
+  --grey-mention: #666666; /* secondary */
+  --grey-disabled: #929292;
+  --border-default: #dddddd;
+  --border-contrast: #e5e5e5;
+  --bg-default: #ffffff;
+  --bg-alt: #f6f6f6;       /* alt grey background */
+  --bg-contrast: #eeeeee;
+  --bg-raised: #ffffff;
+
+  /* — Feedback — */
+  --info: #0063cb;        --info-bg: #e8edff;
+  --success: #18753c;     --success-bg: #b8fec9;
+  --warning: #b34000;     --warning-bg: #ffe9e6;
+  --error: #ce0500;       --error-bg: #ffe9e9;
+
+  /* — Data-viz: categorical (Okabe–Ito), one hue per administrative level —
+     Deliberately NOT Bleu France, so chrome and data never collide.        */
+  --niv-etat:    #0072b2;  /* bleu profond  — État / administration centrale */
+  --niv-etat-bg: #e3eef5;
+  --niv-local:   #009e73;  /* vert          — collectivités territoriales     */
+  --niv-local-bg:#dcf0e9;
+  --niv-social:  #cc79a7;  /* rose-mauve    — sécurité sociale                */
+  --niv-social-bg:#f7e8f0;
+  --niv-delegue: #e69f00;  /* orange-ambre  — opérateurs / délégataires       */
+  --niv-delegue-bg:#fbeed4;
+  --niv-unresolved: #b4b4b4; /* gris — entité non résolue (SIREN manquant)   */
+
+  /* — Data-viz: sequential (montants), single-hue blue ramp — */
+  --seq-1: #eef3f9;
+  --seq-2: #cfe0ef;
+  --seq-3: #9cc1df;
+  --seq-4: #5e95c7;
+  --seq-5: #2e6ca8;
+  --seq-6: #103e6e;
+
+  /* — Edge / flow tints — */
+  --edge-tutelle: #525252;
+  --edge-funds: #0072b2;
+  --edge-delegates: #b34000;
+
+  /* — Type scale (rem) — */
+  --fs-display: 2.5rem;   /* 40 */
+  --fs-h1: 2rem;          /* 32 */
+  --fs-h2: 1.625rem;      /* 26 */
+  --fs-h3: 1.375rem;      /* 22 */
+  --fs-h4: 1.125rem;      /* 18 */
+  --fs-lead: 1.25rem;     /* 20 */
+  --fs-base: 1rem;        /* 16 */
+  --fs-sm: 0.875rem;      /* 14 */
+  --fs-xs: 0.75rem;       /* 12 */
+
+  /* — Spacing scale (DSFR-aligned, 0.25rem base) — */
+  --sp-1: 0.25rem;  /* 4  */
+  --sp-2: 0.5rem;   /* 8  */
+  --sp-3: 0.75rem;  /* 12 */
+  --sp-4: 1rem;     /* 16 */
+  --sp-5: 1.5rem;   /* 24 */
+  --sp-6: 2rem;     /* 32 */
+  --sp-7: 2.5rem;   /* 40 */
+  --sp-8: 3rem;     /* 48 */
+  --sp-9: 4rem;     /* 64 */
+
+  /* — Radius — DSFR is square-ish; small radii only — */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+
+  /* — Elevation — restrained, no heavy drop shadows — */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 18, 0.08);
+  --shadow-md: 0 2px 6px rgba(0, 0, 18, 0.10);
+  --shadow-raised: 0 6px 18px -8px rgba(0, 0, 33, 0.22);
+
+  /* — Layout — */
+  --container: 1248px;
+  --header-h: 116px;
+
+  --font-sans: "Marianne", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "Roboto Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}

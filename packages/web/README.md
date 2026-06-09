@@ -1,10 +1,11 @@
 # web
 
 React + Vite + TypeScript frontend. Routing via **react-router**, graph via
-**Sigma.js/graphology**, flows via **D3** (Sankey), UI via the French State Design System
-(**@codegouvfr/react-dsfr**, the typed React layer over `@gouvfr/dsfr`). It reads **Supabase
-directly** — PostgREST for tables and the `graph_neighbors` RPC for graph traversal, under Row
-Level Security (public read). There is no bespoke API server.
+**Sigma.js/graphology**, flows via **D3** (Sankey). The UI follows the French State Design
+System (DSFR): a **self-contained design layer** — design tokens, Marianne fonts and base
+components — ported from the delivered `design/` export at the repo root (see `src/styles/` and
+`src/lib/ui/`). It reads **Supabase directly** — PostgREST for tables and the `graph_neighbors`
+RPC for graph traversal, under Row Level Security (public read). There is no bespoke API server.
 
 ## App shell & feature folders
 
@@ -13,8 +14,9 @@ self-contained folder under `src/features/<name>/`, registered with one line in
 `src/app/routes.tsx` — so feature lanes progress in parallel. See
 [`src/features/README.md`](src/features/README.md) for the convention.
 
-> DSFR assets are copied into `public/dsfr/` (gitignored) by `copy-dsfr-to-public`, which runs
-> automatically on `postinstall`, `dev`, and `build`.
+> The design system — tokens, the DSFR-faithful base/components, app chrome and the Marianne
+> fonts — lives under `src/styles/` and is imported once in `src/main.tsx`. The base component
+> library is `src/lib/ui/`. The canonical reference is the `design/` export at the repo root.
 
 ## Quickstart
 

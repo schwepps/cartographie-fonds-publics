@@ -5,7 +5,7 @@ const route: FeatureRoute = {
   // Detail route reached by SIREN (e.g. from search); no header nav entry.
   path: "entity/:siren",
   Component: lazy(() => import("./EntityPage")),
-  order: 40,
+  order: 50,
 };
 
 export default route;

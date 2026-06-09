@@ -6,6 +6,15 @@ Commits follow [Conventional Commits](https://www.conventionalcommits.org/).
 
 ## [Unreleased]
 ### Added
+- Design system wired app-wide (FSC-49): the delivered `design/` export is adopted as the web app's
+  self-contained styling layer — design tokens, the DSFR-faithful base/components, app chrome and
+  the self-hosted Marianne fonts under `packages/web/src/styles/`, imported once in `main.tsx`. A
+  typed base component library lands in `src/lib/ui/` (icons, Button, Card, Badge/LevelBadge,
+  LevelShape, Chip, Callout, Breadcrumb, ExampleFlag, StateBlock, a sortable accessible DataTable)
+  plus pure helpers (`format.ts` euro formatters, `levels.ts` the Okabe–Ito level SSOT, `seq.ts`).
+  The Marianne header/nav/footer shell is ported to `src/app/shell/` (registry-driven nav with
+  per-feature icons + order) and a `/flux` placeholder screen is added so the nav matches the
+  design. The committed `design/` folder is the canonical reference for follow-up per-screen tickets.
 - State-budget connector + transforms (FSC-26): a generic `ods_explore` connector (Opendatasoft
   Explore v2.1 — resolve the dataset endpoint from the registry, read back the latest exercice and
   fetch *that* year's export filtered via `where=` → validate → snapshot, no frozen URL; bounded,

@@ -3,7 +3,23 @@
     "tagline": "Understand how public money is used",
     "footer": "Open data (Licence Ouverte / Etalab 2.0). Code under AGPL-3.0.",
     "skipToContent": "Skip to content",
-    "loading": "Loading…"
+    "loading": "Loading…",
+    "homeTitle": "Home — Cartographie des Fonds Publics",
+    "search": "Search",
+    "data": "Data",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
+    "mainMenu": "Main menu",
+    "footerDescription": "Cartographie des Fonds Publics reuses open public data to make the links, funding and mandates of French institutions legible.",
+    "footerLinksLabel": "Footer links",
+    "methodology": "Methodology",
+    "openLicense": "Licence Ouverte 2.0",
+    "accessibilityPartial": "Accessibility: partially compliant",
+    "sourceCode": "Source code (AGPL-3.0)",
+    "legalNotice": "Legal notice",
+    "personalData": "Personal data",
+    "cookies": "Cookie settings",
+    "copyright": "© République Française {{year}} — Unless stated otherwise, content under Licence Ouverte 2.0"
   },
   "provenance": {
     "millesime": "Year",
@@ -91,5 +107,10 @@
   },
   "fallback": {
     "label": "Tabular equivalent"
+  },
+  "flux": {
+    "title": "Funding flows",
+    "intro": "Funding-flow visualisation (Sankey diagram).",
+    "comingSoon": "This screen is coming soon. It will map funding flows between institutions and operators."
   }
 }

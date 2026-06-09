@@ -18,19 +18,30 @@ describe("feature route registry", () => {
     expect(featureRoutes.some((route) => route.path === "search")).toBe(true);
   });
 
-  it("derives ordered nav items from the descriptors", () => {
+  it("derives ordered nav items from the descriptors (design nav order)", () => {
     expect(navItems.map((item) => item.label)).toEqual([
       "Accueil",
-      "Recherche",
-      "Données & licences",
       "Graphe institutionnel",
+      "Recherche",
+      "Flux de financement",
+      "Données & licences",
     ]);
-    expect(navItems.map((item) => item.to)).toEqual(["/", "/search", "/sources", "/graph"]);
+    expect(navItems.map((item) => item.to)).toEqual([
+      "/",
+      "/graph",
+      "/search",
+      "/flux",
+      "/sources",
+    ]);
   });
 
-  // Guards the shell's hardcoded `/search?q=…` navigation (Layout.tsx): if the
-  // search lane renames its slug, this fails loudly instead of silently 404-ing.
-  it("always registers the `search` route the header search depends on", () => {
+  it("carries an icon name on each nav item for the header glyphs", () => {
+    expect(navItems.every((item) => typeof item.icon === "string")).toBe(true);
+  });
+
+  // Guards the header's "Rechercher" tool link → /search: if the search lane renames its slug,
+  // this fails loudly instead of silently 404-ing.
+  it("always registers the `search` route the header tool link depends on", () => {
     expect(featureRouteObjects.some((r) => "path" in r && r.path === "search")).toBe(true);
   });
 });
