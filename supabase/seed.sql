@@ -38,9 +38,9 @@ insert into edges (source_siren, target_siren, type, amount_eur, exercice, prove
   ('110046018', '180046252', 'tutelle', null, null, 'operateurs_etat');
 
 -- Budget facts: PLF 2025 MIRES, voté (mission/programme grain).
-insert into budget_facts (entity_siren, exercice, mission, programme, amount_ae_eur, amount_cp_eur, executed) values
-  ('110044013', 2025, 'MIRES', '150', 15217000000, 15279000000, false),
-  ('110044013', 2025, 'MIRES', '172', 8259807441, 8701105312, false);
+insert into budget_facts (entity_siren, exercice, mission, programme, amount_ae_eur, amount_cp_eur, executed, provenance) values
+  ('110044013', 2025, 'MIRES', '150', 15217000000, 15279000000, false, 'budget_plf_lfi'),
+  ('110044013', 2025, 'MIRES', '172', 8259807441, 8701105312, false, 'budget_plf_lfi');
 
 -- Contracts: real DECP marchés (CNRS acheteur).
 insert into contracts (acheteur_siren, titulaire_siren, montant_eur, nature, exercice) values

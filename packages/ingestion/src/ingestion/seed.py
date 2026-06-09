@@ -26,10 +26,8 @@ Provenance + licence for every figure live in the SQL header (see ``_SQL_HEADER`
 
 from __future__ import annotations
 
-import math
 import os
 from dataclasses import dataclass, field
-from enum import Enum
 from pathlib import Path
 
 from core.crosswalk import Crosswalk
@@ -37,6 +35,7 @@ from core.models import BudgetFact, Contract, Edge, EdgeType, Entity, Level, Nat
 from core.resolve import normalize_name
 
 from .crosswalk_io import load_crosswalk
+from .sql_render import BUDGET_COLUMNS, EDGE_COLUMNS, ENTITY_COLUMNS, render_insert
 from .transforms.operateurs_etat import MINISTRY_CATEGORY, MinistryIndex
 
 # Registry source id stamped on every seeded entity and tutelle edge. The État-central skeleton
@@ -45,6 +44,10 @@ from .transforms.operateurs_etat import MINISTRY_CATEGORY, MinistryIndex
 # registry") and letting the UI resolve it to a real source name. (The whole seed slice is
 # dev/preview-only and truncates the curated tables, which is what marks it as seed data.)
 PROVENANCE = "operateurs_etat"
+
+# Registry source id for the seeded budget facts (voted PLF). Matches the production
+# `budget_plf_lfi` transform's SOURCE_ID so the seed and the full load stamp provenance identically.
+BUDGET_PROVENANCE = "budget_plf_lfi"
 
 # The committed artifact this builder generates. Same env-override pattern as crosswalk_io.
 _DEFAULT_SEED_SQL_PATH = Path(__file__).resolve().parents[4] / "supabase" / "seed.sql"
@@ -76,6 +79,9 @@ def _seed_budget_facts(owner_siren: str) -> list[BudgetFact]:
     (https://www.senat.fr/rap/l24-144-324/l24-144-324_mono.html) + budget.gouv.fr PAP. Licence
     Ouverte 2.0.
     """
+    # These are voted PLF credits, so they carry the State-budget source's registry id — the same
+    # provenance the production `budget_plf_lfi` transform stamps (FSC-35), letting the UI attribute
+    # the figures and a State-budget reload replace exactly its own facts.
     return [
         BudgetFact(
             entity_siren=owner_siren,
@@ -85,6 +91,7 @@ def _seed_budget_facts(owner_siren: str) -> list[BudgetFact]:
             amount_ae_eur=15_217_000_000,
             amount_cp_eur=15_279_000_000,
             executed=False,
+            provenance=BUDGET_PROVENANCE,
         ),
         BudgetFact(
             entity_siren=owner_siren,
@@ -94,6 +101,7 @@ def _seed_budget_facts(owner_siren: str) -> list[BudgetFact]:
             amount_ae_eur=8_259_807_441,
             amount_cp_eur=8_701_105_312,
             executed=False,
+            provenance=BUDGET_PROVENANCE,
         ),
     ]
 
@@ -238,49 +246,9 @@ _SQL_HEADER = """\
 --     22847056-61df-452d-837d-8b8ceadbfc52 (extrait 2026-06-09).
 """
 
-_ENTITY_COLUMNS = ("siren", "name", "level", "category", "parent_siren", "provenance")
-_EDGE_COLUMNS = ("source_siren", "target_siren", "type", "amount_eur", "exercice", "provenance")
-_BUDGET_COLUMNS = (
-    "entity_siren",
-    "exercice",
-    "mission",
-    "programme",
-    "amount_ae_eur",
-    "amount_cp_eur",
-    "executed",
-)
+# Entity/edge/budget column tuples are shared with the loader (``ingestion.sql_render``); contracts
+# are seed-only (DECP -> graph is FSC-35's job), so their column list stays here.
 _CONTRACT_COLUMNS = ("acheteur_siren", "titulaire_siren", "montant_eur", "nature", "exercice")
-
-
-def _lit(value: object) -> str:
-    """Render a Python value as a SQL literal (deterministic; integral floats stay integers)."""
-    if value is None:
-        return "null"
-    if isinstance(value, bool):
-        return "true" if value else "false"
-    if isinstance(value, Enum):
-        value = value.value
-    if isinstance(value, float):
-        # Fail loud rather than emit `nan`/`inf` — invalid in a numeric INSERT (cf.
-        # crosswalk_io._parse_ratio, which rejects non-finite floats the same way).
-        if not math.isfinite(value):
-            raise ValueError(f"non-finite amount cannot be rendered to SQL: {value!r}")
-        return str(int(value)) if value.is_integer() else repr(value)
-    if isinstance(value, int):
-        return str(value)
-    return "'" + str(value).replace("'", "''") + "'"
-
-
-def _insert(table: str, columns: tuple[str, ...], rows: list[object]) -> str:
-    """Render a single multi-row INSERT for ``rows`` (pydantic models), or a comment if empty."""
-    if not rows:
-        return f"-- (no {table} rows)\n"
-    values = [
-        "  (" + ", ".join(_lit(r.model_dump(mode="json")[c]) for c in columns) + ")"  # type: ignore[attr-defined]
-        for r in rows
-    ]
-    cols = ", ".join(columns)
-    return f"insert into {table} ({cols}) values\n" + ",\n".join(values) + ";\n"
 
 
 def render_sql(bundle: SeedBundle) -> str:
@@ -292,13 +260,13 @@ def render_sql(bundle: SeedBundle) -> str:
         "truncate entities, edges, budget_facts, contracts, attributions, mentions "
         "restart identity cascade;",
         "\n-- Entities: ministries (graph roots) then operators.",
-        _insert("entities", _ENTITY_COLUMNS, list(bundle.entities)),
+        render_insert("entities", ENTITY_COLUMNS, list(bundle.entities)),
         "-- Tutelle edges: ministry -> operator.",
-        _insert("edges", _EDGE_COLUMNS, list(bundle.edges)),
+        render_insert("edges", EDGE_COLUMNS, list(bundle.edges)),
         "-- Budget facts: PLF 2025 MIRES, voté (mission/programme grain).",
-        _insert("budget_facts", _BUDGET_COLUMNS, list(bundle.budget_facts)),
+        render_insert("budget_facts", BUDGET_COLUMNS, list(bundle.budget_facts)),
         "-- Contracts: real DECP marchés (CNRS acheteur).",
-        _insert("contracts", _CONTRACT_COLUMNS, list(bundle.contracts)),
+        render_insert("contracts", _CONTRACT_COLUMNS, list(bundle.contracts)),
         "\ncommit;\n",
     ]
     return "\n".join(sections)

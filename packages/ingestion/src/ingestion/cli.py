@@ -22,8 +22,10 @@ from .crosswalk_io import (
     load_seed_csv,
     merge_seed,
 )
+from .load import LOAD_SQL_PATH, emit_load_sql, load_summary
 from .registry import Source, sources
 from .seed import SEED_SQL_PATH, emit_seed_sql
+from .snapshot import SNAPSHOT_ROOT
 from .tabular import parse_csv_bytes
 from .transforms import get_transform
 
@@ -58,10 +60,11 @@ def ingest() -> None:
             continue
         routed += 1
         typer.echo(f"[ingest] {s.id} ({s.layer}) — {type(connector).__name__}")
-        # TODO: connector.discover -> extract -> validate -> snapshot -> stage.
-        # Once stage() writes to Supabase, revisit warn-and-continue: a partial run would
-        # persist some sources while skipping others. Consider an all-or-nothing routing
-        # pre-check before any side effects.
+        # TODO (FSC-38): connector.discover -> extract -> validate -> snapshot. The curated load
+        # is a separate, cross-source step run after snapshots exist (`load` command / `make load`,
+        # see ingestion.load), not folded into a per-source stage(); that keeps the rebuild
+        # provenance-scoped and atomic. When this loop snapshots live, decide all-or-nothing routing
+        # before any side effects.
     if missing:
         typer.echo(f"[ingest] routed {routed}, skipped {missing}", err=True)
         raise typer.Exit(code=1)
@@ -264,6 +267,36 @@ def seed_emit(
     """
     written = emit_seed_sql(out)
     typer.echo(f"[seed-emit] wrote {written}")
+
+
+@app.command()
+def load(
+    out: Annotated[
+        Path, typer.Option(help="Load SQL file to write (then applied by `make load`).")
+    ] = LOAD_SQL_PATH,
+    snapshot_root: Annotated[
+        Path | None, typer.Option(help="Snapshot root (defaults to CFP_SNAPSHOT_ROOT).")
+    ] = None,
+    allow_empty: Annotated[
+        bool,
+        typer.Option(
+            help="Allow a source that produced 0 rows (a reload would delete its rows). Off by "
+            "default — fail loud rather than wipe the graph from an empty/broken snapshot."
+        ),
+    ] = False,
+) -> None:
+    """Render the curated État-central load SQL from the latest snapshots; print a load summary.
+
+    Emits SQL only — `make load` pipes it to psql via the service-role ``DATABASE_URL`` (mirroring
+    `seed-emit` vs `make seed`). The load is idempotent and **provenance-scoped**: entities upsert
+    on SIREN; edges/budget_facts are rebuilt per source (delete-by-provenance then insert), so a
+    reload replaces exactly this load's sources and never touches another source's rows. Curated
+    rows only — raw extracts stay as Parquet snapshots (golden rule #6).
+    """
+    root = snapshot_root if snapshot_root is not None else SNAPSHOT_ROOT
+    written, bundle = emit_load_sql(out, snapshot_root=root, allow_empty=allow_empty)
+    typer.echo(load_summary(bundle))
+    typer.echo(f"[load] wrote {written}")
 
 
 if __name__ == "__main__":

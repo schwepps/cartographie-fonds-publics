@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-.PHONY: help install up down supabase-up supabase-down supabase-reset lint format typecheck test spike spike-live spike-resolve spike-resolve-live resolve resolve-seed operators budget ingest refresh seed db-migrate db-verify web
+.PHONY: help install up down supabase-up supabase-down supabase-reset lint format typecheck test spike spike-live spike-resolve spike-resolve-live resolve resolve-seed operators budget ingest refresh seed load db-migrate db-verify web
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-16s\033[0m %s\n",$$1,$$2}'
@@ -83,6 +83,10 @@ seed: ## Regenerate supabase/seed.sql and load it into $$DATABASE_URL (LOCAL dev
 	esac
 	uv run python -m ingestion.cli seed-emit
 	psql "$$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/seed.sql
+
+load: ## Load the curated État-central graph from latest snapshots into $$DATABASE_URL (FSC-35)
+	uv run python -m ingestion.cli load --out out/load.sql
+	psql "$$DATABASE_URL" -v ON_ERROR_STOP=1 -f out/load.sql
 
 db-migrate: ## Apply Supabase SQL migrations (in order) to $$DATABASE_URL
 	@for f in supabase/migrations/*.sql; do \

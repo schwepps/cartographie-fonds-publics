@@ -8,7 +8,8 @@ Schema, and snapshot the raw bytes with provenance. Source-specific curation liv
 
 The discover→extract context (resolved resource URL, the source's license + schema ref) is held as
 instance state and threaded into ``snapshot``, per the :class:`~ingestion.connectors.base.Connector`
-contract. ``stage`` is intentionally left to FSC-35 (the Supabase loader).
+contract. ``stage`` is intentionally not implemented here — curated loading is a cross-source,
+provenance-scoped rebuild (``ingestion.load`` / ``make load``, FSC-35), not a per-source step.
 """
 
 from __future__ import annotations
@@ -100,8 +101,9 @@ class DatagouvApiConnector(Connector):
     # -- stage -------------------------------------------------------------- #
     def stage(self, snapshot_uri: str, source_id: str) -> None:
         raise NotImplementedError(
-            "Supabase staging is owned by FSC-35 (the curated-graph loader); "
-            "FSC-25 produces validated entities/edges via ingestion.transforms."
+            "Curated loading is a cross-source, provenance-scoped rebuild done after snapshots "
+            "exist — see `ingestion.load` / `make load` (FSC-35), not a per-source stage(). "
+            "Wiring this connector's live discover->snapshot loop and calling the loader is FSC-38."
         )
 
     # -- internals ---------------------------------------------------------- #

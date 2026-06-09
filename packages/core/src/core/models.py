@@ -98,6 +98,7 @@ class BudgetFact(FrozenModel):
     amount_ae_eur: float | None = None  # autorisations d'engagement
     amount_cp_eur: float | None = None  # credits de paiement
     executed: bool = False  # voted (False) vs executed (True)
+    provenance: str | None = None  # source id from the registry (mirrors Entity/Edge.provenance)
 
 
 class Contract(FrozenModel):

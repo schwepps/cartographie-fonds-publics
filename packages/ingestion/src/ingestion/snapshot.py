@@ -164,6 +164,55 @@ def read_provenance(path: Path | str) -> Provenance:
     raise SnapshotError(f"No provenance metadata found in snapshot {path}")
 
 
+def latest_snapshot_path(source_id: str, *, root: Path = SNAPSHOT_ROOT) -> Path:
+    """Resolve a source's current snapshot via its ``latest.json`` pointer; fail loud if absent.
+
+    The pointer only advances once a new snapshot is safely on disk (see ``write_snapshot``), so the
+    resolved file is always a complete, valid extract — the curated loader reads exactly this.
+    """
+    pointer = Path(root) / source_id / _LATEST_POINTER
+    if not pointer.is_file():
+        raise SnapshotError(
+            f"No snapshot pointer for source {source_id!r} at {pointer} — run the ingestion "
+            "pipeline (discover/extract/validate/snapshot) for this source first."
+        )
+    filename = json.loads(pointer.read_text(encoding="utf-8")).get("snapshot")
+    if not filename:
+        raise SnapshotError(f"Malformed snapshot pointer {pointer}: missing 'snapshot' key.")
+    path = pointer.parent / filename
+    if not path.is_file():
+        raise SnapshotError(f"Snapshot pointer {pointer} references a missing file {path}.")
+    return path
+
+
+def read_snapshot_rows(
+    source_id: str, *, root: Path = SNAPSHOT_ROOT
+) -> tuple[list[str], list[dict[str, str]]]:
+    """Read the latest snapshot's rows for a source as ``(headers, rows)``, every cell as text.
+
+    The symmetric read to :func:`write_snapshot`: snapshots are stored ``all_varchar`` so source
+    bytes survive faithfully (e.g. SIREN leading zeros). NULLs become empty strings, matching
+    ``ingestion.tabular.parse_csv_bytes`` — so a transform sees the same shape whether fed a live
+    CSV (``make operators``/``make budget``) or a snapshot (the curated load). Fails loud if the
+    snapshot is missing (delegated to :func:`latest_snapshot_path`).
+    """
+    path = latest_snapshot_path(source_id, root=root)
+    con = duckdb.connect()
+    try:
+        cursor = con.execute("SELECT * FROM read_parquet(?)", [str(path)])
+        headers = [column[0] for column in cursor.description or []]
+        rows = [
+            {
+                header: ("" if value is None else str(value))
+                for header, value in zip(headers, record, strict=True)
+            }
+            for record in cursor.fetchall()
+        ]
+    finally:
+        con.close()
+    return headers, rows
+
+
 def _write_pointer(pointer_path: Path, snapshot_filename: str) -> None:
     """Atomically point ``latest.json`` at the freshly written snapshot."""
     fd, tmp = tempfile.mkstemp(dir=pointer_path.parent, suffix=".json.tmp")

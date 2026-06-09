@@ -36,4 +36,10 @@ class Connector(ABC):
 
     @abstractmethod
     def stage(self, snapshot_uri: str, source_id: str) -> None:
-        """Load curated rows from the snapshot into Supabase (service-role write)."""
+        """Curated load entry point (service-role write).
+
+        The État-central loader (``ingestion.load`` / ``make load``, FSC-35) rebuilds the curated
+        graph as a cross-source, provenance-scoped batch *after* snapshots exist, rather than per
+        source — so connectors currently raise ``NotImplementedError`` here. Wiring the live
+        discover→snapshot loop and invoking the loader is FSC-38.
+        """

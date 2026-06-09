@@ -37,6 +37,12 @@ class SnapshotError(IngestionError):
     """Writing a raw-extract snapshot failed; the previous valid snapshot is left untouched."""
 
 
+class LoadError(IngestionError):
+    """The curated load was refused or failed — e.g. a source contributed zero rows, which would
+    delete its existing curated rows (provenance-scoped rebuild) with nothing to re-insert. Fail
+    loud rather than silently wipe the graph (golden rule #3)."""
+
+
 class SchemaValidationError(IngestionError):
     """An extract drifted from its declared Table Schema — fail loud (golden rule #3).
 
