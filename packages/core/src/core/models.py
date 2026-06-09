@@ -78,6 +78,7 @@ class Entity(FrozenModel):
     level: Level
     category: str | None = None  # INSEE legal category, operator category, etc.
     parent_siren: OptionalSiren = None
+    provenance: str | None = None  # source id from the registry (mirrors Edge.provenance)
 
 
 class Edge(FrozenModel):

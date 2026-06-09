@@ -57,6 +57,13 @@ def test_entity_normalizes_and_allows_none_siren():
     assert Entity(siren=None, name="Unresolved op", level=Level.state).siren is None
 
 
+def test_entity_carries_optional_provenance():
+    # Provenance (the registry source id) mirrors Edge.provenance: optional, defaults None.
+    assert Entity(siren=None, name="X", level=Level.state).provenance is None
+    op = Entity(siren="180089013", name="CNRS", level=Level.state, provenance="operateurs_etat")
+    assert op.provenance == "operateurs_etat"
+
+
 def test_entity_rejects_invalid_siren():
     with pytest.raises(ValidationError):
         Entity(siren="abc123", name="Bad", level=Level.state)

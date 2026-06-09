@@ -56,6 +56,18 @@ The descriptor is the single source of truth: it drives both the router and the 
 navigation. Lazy-load the page component so heavy pages (Sigma graph, D3 Sankey) stay
 code-split behind the shell's shared `<Suspense>`.
 
+## Accessibility & i18n (baseline, FSC-30)
+
+- **i18n**: strings go through `useTranslation()` (keys in `src/locales/{fr,en}.json`); `fr` is the
+  default + fallback. Don't hardcode user-facing copy in components.
+- **Non-visual fallback**: every **graphical** view (Sigma graph, D3 Sankey…) MUST also render
+  `DataTableFallback` (`src/lib/a11y/DataTableFallback.tsx`) with equivalent data, so the information
+  is reachable without sight. The entity sheet shows the pattern.
+- **Provenance**: surface a figure's source with `ProvenanceBadge` (`src/lib/provenance/`); values
+  are read from the registry, never hardcoded.
+- Automated a11y checks run in `pnpm test` via `vitest-axe` — add a `toHaveNoViolations()` assertion
+  for new pages.
+
 ## Global search
 
 The header search bar lives in the shared `Layout` and navigates to `/search?q=…`. The

@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import { startReactDsfr } from "@codegouvfr/react-dsfr/spa";
 import { Link } from "react-router-dom";
 import { App } from "./App";
+import "./lib/i18n"; // initialise i18next (fr default) before first render
 
 // Register react-router's Link so DSFR components (Header nav, Footer…) navigate
 // client-side. `to` then becomes the canonical link prop across the app.

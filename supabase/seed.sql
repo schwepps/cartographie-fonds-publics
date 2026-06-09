@@ -22,19 +22,19 @@ begin;
 truncate entities, edges, budget_facts, contracts, attributions, mentions restart identity cascade;
 
 -- Entities: ministries (graph roots) then operators.
-insert into entities (siren, name, level, category, parent_siren) values
-  ('110000072', 'Ministère du Travail et des Solidarités', 'state', 'ministère', null),
-  ('110044013', 'Ministère de l''Enseignement supérieur et de la Recherche', 'state', 'ministère', null),
-  ('110046018', 'Ministère de la Culture', 'state', 'ministère', null),
-  ('130005481', 'France Travail', 'state', null, '110000072'),
-  ('180046252', 'Bibliothèque nationale de France', 'state', 'EPA', '110046018'),
-  ('180089013', 'Centre national de la recherche scientifique', 'state', 'EPST', '110044013');
+insert into entities (siren, name, level, category, parent_siren, provenance) values
+  ('110000072', 'Ministère du Travail et des Solidarités', 'state', 'ministère', null, 'operateurs_etat'),
+  ('110044013', 'Ministère de l''Enseignement supérieur et de la Recherche', 'state', 'ministère', null, 'operateurs_etat'),
+  ('110046018', 'Ministère de la Culture', 'state', 'ministère', null, 'operateurs_etat'),
+  ('130005481', 'France Travail', 'state', null, '110000072', 'operateurs_etat'),
+  ('180046252', 'Bibliothèque nationale de France', 'state', 'EPA', '110046018', 'operateurs_etat'),
+  ('180089013', 'Centre national de la recherche scientifique', 'state', 'EPST', '110044013', 'operateurs_etat');
 
 -- Tutelle edges: ministry -> operator.
 insert into edges (source_siren, target_siren, type, amount_eur, exercice, provenance) values
-  ('110000072', '130005481', 'tutelle', null, null, 'seed'),
-  ('110044013', '180089013', 'tutelle', null, null, 'seed'),
-  ('110046018', '180046252', 'tutelle', null, null, 'seed');
+  ('110000072', '130005481', 'tutelle', null, null, 'operateurs_etat'),
+  ('110044013', '180089013', 'tutelle', null, null, 'operateurs_etat'),
+  ('110046018', '180046252', 'tutelle', null, null, 'operateurs_etat');
 
 -- Budget facts: PLF 2025 MIRES, voté (mission/programme grain).
 insert into budget_facts (entity_siren, exercice, mission, programme, amount_ae_eur, amount_cp_eur, executed) values

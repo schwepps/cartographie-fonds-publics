@@ -1,6 +1,8 @@
 import { Suspense } from "react";
 import { Footer } from "@codegouvfr/react-dsfr/Footer";
 import { Header } from "@codegouvfr/react-dsfr/Header";
+import { SkipLinks } from "@codegouvfr/react-dsfr/SkipLinks";
+import { useTranslation } from "react-i18next";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { navItems } from "./routes";
 
@@ -25,14 +27,16 @@ const HOME_LINK_PROPS = {
 export function Layout() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
+  const { t } = useTranslation();
 
   return (
     <>
+      <SkipLinks links={[{ anchor: "#content", label: t("shell.skipToContent") }]} />
       <Header
         brandTop={BRAND_TOP}
         homeLinkProps={HOME_LINK_PROPS}
         serviceTitle="Cartographie des Fonds Publics"
-        serviceTagline="Comprendre l'usage des fonds publics"
+        serviceTagline={t("shell.tagline")}
         navigation={navItems.map((item) => ({
           text: item.label,
           linkProps: { to: item.to },
@@ -41,7 +45,7 @@ export function Layout() {
         onSearchButtonClick={(text) => navigate(`/search?q=${encodeURIComponent(text.trim())}`)}
       />
       <main role="main" id="content" className="fr-container fr-my-4w">
-        <Suspense fallback={<p className="fr-text--lead">Chargement…</p>}>
+        <Suspense fallback={<p className="fr-text--lead">{t("shell.loading")}</p>}>
           <Outlet />
         </Suspense>
       </main>
@@ -49,7 +53,7 @@ export function Layout() {
         accessibility="non compliant"
         brandTop={BRAND_TOP}
         homeLinkProps={HOME_LINK_PROPS}
-        contentDescription="Données ouvertes (Licence Ouverte / Etalab 2.0). Code sous AGPL-3.0."
+        contentDescription={t("shell.footer")}
       />
     </>
   );

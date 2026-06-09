@@ -75,6 +75,15 @@ def test_referential_integrity() -> None:
     assert all(c.acheteur_siren in siren_set for c in bundle.contracts)
 
 
+def test_seed_rows_carry_a_registry_resolvable_provenance() -> None:
+    """Entities and edges are stamped with a real registry source id (not a 'seed' sentinel), so the
+    web provenance UI can resolve them to a source name. The État-central skeleton is the Jaune
+    « Opérateurs de l'État »."""
+    bundle = build_seed()
+    assert all(e.provenance == "operateurs_etat" for e in bundle.entities)
+    assert all(edge.provenance == "operateurs_etat" for edge in bundle.edges)
+
+
 def test_sirens_come_from_the_committed_crosswalk() -> None:
     """No SIREN is hardcoded in the builder: operators resolve via the crosswalk, ministries via the
     reviewed ministry reference."""

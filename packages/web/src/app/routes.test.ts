@@ -19,8 +19,12 @@ describe("feature route registry", () => {
   });
 
   it("derives ordered nav items from the descriptors", () => {
-    expect(navItems.map((item) => item.label)).toEqual(["Accueil", "Recherche"]);
-    expect(navItems.map((item) => item.to)).toEqual(["/", "/search"]);
+    expect(navItems.map((item) => item.label)).toEqual([
+      "Accueil",
+      "Recherche",
+      "Données & licences",
+    ]);
+    expect(navItems.map((item) => item.to)).toEqual(["/", "/search", "/sources"]);
   });
 
   // Guards the shell's hardcoded `/search?q=…` navigation (Layout.tsx): if the

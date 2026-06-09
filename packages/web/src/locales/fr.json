@@ -1,0 +1,51 @@
+{
+  "shell": {
+    "tagline": "Comprendre l'usage des fonds publics",
+    "footer": "Données ouvertes (Licence Ouverte / Etalab 2.0). Code sous AGPL-3.0.",
+    "skipToContent": "Aller au contenu",
+    "loading": "Chargement…"
+  },
+  "provenance": {
+    "millesime": "Millésime",
+    "aria": "Provenance : {{publisher}}, licence {{licence}}{{millesime}}",
+    "ariaMillesime": ", millésime {{millesime}}",
+    "unknown": "Source inconnue ({{id}})",
+    "seeSources": "Voir le détail de la source"
+  },
+  "sources": {
+    "title": "Données & licences",
+    "intro": "Toutes les données proviennent de sources publiques ouvertes. Chaque figure de l'application renvoie à l'une des sources ci-dessous.",
+    "updatedAt": "Registre des sources à jour au {{date}}.",
+    "attribution": "Réutilisation sous Licence Ouverte / Etalab 2.0 — attribution au producteur indiqué.",
+    "col": {
+      "publisher": "Producteur",
+      "licence": "Licence",
+      "cadence": "Mise à jour",
+      "description": "Description"
+    },
+    "tableCaption": "Sources de données et licences"
+  },
+  "entity": {
+    "loading": "Chargement de l'entité…",
+    "error": "Impossible de charger cette entité. Réessayez plus tard.",
+    "notFound": "Aucune entité trouvée pour le SIREN {{siren}}.",
+    "identity": "Identité",
+    "siren": "SIREN",
+    "level": "Niveau",
+    "category": "Catégorie",
+    "source": "Source",
+    "figuresTitle": "Relations et flux",
+    "empty": "Aucune relation enregistrée pour cette entité.",
+    "tableCaption": "Relations de l'entité, avec leur provenance",
+    "col": {
+      "type": "Type",
+      "counterpart": "Entité liée (SIREN)",
+      "amount": "Montant (€)",
+      "exercice": "Millésime",
+      "provenance": "Provenance"
+    }
+  },
+  "fallback": {
+    "label": "Équivalent tabulaire"
+  }
+}
