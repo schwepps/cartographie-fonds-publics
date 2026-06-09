@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
 from core.models import BudgetFact
 from ingestion.tabular import parse_csv_bytes
 from ingestion.transforms import TransformResult, get_transform
@@ -89,3 +90,13 @@ def test_period_key_orders_numeric_then_date_like() -> None:
     assert _period_key("12") > _period_key("2")
     assert _period_key("2025-12") > _period_key("2025-03")
     assert _period_key("1") > _period_key("2025-03")
+
+
+def test_missing_period_column_fails_loud() -> None:
+    # Without a month/period column the latest-month reduction would degenerate to "first row wins".
+    headers = ["Exercice", "Code mission", "Code programme", "Dépenses nettes"]
+    rows = [
+        {"Exercice": "2025", "Code mission": "X", "Code programme": "1", "Dépenses nettes": "5"}
+    ]
+    with pytest.raises(ValueError, match="month/period"):
+        build(headers, rows)

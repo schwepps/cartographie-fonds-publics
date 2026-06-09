@@ -63,6 +63,10 @@ def build(headers: list[str], rows: list[dict[str, str]]) -> TransformResult:
     ae_col = first_column(headers, _AE_PATTERNS)
     if exercice_col is None:
         raise ValueError(f"no exercice column detected in headers {headers!r}")
+    if period_col is None:
+        # The latest-month reduction is the whole contract for executed facts; without a period
+        # column it would degenerate to "first row wins" and silently pick a non-latest month.
+        raise ValueError(f"no month/period column detected in headers {headers!r}")
     if cp_col is None and ae_col is None:
         raise ValueError(f"no dépenses/amount column detected in headers {headers!r}")
 
@@ -74,7 +78,7 @@ def build(headers: list[str], rows: list[dict[str, str]]) -> TransformResult:
             dropped += 1
             continue
         key = (exercice, clean_cell(row, mission_col), clean_cell(row, programme_col))
-        period = _period_key(row.get(period_col)) if period_col else (0, 0, "")
+        period = _period_key(row.get(period_col))
         current = winners.get(key)
         if current is None or period > current[0]:  # keep the latest month only (cumulative YTD)
             ae = parse_amount(row.get(ae_col)) if ae_col else None

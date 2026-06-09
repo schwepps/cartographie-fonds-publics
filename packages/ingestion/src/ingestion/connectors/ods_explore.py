@@ -61,7 +61,16 @@ class OdsExploreConnector(Connector):
         with httpx.Client(headers={"User-Agent": USER_AGENT}, timeout=HTTP_TIMEOUT) as client:
             results = self._sample_records(client, records_url)
         field, latest_exercice = self._resolve_exercice(results)
-        where = f"{field}={latest_exercice}" if field and latest_exercice is not None else None
+        if field is None or latest_exercice is None:
+            # The connector's contract is "resolve latest exercice, then fetch that year". Without a
+            # resolved exercice we'd fall back to an unfiltered multi-year export (unbounded, and
+            # the snapshot would not record a millésime) — fail loud instead (drift/misconfig).
+            raise ValueError(
+                f"ods_explore source {source.get('id')!r}: could not resolve an exercice from the "
+                f"records sample (field={field!r}, latest={latest_exercice!r}). The dataset must "
+                "expose an exercice/année field; fix the source or extend the connector."
+            )
+        where = f"{field}={latest_exercice}"
         # Capture provenance from the registry source for snapshot(); the source_ref carries the
         # exercice filter so the snapshot self-documents which millésime it holds.
         self._source_id = str(source.get("id") or self._source_id)

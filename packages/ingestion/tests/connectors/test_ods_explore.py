@@ -66,6 +66,16 @@ def test_discover_caps_oversize_records_body(load_fixture, respx_mock, monkeypat
         OdsExploreConnector().discover(_SOURCE)
 
 
+def test_discover_fails_loud_when_no_exercice_field(respx_mock) -> None:  # type: ignore[no-untyped-def]
+    # No exercice/année field in the records -> can't resolve a millésime -> fail loud, never fetch
+    # an unfiltered multi-year export.
+    respx_mock.get(RECORDS_URL).mock(
+        return_value=httpx.Response(200, json={"results": [{"mois": 1, "code_mission": "X"}]})
+    )
+    with pytest.raises(ValueError, match="resolve an exercice"):
+        OdsExploreConnector().discover(_SOURCE)
+
+
 def test_extract_downloads_filtered_export(load_fixture, respx_mock) -> None:  # type: ignore[no-untyped-def]
     route = respx_mock.get(EXPORT_URL).mock(
         return_value=httpx.Response(200, content=load_fixture("ods_situation_mensuelle.csv"))
