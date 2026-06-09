@@ -16,13 +16,11 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",
     "d3": "^7.9.0",
-    "graphology": "^0.26.0",
     "i18next": "^26.3.1",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "react-i18next": "^17.0.8",
-    "react-router-dom": "^7.17.0",
-    "sigma": "^3.0.0"
+    "react-router-dom": "^7.17.0"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
