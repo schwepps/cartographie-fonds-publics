@@ -6,6 +6,15 @@ Commits follow [Conventional Commits](https://www.conventionalcommits.org/).
 
 ## [Unreleased]
 ### Added
+- Delivered design screens ported (FSC-50…53): the Accueil overview (hero, headline figures with
+  provenance, teaser Sankey, action tiles), the Recherche results + facets, the institutional Graphe
+  reworked to a custom **2D-canvas force-directed** layout (clusters, CP-scaled nodes, typed/weighted
+  edges, filters, legend, side panel, keyboard nav + synchronized table fallback — superseding the
+  Sigma v1), the entity Fiche (budget AE/CP bars + trend, mini-flux, contracts, relations chips), the
+  Flux **Sankey** screen, and the Données methodology page. Backed by a separate illustrative
+  dev/preview demo seed (`ingestion.demo_seed`) with funds/delegates/participation flows + multi-year
+  budgets so the screens render rich data before the flow ingestion (FSC-39/FSC-33) lands. With the
+  export fully ported, the `design/` reference folder is removed (it lives on in git history).
 - Design system wired app-wide (FSC-49): the delivered `design/` export is adopted as the web app's
   self-contained styling layer — design tokens, the DSFR-faithful base/components, app chrome and
   the self-hosted Marianne fonts under `packages/web/src/styles/`, imported once in `main.tsx`. A
