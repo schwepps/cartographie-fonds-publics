@@ -39,6 +39,32 @@ project. (Parity is about the migrations, not the engine version: set `[db] majo
 - **New curated table → public-read RLS in the same migration**, and add the table to the loop
   list in [`tests/rls_checks.sql`](tests/rls_checks.sql) so the RLS check covers it.
 
+## Seed (curated starter data)
+
+[`seed.sql`](seed.sql) is a tiny, real, licence-attributed **État-central** slice (a few
+ministries + operators + tutelle edges + PLF 2025 MIRES budget facts + real DECP contracts) so a
+fresh dev DB — and Vercel previews — render a populated graph + entity sheet **before** the full
+ingestion load (FSC-35) exists. It lets the web features (entity sheet, graph explorer, Sankey)
+develop entirely against committed data.
+
+```bash
+# Local: auto-loaded on a fresh DB (config.toml `[db.seed]`) after migrations apply.
+make supabase-reset      # supabase db reset — re-applies migrations, then loads seed.sql
+# Any DB (preview / a running stack): regenerate + load over the direct connection.
+make seed                # python -m ingestion.cli seed-emit, then psql -f seed.sql
+```
+
+- **Generated, not hand-edited.** `seed.sql` is rendered from `packages/ingestion`'s
+  `ingestion.seed` builder, which constructs the frozen domain models (validation is free) and
+  resolves every SIREN from `data/crosswalk/*.yaml` (never hardcoded). Edit the builder, then
+  `make seed`; a golden test (`packages/ingestion/tests/test_seed.py`) fails loud if the committed
+  SQL drifts from the builder.
+- **Dev/preview only.** `seed.sql` **truncates** the curated tables before inserting, so it is
+  idempotent for dev but must **never** run against the curated production database. `make seed`
+  enforces this: it **refuses a non-local `DATABASE_URL`** unless `SEED_ALLOW_NONLOCAL=1` is set
+  (the explicit opt-in for seeding a preview DB). The local auto-load on `supabase db reset` is
+  unaffected.
+
 ## Verify RLS
 
 `make db-verify` runs [`tests/rls_checks.sql`](tests/rls_checks.sql): it asserts that `anon`
