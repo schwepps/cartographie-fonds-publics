@@ -70,11 +70,16 @@ refresh: ## Discover latest millésimes for all sources
 	uv run python -m ingestion.cli refresh
 
 seed: ## Regenerate supabase/seed.sql and load it into $$DATABASE_URL (LOCAL dev/preview only, FSC-24)
-	@case "$$DATABASE_URL" in \
-		*127.0.0.1*|*localhost*) : ;; \
-		*) echo "✋ make seed refuses non-local DATABASE_URL ('$$DATABASE_URL'): seed.sql TRUNCATES the curated tables." >&2; \
-		   echo "   Point DATABASE_URL at the local stack, or set SEED_ALLOW_NONLOCAL=1 to override (e.g. a preview DB)." >&2; \
-		   [ "$$SEED_ALLOW_NONLOCAL" = "1" ] || exit 1 ;; \
+	@host="$${DATABASE_URL#*://}"; host="$${host##*@}"; host="$${host%%/*}"; host="$${host%%:*}"; \
+	case "$$host" in \
+		127.0.0.1|localhost|::1) ;; \
+		*) if [ "$$SEED_ALLOW_NONLOCAL" = "1" ]; then \
+		     echo "⚠️  make seed: SEED_ALLOW_NONLOCAL=1 set — seeding non-local host '$$host'." >&2; \
+		   else \
+		     echo "✋ make seed refuses non-local DATABASE_URL (host '$$host'): seed.sql TRUNCATES the curated tables." >&2; \
+		     echo "   Point DATABASE_URL at the local stack, or set SEED_ALLOW_NONLOCAL=1 to override (e.g. a preview DB)." >&2; \
+		     exit 1; \
+		   fi ;; \
 	esac
 	uv run python -m ingestion.cli seed-emit
 	psql "$$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/seed.sql
