@@ -98,7 +98,10 @@ def load_ministries(path: Path | str = MINISTERES_PATH) -> list[CrosswalkEntry]:
                 f"{path}: ministry {entry.denomination!r} must be 'reviewed' "
                 f"(hand-curated, never generated); got {entry.status.value!r}"
             )
-        code = (entry.tutelle or "").strip()
+        # Normalize the code the same way MinistryIndex looks it up (.upper()), so a case-variant
+        # duplicate (e.g. 'aa' vs 'AA') fails loud here instead of silently overwriting in the
+        # index and mis-resolving a tutelle.
+        code = (entry.tutelle or "").strip().upper()
         if not code:
             raise ValueError(
                 f"{path}: ministry {entry.denomination!r} has no tutelle code "

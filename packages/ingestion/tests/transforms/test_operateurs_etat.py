@@ -172,6 +172,19 @@ def test_load_ministries_fails_loud_on_duplicate_code(tmp_path: Path) -> None:
         load_ministries(bad)
 
 
+def test_load_ministries_fails_loud_on_case_variant_duplicate_code(tmp_path: Path) -> None:
+    # 'aa' and 'AA' are the same code to MinistryIndex (.upper()), so the loader must reject them.
+    bad = tmp_path / "m.yaml"
+    bad.write_text(
+        "schema_version: 1\nentries:\n"
+        "- denomination: X\n  status: reviewed\n  siren: '900000017'\n  tutelle: aa\n"
+        "- denomination: Y\n  status: reviewed\n  siren: '900000025'\n  tutelle: AA\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="duplicate ministry tutelle code"):
+        load_ministries(bad)
+
+
 def test_load_ministries_rejects_non_reviewed_status(tmp_path: Path) -> None:
     # The ministry reference is hand-curated, never generated — an `auto` row must fail loud.
     bad = tmp_path / "m.yaml"

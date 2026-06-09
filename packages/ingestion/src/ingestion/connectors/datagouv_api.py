@@ -80,6 +80,8 @@ class DatagouvApiConnector(Connector):
         """Validate against the Table Schema; raise loudly on drift. Keep the cell-warning count."""
         report = validate_extract(raw, source_id=self._source_id, schema_ref=schema_ref)
         self._cell_warnings = report.cell_warning_count
+        # Pin provenance to what was actually validated, so the snapshot can't record a stale ref.
+        self._schema_ref = schema_ref
 
     # -- snapshot ----------------------------------------------------------- #
     def snapshot(self, raw: bytes, source_id: str) -> str:
