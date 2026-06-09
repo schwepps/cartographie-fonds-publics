@@ -74,7 +74,7 @@ class LoadBundle:
     """The curated slice to load + the metadata the SQL render and the summary need."""
 
     entities: list[Entity]  # deduped by SIREN; siren is never None (unresolved are dropped)
-    edges: list[Edge]  # deduped by (source, target, type, exercice)
+    edges: list[Edge]  # deduped by (source, target, type, exercice, provenance)
     budget_facts: list[BudgetFact]  # as emitted (entity_siren may be None — a LOLF-level fact)
     provenances: tuple[str, ...]  # provenance scopes this load rebuilds (the source_ids)
     skipped_unresolved: int  # entities dropped for siren=None (reported, never silent)
@@ -102,7 +102,10 @@ def build_bundle(
     )
 
     entities_by_siren: dict[str, Entity] = {}
-    edges_by_key: dict[tuple[str, str, str, int | None], Edge] = {}
+    # Include provenance in the key: the same (source, target, type, exercice) edge from two
+    # different sources is two legitimately distinct rows (the DB has no uniqueness constraint and
+    # each provenance is rebuilt independently), so they must not collapse into one.
+    edges_by_key: dict[tuple[str, str, str, int | None, str | None], Edge] = {}
     budget_facts: list[BudgetFact] = []
     reports: dict[str, dict[str, Any]] = {}
     skipped_unresolved = 0
@@ -124,14 +127,22 @@ def build_bundle(
             entities_by_siren.setdefault(entity.siren, entity)
         for edge in result.edges:
             edges_by_key.setdefault(
-                (edge.source_siren, edge.target_siren, edge.type.value, edge.exercice), edge
+                (
+                    edge.source_siren,
+                    edge.target_siren,
+                    edge.type.value,
+                    edge.exercice,
+                    edge.provenance,
+                ),
+                edge,
             )
         budget_facts.extend(result.budget_facts)
 
     return LoadBundle(
         entities=sorted(entities_by_siren.values(), key=lambda e: e.siren or ""),
         edges=sorted(
-            edges_by_key.values(), key=lambda e: (e.source_siren, e.target_siren, e.type.value)
+            edges_by_key.values(),
+            key=lambda e: (e.source_siren, e.target_siren, e.type.value, e.provenance or ""),
         ),
         budget_facts=sorted(
             budget_facts,
@@ -174,7 +185,16 @@ def _delete_by_provenance(table: str, rows: Sequence[Edge | BudgetFact]) -> str:
       source's rows (e.g. ``delegates`` edges from a future DECP loader) are never touched;
     * within a produced provenance, orphans are still removed: all its rows are deleted, then the
       current set re-inserted.
+
+    A row missing ``provenance`` is fatal (``LoadError``): it would be inserted but never fall in
+    any delete scope, silently breaking idempotency on the next reload. Provenance-scoped rebuild
+    is a core invariant, so a transform that forgot to stamp it must fail loud (golden rule #3).
     """
+    if any(row.provenance is None for row in rows):
+        raise LoadError(
+            f"{table} row missing provenance — every loaded row must carry its source id for the "
+            "provenance-scoped rebuild to stay idempotent. Fix the transform to stamp provenance."
+        )
     provenances = sorted({row.provenance for row in rows if row.provenance is not None})
     if not provenances:
         return f"-- (no {table} rows this load; provenance scope empty, nothing deleted)"

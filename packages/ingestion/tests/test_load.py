@@ -19,7 +19,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-from core.models import Entity, Level
+from core.models import Edge, EdgeType, Entity, Level
 from ingestion.errors import LoadError
 from ingestion.load import (
     ETAT_CENTRAL_SOURCE_IDS,
@@ -187,3 +187,25 @@ def test_render_skips_delete_for_a_table_with_no_rows() -> None:
     assert "on conflict (siren) do update set" in sql  # entities still upserted
     assert "delete from edges" not in sql  # nothing produced this run -> nothing deleted
     assert "delete from budget_facts" not in sql
+
+
+def test_render_fails_loud_on_row_missing_provenance() -> None:
+    # A row without provenance would be inserted yet fall in no delete scope, silently breaking
+    # idempotency on the next reload — the loader must refuse it rather than load it.
+    bundle = LoadBundle(
+        entities=[],
+        edges=[
+            Edge(
+                source_siren="110000072",
+                target_siren="130005481",
+                type=EdgeType.tutelle,
+                provenance=None,
+            )
+        ],
+        budget_facts=[],
+        provenances=("operateurs_etat",),
+        skipped_unresolved=0,
+        reports={},
+    )
+    with pytest.raises(LoadError, match="missing provenance"):
+        render_load_sql(bundle)

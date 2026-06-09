@@ -7,3 +7,9 @@
 -- Append-only + idempotent; budget_facts already carries the "public read" RLS policy, which a new
 -- column inherits, so no policy or rls_checks change is needed.
 alter table budget_facts add column if not exists provenance text;  -- source id from the registry
+
+-- Index the provenance columns the curated loader filters/deletes by on every (scheduled) reload,
+-- so provenance-scoped rebuilds stay index scans rather than sequential scans as the tables grow
+-- (edges.provenance has the column since 0001 but no index; budget_facts.provenance is new above).
+create index if not exists budget_facts_provenance_idx on budget_facts (provenance);
+create index if not exists edges_provenance_idx on edges (provenance);

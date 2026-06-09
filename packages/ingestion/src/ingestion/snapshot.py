@@ -176,7 +176,11 @@ def latest_snapshot_path(source_id: str, *, root: Path = SNAPSHOT_ROOT) -> Path:
             f"No snapshot pointer for source {source_id!r} at {pointer} — run the ingestion "
             "pipeline (discover/extract/validate/snapshot) for this source first."
         )
-    filename = json.loads(pointer.read_text(encoding="utf-8")).get("snapshot")
+    try:
+        pointer_data = json.loads(pointer.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise SnapshotError(f"Corrupt snapshot pointer {pointer}: {exc}") from exc
+    filename = pointer_data.get("snapshot")
     if not filename:
         raise SnapshotError(f"Malformed snapshot pointer {pointer}: missing 'snapshot' key.")
     path = pointer.parent / filename
