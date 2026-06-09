@@ -1,0 +1,12 @@
+schema_version: 1
+entries:
+- denomination: Ministère Alpha
+  status: reviewed
+  siren: '900000017'
+  tutelle: AA
+  source: manual
+- denomination: Ministère Gamma
+  status: reviewed
+  siren: '900000025'
+  tutelle: GG
+  source: manual

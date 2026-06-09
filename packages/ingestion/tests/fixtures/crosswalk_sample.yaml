@@ -1,0 +1,22 @@
+schema_version: 1
+entries:
+- denomination: Agence Alpha
+  status: auto
+  siren: '111111118'
+  tutelle: AA
+  source: spike-auto
+- denomination: Agence Beta
+  status: auto
+  siren: '222222226'
+  tutelle: ZZ
+  source: spike-auto
+- denomination: Agence Pending
+  status: pending
+  candidate_sirens:
+  - '333333334'
+  - '444444442'
+  source: spike-backlog
+- denomination: Universités et assimilés
+  status: category
+  notes: grouping label, no own SIREN — by design
+  source: manual

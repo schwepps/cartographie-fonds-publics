@@ -85,3 +85,27 @@ make resolve   # resolve the offline operator sample against this crosswalk; wri
 
 The report (`out/`) is generated output and **gitignored**; only this crosswalk + README are
 committed.
+
+## `ministeres.yaml` — the tutelle-ministry reference (FSC-25)
+
+`operateurs.yaml` resolves an *operator* name to its SIREN. It does **not** know a ministry's SIREN,
+yet a `tutelle` edge (`ministry → operator`) needs one on each side. `ministeres.yaml` is the
+curated, hand-maintained map that fills that gap.
+
+- **Schema:** the same `CrosswalkEntry` rows, but here a row's `tutelle` field holds the **ministry's
+  own code** (the value an operator references in the Jaune, e.g. `MESR`), `denomination` is the
+  ministry's canonical name (the entity node), and `siren` its own SIREN. All rows are `reviewed`.
+- **Resolution:** the operator transform resolves an operator's tutelle by **code** (case-insensitive)
+  with a normalized-name fallback (`ingestion.transforms.operateurs_etat.MinistryIndex`), so it works
+  whether the live Jaune emits `MESR` or the full ministry label.
+- **Governance:** hand-curated, **never generated** (unlike `operateurs.yaml`'s `auto`/`pending`
+  rows). Loading fails loud on a missing or duplicate tutelle code, or a malformed SIREN
+  (`ingestion.crosswalk_io.load_ministries`). SIRENs are verified against
+  annuaire-/recherche-entreprises (central-State administrations, *nature juridique* 7113); record
+  `reviewed_by`/`reviewed_at`. The committed file is a partial seed covering the offline sample's
+  codes — add ministries by review as the full operator crosswalk lands.
+
+```bash
+make operators   # transform the offline operator sample into entities + tutelle edges; writes
+                 # out/operators_report.json and exits nonzero if the resolution rate < 50%.
+```

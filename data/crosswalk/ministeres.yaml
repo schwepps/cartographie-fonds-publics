@@ -1,0 +1,89 @@
+# Reviewed tutelle-ministry reference: ministry CODE -> SIREN (golden rule #5).
+# Hand-curated, never generated. Each entry's `tutelle` is the code an operator references in the
+# Jaune; `denomination` is the ministry's canonical name (the entity node) and `siren` its own SIREN.
+# SIRENs verified against recherche-entreprises (nature juridique 7113 — central State admin).
+# This is a partial seed covering the offline sample's codes; add ministries by review as the full
+# operator crosswalk lands. See data/crosswalk/README.md.
+schema_version: 1
+maintainer: contact@cartographie-fonds-publics.fr
+entries:
+- denomination: Ministère des Armées et des Anciens combattants
+  status: reviewed
+  siren: '110090016'
+  tutelle: MA
+  source: manual
+  reviewed_by: francois.schuers
+  reviewed_at: '2026-06-09'
+  notes: Vérifié via recherche-entreprises (nature 7113).
+- denomination: Ministère de l'Agriculture et de la Souveraineté alimentaire
+  status: reviewed
+  siren: '110070018'
+  tutelle: MASA
+  source: manual
+  reviewed_by: francois.schuers
+  reviewed_at: '2026-06-09'
+  notes: Vérifié via recherche-entreprises (nature 7113).
+- denomination: Ministère de la Culture
+  status: reviewed
+  siren: '110046018'
+  tutelle: MC
+  source: manual
+  reviewed_by: francois.schuers
+  reviewed_at: '2026-06-09'
+  notes: Vérifié via recherche-entreprises (nature 7113).
+- denomination: Ministère de l'Économie et des Finances
+  status: reviewed
+  siren: '110020013'
+  tutelle: MEF
+  source: manual
+  reviewed_by: francois.schuers
+  reviewed_at: '2026-06-09'
+  notes: Vérifié via recherche-entreprises (nature 7113).
+- denomination: Ministère de l'Europe et des Affaires étrangères
+  status: reviewed
+  siren: '110006012'
+  tutelle: MEAE
+  source: manual
+  reviewed_by: francois.schuers
+  reviewed_at: '2026-06-09'
+  notes: Vérifié via recherche-entreprises (nature 7113).
+- denomination: Ministère de l'Éducation nationale
+  status: reviewed
+  siren: '110043015'
+  tutelle: MENJ
+  source: manual
+  reviewed_by: francois.schuers
+  reviewed_at: '2026-06-09'
+  notes: Vérifié via recherche-entreprises (nature 7113).
+- denomination: Ministère de l'Enseignement supérieur et de la Recherche
+  status: reviewed
+  siren: '110044013'
+  tutelle: MESR
+  source: manual
+  reviewed_by: francois.schuers
+  reviewed_at: '2026-06-09'
+  notes: Vérifié via recherche-entreprises (nature 7113).
+- denomination: Ministère de l'Intérieur
+  status: reviewed
+  siren: '110014016'
+  tutelle: MI
+  source: manual
+  reviewed_by: francois.schuers
+  reviewed_at: '2026-06-09'
+  notes: Vérifié via recherche-entreprises (nature 7113).
+- denomination: Ministère de la Justice
+  status: reviewed
+  siren: '110010014'
+  tutelle: MJ
+  source: manual
+  reviewed_by: francois.schuers
+  reviewed_at: '2026-06-09'
+  notes: Vérifié via recherche-entreprises (nature 7113).
+- denomination: Ministère du Travail et des Solidarités
+  status: reviewed
+  siren: '110000072'
+  tutelle: MTPEI
+  source: manual
+  reviewed_by: francois.schuers
+  reviewed_at: '2026-06-09'
+  notes: Vérifié via recherche-entreprises (nature 7113).

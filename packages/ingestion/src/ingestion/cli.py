@@ -22,6 +22,8 @@ from .crosswalk_io import (
     merge_seed,
 )
 from .registry import Source, sources
+from .tabular import parse_csv_bytes
+from .transforms import get_transform
 
 app = typer.Typer(help="Registry-driven ingestion pipeline.")
 
@@ -145,6 +147,44 @@ def resolve(
             f"[resolve] resolution rate {result.resolution_rate:.0%} < {min_rate:.0%} threshold",
             err=True,
         )
+        raise typer.Exit(code=1)
+
+
+@app.command()
+def operators(
+    csv_path: Annotated[
+        Path, typer.Option("--operators", help="CSV of Jaune operators (offline sample).")
+    ],
+    out: Annotated[Path, typer.Option(help="Report output path.")] = Path(
+        "out/operators_report.json"
+    ),
+    min_rate: Annotated[
+        float, typer.Option(help="Exit nonzero below this resolution rate.")
+    ] = RESOLVE_RATE_MIN,
+) -> None:
+    """Transform the Jaune operators into entities + tutelle edges; write the report + rate.
+
+    Resolves operator SIRENs via the crosswalk and tutelle ministries via the curated reference,
+    emitting `ministry -> operator` edges for resolved pairs. Every operator is accounted for —
+    resolved (an entity with a SIREN) or unresolved (kept, surfaced in the report — never dropped,
+    golden rule #5). Exits nonzero below the resolution-rate threshold, surfacing the metric to CI.
+    """
+    headers, rows = parse_csv_bytes(Path(csv_path).read_bytes())
+    result = get_transform("operateurs_etat")(headers, rows)
+    report = result.report
+    _write_report(report, out)
+    rate = float(report["resolution_rate"])
+    typer.echo(
+        f"[operators] {report['resolved']}/{report['total']} operators resolved (rate {rate:.0%}); "
+        f"{len(result.entities)} entities ({report['ministries']} ministries), "
+        f"{report['tutelle_edges']} tutelle edges -> {out}"
+    )
+    by_reason: dict[str, int] = report["unresolved_by_reason"]  # type: ignore[assignment]
+    for reason, count in sorted(by_reason.items()):
+        if count:
+            typer.echo(f"  {reason}: {count}")
+    if rate < min_rate:
+        typer.echo(f"[operators] resolution rate {rate:.0%} < {min_rate:.0%} threshold", err=True)
         raise typer.Exit(code=1)
 
 

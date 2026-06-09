@@ -39,6 +39,15 @@ _DEFAULT_CROSSWALK_PATH = (
 )
 CROSSWALK_PATH = Path(os.environ.get("CFP_CROSSWALK_PATH", _DEFAULT_CROSSWALK_PATH))
 
+# Curated tutelle-ministry reference: maps an operator's tutelle (a ministry code or name) to the
+# ministry's own SIREN, so FSC-25 can anchor `ministry -> operator` tutelle edges. Same YAML
+# conventions + governance as the crosswalk; here a row's `tutelle` field holds the ministry's own
+# code (the value operators reference) and `denomination` its canonical name.
+_DEFAULT_MINISTERES_PATH = (
+    Path(__file__).resolve().parents[4] / "data" / "crosswalk" / "ministeres.yaml"
+)
+MINISTERES_PATH = Path(os.environ.get("CFP_MINISTERES_PATH", _DEFAULT_MINISTERES_PATH))
+
 # Fields persisted per entry, in stable order. ``normalized_name`` is derived (not persisted):
 # the denomination is the source of truth, so writing the key back would only invite drift.
 _ENTRY_FIELDS = (
@@ -75,6 +84,38 @@ def load_entries(path: Path | str = CROSSWALK_PATH) -> list[CrosswalkEntry]:
 def load_crosswalk(path: Path | str = CROSSWALK_PATH) -> Crosswalk:
     """Build a :class:`Crosswalk` from the file (collision detection fails loud)."""
     return Crosswalk.from_entries(load_entries(path))
+
+
+def load_ministries(path: Path | str = MINISTERES_PATH) -> list[CrosswalkEntry]:
+    """Load the reviewed ministry reference. Each row must be an accepted (SIREN-carrying) entry
+    with a non-empty tutelle code; fails loud on a missing or duplicate code so an operator's
+    tutelle can never silently resolve to the wrong ministry (golden rule #5)."""
+    entries = load_entries(path)
+    seen: dict[str, str] = {}
+    for entry in entries:
+        if entry.status is not CrosswalkStatus.reviewed:
+            raise ValueError(
+                f"{path}: ministry {entry.denomination!r} must be 'reviewed' "
+                f"(hand-curated, never generated); got {entry.status.value!r}"
+            )
+        # Normalize the code the same way MinistryIndex looks it up (.upper()), so a case-variant
+        # duplicate (e.g. 'aa' vs 'AA') fails loud here instead of silently overwriting in the
+        # index and mis-resolving a tutelle.
+        code = (entry.tutelle or "").strip().upper()
+        if not code:
+            raise ValueError(
+                f"{path}: ministry {entry.denomination!r} has no tutelle code "
+                "(the value operators reference)"
+            )
+        if entry.siren is None:
+            raise ValueError(f"{path}: ministry {entry.denomination!r} must carry a SIREN")
+        if code in seen:
+            raise ValueError(
+                f"{path}: duplicate ministry tutelle code {code!r} "
+                f"({seen[code]!r} vs {entry.denomination!r})"
+            )
+        seen[code] = entry.denomination
+    return entries
 
 
 def _entry_to_row(entry: CrosswalkEntry) -> dict[str, Any]:
