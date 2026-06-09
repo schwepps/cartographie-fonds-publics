@@ -84,6 +84,21 @@ seed: ## Regenerate supabase/seed.sql and load it into $$DATABASE_URL (LOCAL dev
 	uv run python -m ingestion.cli seed-emit
 	psql "$$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/seed.sql
 
+demo-seed: ## Regenerate supabase/demo_seed.sql + load the ILLUSTRATIVE dev slice (LOCAL only, FSC-50..53)
+	@host="$${DATABASE_URL#*://}"; host="$${host##*@}"; host="$${host%%/*}"; host="$${host%%:*}"; \
+	case "$$host" in \
+		127.0.0.1|localhost|::1) ;; \
+		*) if [ "$$SEED_ALLOW_NONLOCAL" = "1" ]; then \
+		     echo "⚠️  make demo-seed: SEED_ALLOW_NONLOCAL=1 set — seeding non-local host '$$host'." >&2; \
+		   else \
+		     echo "✋ make demo-seed refuses non-local DATABASE_URL (host '$$host'): demo_seed.sql TRUNCATES the curated tables." >&2; \
+		     echo "   Point DATABASE_URL at the local stack, or set SEED_ALLOW_NONLOCAL=1 to override (e.g. a preview DB)." >&2; \
+		     exit 1; \
+		   fi ;; \
+	esac
+	uv run python -m ingestion.cli demo-seed-emit
+	psql "$$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/demo_seed.sql
+
 load: ## Load the curated État-central graph from latest snapshots into $$DATABASE_URL (FSC-35)
 	uv run python -m ingestion.cli load --out out/load.sql
 	psql "$$DATABASE_URL" -v ON_ERROR_STOP=1 -f out/load.sql
