@@ -80,7 +80,7 @@ export function SearchBar({ value, onChange, onSubmit, placeholder, label }: Sea
         placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
       />
-      <Button type="submit" aria-label={label}>
+      <Button type="submit" aria-label="Lancer la recherche">
         <Search />
       </Button>
     </form>
