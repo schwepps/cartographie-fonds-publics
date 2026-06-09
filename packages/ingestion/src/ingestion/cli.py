@@ -14,12 +14,13 @@ from core.resolution import resolve_entities
 from .connectors import Connector, UnknownPlatformError, get_connector
 from .crosswalk_io import (
     CROSSWALK_PATH,
+    CURATED_STATUSES,
     dump_entries,
     load_crosswalk,
     load_entries,
+    load_seed_csv,
     merge_seed,
 )
-from .crosswalk_io import _row_to_seed_entry as row_to_seed_entry
 from .registry import Source, sources
 
 app = typer.Typer(help="Registry-driven ingestion pipeline.")
@@ -89,6 +90,26 @@ def _read_operator_names(path: Path, name_column: str) -> list[str]:
         return [name for row in reader if (name := (row.get(name_column) or "").strip())]
 
 
+def _write_report(report: dict[str, object], out: Path) -> None:
+    """Write the resolution report as deterministic JSON (sorted keys, gitignored out dir)."""
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
+
+
+def _echo_summary(report: dict[str, object], resolution_rate: float, out: Path) -> None:
+    """Print the headline counts + the per-reason breakdown of unresolved links."""
+    typer.echo(
+        f"[resolve] {report['resolved']}/{report['total']} resolved "
+        f"(rate {resolution_rate:.0%}); {report['unresolved']} unresolved -> {out}"
+    )
+    by_reason: dict[str, int] = report["unresolved_by_reason"]  # type: ignore[assignment]
+    for reason, count in sorted(by_reason.items()):
+        if count:
+            typer.echo(f"  {reason}: {count}")
+
+
 @app.command()
 def resolve(
     operators: Annotated[
@@ -117,19 +138,8 @@ def resolve(
     ]
     result = resolve_entities(entities, cw)
     report = result.to_report_dict()
-
-    out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(
-        json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8"
-    )
-
-    typer.echo(
-        f"[resolve] {report['resolved']}/{report['total']} resolved "
-        f"(rate {result.resolution_rate:.0%}); {report['unresolved']} unresolved -> {out}"
-    )
-    for reason, count in sorted(report["unresolved_by_reason"].items()):
-        if count:
-            typer.echo(f"  {reason}: {count}")
+    _write_report(report, out)
+    _echo_summary(report, result.resolution_rate, out)
     if result.resolution_rate < min_rate:
         typer.echo(
             f"[resolve] resolution rate {result.resolution_rate:.0%} < {min_rate:.0%} threshold",
@@ -156,17 +166,11 @@ def resolve_seed(
     into the committed crosswalk — `unique` -> `auto`, `multiple`/`none` -> `pending` backlog —
     without clobbering any `reviewed`/`category` curation already in the file.
     """
-    with open(resolution_csv, encoding="utf-8") as fh:
-        seed = [row_to_seed_entry(row) for row in csv.DictReader(fh)]
+    seed = load_seed_csv(resolution_csv)
     existing = load_entries(crosswalk) if Path(crosswalk).exists() else []
     merged = merge_seed(seed, existing)
     dump_entries(merged, crosswalk, maintainer=maintainer)
-    preserved = sum(
-        1
-        for e in existing
-        if e.normalized_name in {m.normalized_name for m in merged}
-        and e.status.value in {"reviewed", "category"}
-    )
+    preserved = sum(1 for e in existing if e.status in CURATED_STATUSES)
     typer.echo(
         f"[resolve-seed] wrote {len(merged)} entries to {crosswalk} (preserved {preserved} curated)"
     )

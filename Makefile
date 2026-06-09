@@ -49,7 +49,7 @@ spike-resolve: ## Run the Phase-0.5 operator name->SIREN resolution spike (offli
 spike-resolve-live: ## Run the Phase-0.5 resolution spike LIVE (~430 operators via recherche-entreprises)
 	uv run python spikes/phase0_siren_match/resolve_spike.py
 
-resolve: ## Resolve the offline operator sample via the crosswalk (report + match rate, FSC-23)
+resolve: ## Resolve the offline operator sample via the crosswalk (report + resolution rate, FSC-23)
 	uv run python -m ingestion.cli resolve --operators spikes/phase0_siren_match/fixtures/operateurs_resolve_sample.csv
 
 resolve-seed: ## Regenerate the crosswalk from the spike CSV (merge-aware; run a spike-resolve first)

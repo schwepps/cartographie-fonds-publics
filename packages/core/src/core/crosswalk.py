@@ -18,8 +18,8 @@ from enum import StrEnum
 
 from pydantic import Field, model_validator
 
-from .models import OptionalSiren, _FrozenModel
-from .resolve import normalize_name
+from .models import FrozenModel, OptionalSiren
+from .resolve import normalize_name, normalize_siren
 
 
 class CrosswalkStatus(StrEnum):
@@ -33,7 +33,7 @@ class CrosswalkStatus(StrEnum):
 _ACCEPTED: frozenset[CrosswalkStatus] = frozenset({CrosswalkStatus.auto, CrosswalkStatus.reviewed})
 
 
-class CrosswalkEntry(_FrozenModel):
+class CrosswalkEntry(FrozenModel):
     """One reviewed mapping from an entity name to a SIREN (or to a documented non-match).
 
     ``normalized_name`` is always recomputed from ``denomination`` so the lookup key stays
@@ -47,7 +47,7 @@ class CrosswalkEntry(_FrozenModel):
     siren: OptionalSiren = None
     normalized_name: str = ""  # derived from denomination on validation; never trusted as input
     tutelle: str | None = None
-    candidate_sirens: list[str] = Field(default_factory=list)  # reviewer hints (not validated)
+    candidate_sirens: list[str] = Field(default_factory=list)  # reviewer hints, SIREN-validated
     top_match_ratio: float | None = None  # difflib hint for the backlog (descriptive only)
     source: str | None = None  # provenance: "spike-auto", "manual", ...
     reviewed_by: str | None = None
@@ -71,6 +71,17 @@ class CrosswalkEntry(_FrozenModel):
                 f"{self.status} entry {denomination!r} must not carry a SIREN "
                 f"(got {self.siren!r}); flip status to 'reviewed' once confirmed"
             )
+        # Candidate hints are SIRENs a reviewer may promote: validate them like the accepted SIREN
+        # so a malformed hint never reaches the review report (consistent with golden rule #5).
+        normalized_candidates: list[str] = []
+        for candidate in self.candidate_sirens:
+            normalized = normalize_siren(candidate)
+            if normalized is None:
+                raise ValueError(
+                    f"entry {denomination!r} has a malformed candidate SIREN: {candidate!r}"
+                )
+            normalized_candidates.append(normalized)
+        self.candidate_sirens = normalized_candidates
         return self
 
 

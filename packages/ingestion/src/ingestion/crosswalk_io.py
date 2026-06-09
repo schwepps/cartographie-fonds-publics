@@ -8,6 +8,8 @@ SIREN, a broken status<->SIREN invariant, or a conflicting-key collision all rai
 
 from __future__ import annotations
 
+import csv
+import math
 import os
 from pathlib import Path
 from typing import Any
@@ -16,6 +18,12 @@ import yaml
 from core.crosswalk import Crosswalk, CrosswalkEntry, CrosswalkStatus
 
 SCHEMA_VERSION = 1
+
+# The single source of truth for "human curation we must never clobber on re-seed". Shared by
+# merge_seed and the CLI's preserved-count so the two can never drift.
+CURATED_STATUSES: frozenset[CrosswalkStatus] = frozenset(
+    {CrosswalkStatus.reviewed, CrosswalkStatus.category}
+)
 
 # Written at the top of the generated file so it stays self-describing across regenerations
 # (yaml.safe_dump drops comments, so this header is re-emitted each time, not hand-maintained).
@@ -51,6 +59,8 @@ def load_entries(path: Path | str = CROSSWALK_PATH) -> list[CrosswalkEntry]:
     """Parse every row into a validated :class:`CrosswalkEntry` (fails loud on bad data)."""
     with open(path, encoding="utf-8") as fh:
         data = yaml.safe_load(fh) or {}
+    if not isinstance(data, dict):
+        raise ValueError(f"{path}: top-level YAML must be a mapping, got {type(data).__name__}")
     rows = data.get("entries", [])
     if not isinstance(rows, list):
         raise ValueError(f"{path}: 'entries' must be a list, got {type(rows).__name__}")
@@ -68,7 +78,9 @@ def _entry_to_row(entry: CrosswalkEntry) -> dict[str, Any]:
     ordered: dict[str, Any] = {}
     for field in _ENTRY_FIELDS:
         value = row.get(field)
-        if value in (None, [], ""):
+        # Drop only genuinely-absent optionals. Never use falsy/equality-membership here: a
+        # meaningful 0 / 0.0 (e.g. top_match_ratio=0.0) must survive the round-trip.
+        if value is None or (isinstance(value, list) and not value) or value == "":
             continue
         ordered[field] = value
     return ordered
@@ -92,7 +104,24 @@ def dump_entries(
 # --------------------------------------------------------------------------- #
 # Seed generator — transform a resolver-spike CSV into crosswalk entries (merge-aware)
 # --------------------------------------------------------------------------- #
-def _row_to_seed_entry(row: dict[str, str]) -> CrosswalkEntry:
+_SEED_REQUIRED_COLUMNS = ("operateur", "tier")
+
+
+def _parse_ratio(raw: str) -> float | None:
+    """Parse a ``top_match_ratio`` cell to a finite ratio in [0, 1], else fail loud."""
+    raw = raw.strip()
+    if not raw:
+        return None
+    try:
+        value = float(raw)
+    except ValueError as exc:
+        raise ValueError(f"top_match_ratio is not a number: {raw!r}") from exc
+    if not math.isfinite(value) or not 0.0 <= value <= 1.0:
+        raise ValueError(f"top_match_ratio must be a finite ratio in [0, 1], got {raw!r}")
+    return value
+
+
+def row_to_seed_entry(row: dict[str, str]) -> CrosswalkEntry:
     """Map one ``operator_resolution.csv`` row (spike output) to a crosswalk entry.
 
     ``unique`` -> ``auto`` (reproducible exact match) with its chosen SIREN; ``multiple``/``none``
@@ -100,8 +129,7 @@ def _row_to_seed_entry(row: dict[str, str]) -> CrosswalkEntry:
     """
     tier = (row.get("tier") or "").strip()
     candidates = [s for s in (row.get("candidate_sirens") or "").split("|") if s]
-    ratio_raw = (row.get("top_match_ratio") or "").strip()
-    ratio = float(ratio_raw) if ratio_raw else None
+    ratio = _parse_ratio(row.get("top_match_ratio") or "")
     tutelle = (row.get("tutelle") or "").strip() or None
     if tier == "unique":
         return CrosswalkEntry(
@@ -122,17 +150,26 @@ def _row_to_seed_entry(row: dict[str, str]) -> CrosswalkEntry:
     )
 
 
+def load_seed_csv(path: Path | str) -> list[CrosswalkEntry]:
+    """Read a resolver-spike CSV into seed entries, failing loud on a missing required column."""
+    with open(path, encoding="utf-8") as fh:
+        reader = csv.DictReader(fh)
+        headers = set(reader.fieldnames or ())
+        missing = [c for c in _SEED_REQUIRED_COLUMNS if c not in headers]
+        if missing:
+            raise ValueError(
+                f"{path}: seed CSV missing required column(s) {missing}; got {reader.fieldnames}"
+            )
+        return [row_to_seed_entry(row) for row in reader]
+
+
 def merge_seed(seed: list[CrosswalkEntry], existing: list[CrosswalkEntry]) -> list[CrosswalkEntry]:
     """Merge freshly-seeded rows over existing ones, **preserving human-reviewed/category rows**.
 
     Regeneration must never clobber curation: any existing ``reviewed`` or ``category`` row wins
     over a seed row for the same key; otherwise the seed (auto/pending) replaces it.
     """
-    curated = {
-        e.normalized_name: e
-        for e in existing
-        if e.status in (CrosswalkStatus.reviewed, CrosswalkStatus.category)
-    }
+    curated = {e.normalized_name: e for e in existing if e.status in CURATED_STATUSES}
     merged: dict[str, CrosswalkEntry] = {e.normalized_name: e for e in seed}
     merged.update(curated)  # curated rows take precedence
     return sorted(merged.values(), key=lambda e: e.normalized_name)

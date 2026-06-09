@@ -19,7 +19,7 @@ from typing import Any
 from pydantic import Field
 
 from .crosswalk import Crosswalk, CrosswalkStatus
-from .models import Entity, _FrozenModel
+from .models import Entity, FrozenModel
 from .resolve import normalize_name
 
 
@@ -30,7 +30,7 @@ class UnresolvedReason(StrEnum):
     category_label = "category_label"  # a category label with no own SIREN, by design
 
 
-class UnresolvedLink(_FrozenModel):
+class UnresolvedLink(FrozenModel):
     """An entity that could not be reconciled to a SIREN — surfaced, never silently dropped."""
 
     denomination: str
@@ -40,7 +40,7 @@ class UnresolvedLink(_FrozenModel):
     top_match_ratio: float | None = None
 
 
-class ResolutionResult(_FrozenModel):
+class ResolutionResult(FrozenModel):
     """The full account of a resolution run. ``resolved`` + ``unresolved`` cover every input."""
 
     resolved: list[Entity] = Field(default_factory=list)

@@ -62,13 +62,17 @@ class Nature(StrEnum):
     concession = "concession"  # concession / DSP
 
 
-class _FrozenModel(BaseModel):
-    """Base for the frozen domain model: unknown fields fail loud."""
+class FrozenModel(BaseModel):
+    """Base for the frozen domain model: unknown fields fail loud.
+
+    Public (no underscore) because it is the shared base for the resolution layer too
+    (``core.crosswalk``, ``core.resolution``), not just this module's domain models.
+    """
 
     model_config = ConfigDict(extra="forbid")
 
 
-class Entity(_FrozenModel):
+class Entity(FrozenModel):
     siren: OptionalSiren  # canonical key; may be None until resolved
     name: str
     level: Level
@@ -76,7 +80,7 @@ class Entity(_FrozenModel):
     parent_siren: OptionalSiren = None
 
 
-class Edge(_FrozenModel):
+class Edge(FrozenModel):
     source_siren: RequiredSiren
     target_siren: RequiredSiren
     type: EdgeType
@@ -85,7 +89,7 @@ class Edge(_FrozenModel):
     provenance: str | None = None  # source id from the registry
 
 
-class BudgetFact(_FrozenModel):
+class BudgetFact(FrozenModel):
     entity_siren: OptionalSiren
     exercice: int
     mission: str | None = None
@@ -95,7 +99,7 @@ class BudgetFact(_FrozenModel):
     executed: bool = False  # voted (False) vs executed (True)
 
 
-class Contract(_FrozenModel):
+class Contract(FrozenModel):
     acheteur_siren: OptionalSiren
     titulaire_siren: OptionalSiren
     montant_eur: float | None = None
@@ -103,7 +107,7 @@ class Contract(_FrozenModel):
     exercice: int | None = None
 
 
-class Attribution(_FrozenModel):
+class Attribution(FrozenModel):
     """Legal mandate / competence attributed to an entity (table: attributions)."""
 
     entity_siren: OptionalSiren = None
@@ -111,7 +115,7 @@ class Attribution(_FrozenModel):
     txt: str | None = None
 
 
-class Mention(_FrozenModel):
+class Mention(FrozenModel):
     """Free-text mention of an entity in a report or document (table: mentions)."""
 
     entity_siren: OptionalSiren = None

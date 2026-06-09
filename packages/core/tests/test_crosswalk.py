@@ -78,6 +78,16 @@ def test_accepted_row_without_siren_raises() -> None:
         _entry("Missing SIREN", "auto", None)
 
 
+def test_malformed_candidate_siren_raises() -> None:
+    with pytest.raises(ValidationError, match="malformed candidate SIREN"):
+        _entry("Has bad candidate", "pending", candidate_sirens=["123", "180089013"])
+
+
+def test_candidate_sirens_are_normalized() -> None:
+    entry = _entry("Spaced candidate", "pending", candidate_sirens=["180 089 013"])
+    assert entry.candidate_sirens == ["180089013"]
+
+
 def test_backlog_row_with_siren_raises() -> None:
     with pytest.raises(ValidationError, match="must not carry a SIREN"):
         _entry("Premature", "pending", "180089013")
