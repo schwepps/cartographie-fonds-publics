@@ -22,6 +22,20 @@ Offline mode needs only PyYAML + the stdlib. **Live mode reuses the workspace pa
 (`core.resolve`, `ingestion.validation`, `ingestion.snapshot`) and so runs through the uv
 workspace venv — use `make spike-live`, not a bare `python`.
 
+### Phase-0.5 — operator name→SIREN resolution (FSC-48)
+
+```bash
+make spike-resolve        # offline sample: resolver tiers + DECP loop (no network)
+make spike-resolve-live   # live: resolve ~430 operators by name via recherche-entreprises
+```
+
+`resolve_spike.py` measures **how many operators auto-resolve to a SIREN from their name** (the
+crosswalk FSC-19 said Phase 1 needs). It reuses this spike's discover/extract/snapshot harness,
+resolves each operator against the public `recherche_entreprises` source (registry-driven URL),
+and reports a 3-tier ambiguity breakdown + the operator→DECP appearance rate. Conservative by
+design: only an **exact** normalized-name match is auto-accepted (never guess). Result on record:
+[`docs/phase0_5-operator-resolution-results.md`](../../docs/phase0_5-operator-resolution-results.md).
+
 ## What success looks like
 
 `--sample` prints a SIREN match rate and writes a tiny real graph
@@ -33,7 +47,8 @@ and writes a machine summary to `out/phase0_live_summary.json`. The recorded go/
 
 ## Files
 
-- `spike.py` — the spike (offline `--sample` + live pipeline).
-- `fixtures/` — sample operators + contracts for offline mode.
-- `tests/` — offline respx tests (mock the catalog + downloads; no network).
-- `out/` — generated graph + live summary (gitignored).
+- `spike.py` — the FSC-19 spike (offline `--sample` + live pipeline).
+- `resolve_spike.py` — the FSC-48 operator name→SIREN resolution spike (reuses `spike.py`).
+- `fixtures/` — sample operators + contracts (incl. the resolver sample + SIRENE index).
+- `tests/` — offline respx tests (mock the catalog, downloads, and recherche-entreprises).
+- `out/` — generated graph, summaries + the operator crosswalk CSV (gitignored).

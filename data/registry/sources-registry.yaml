@@ -127,6 +127,25 @@ sources:
       notes: "API stable et institutionnelle. Volumineux : filtrer sur catégories juridiques publiques."
     blast_radius: "Référentiel pivot du graphe. Faible risque, fort impact -> traiter en source canonique des entités."
 
+  - id: recherche_entreprises
+    layer: institutions
+    publisher: DINUM (annuaire-entreprises / recherche-entreprises)
+    description: "Recherche plein-texte sur SIRENE : nom -> SIREN. API publique, sans clé. Sert à résoudre les opérateurs (dénomination -> SIREN)."
+    platform: datagouv_api          # API publique api.gouv.fr ; pas de dataset à figer
+    discovery:
+      strategy: "API publique recherche-entreprises ; lire endpoint_hint (jamais de slug figé)"
+    endpoint_hint: "https://recherche-entreprises.api.gouv.fr/search"
+    format: json
+    schema: none
+    join_keys: [SIREN]
+    cadence: daily          # miroir SIRENE quotidien
+    license: "Licence Ouverte 2.0"
+    auth: "aucune (API publique, ~7 req/s)"
+    volatility:
+      level: low
+      notes: "API publique stable (DINUM). Débit ~7 req/s ; full-text -> désambiguïsation requise, jamais deviner (règle d'or #5)."
+    blast_radius: "Résolveur nom->SIREN du crosswalk. Faible risque ; évite la clé INSEE à token. Mesuré par le spike Phase-0.5 (FSC-48)."
+
   # ---- COUCHE : FINANCEMENT & BUDGET --------------------------------------
   - id: budget_plf_lfi
     layer: funding_state

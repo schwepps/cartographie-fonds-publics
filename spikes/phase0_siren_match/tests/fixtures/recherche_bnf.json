@@ -1,0 +1,18 @@
+{
+  "results": [
+    {
+      "siren": "552081317",
+      "nom_complet": "BIBLIOTHEQUE NATIONALE DE FRANCE",
+      "nom_raison_sociale": "BIBLIOTHEQUE NATIONALE DE FRANCE EDITIONS",
+      "nature_juridique": "5499",
+      "complements": { "est_administration": false }
+    },
+    {
+      "siren": "180046112",
+      "nom_complet": "BIBLIOTHEQUE NATIONALE DE FRANCE",
+      "nature_juridique": "7120",
+      "complements": { "est_administration": true }
+    }
+  ],
+  "total_results": 2
+}
