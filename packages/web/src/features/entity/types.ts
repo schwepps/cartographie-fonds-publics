@@ -33,3 +33,20 @@ export interface EdgeRow {
   exercice: number | null;
   provenance: string | null;
 }
+
+/** Curated `contracts` row (DECP) — a marché/concession the entity bought. */
+export interface ContractRow {
+  acheteur_siren: string | null;
+  titulaire_siren: string | null;
+  montant_eur: number | null;
+  nature: string | null;
+  exercice: number | null;
+}
+
+/** A linked entity resolved for readable labels + chip shapes (tutelle, counterparts, children). */
+export interface RelatedEntity {
+  siren: string;
+  name: string;
+  level: string | null;
+  category: string | null;
+}

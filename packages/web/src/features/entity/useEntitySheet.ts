@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
 import { isSiren } from "../../lib/siren";
-import type { BudgetFactRow, EdgeRow, EntityRow } from "./types";
+import type { BudgetFactRow, ContractRow, EdgeRow, EntityRow, RelatedEntity } from "./types";
 
 export type EntitySheetState =
   | { status: "loading" }
@@ -11,8 +11,12 @@ export type EntitySheetState =
       entity: EntityRow | null;
       edges: EdgeRow[];
       budgetFacts: BudgetFactRow[];
-      /** SIREN → name for the entity's tutelle + relationship counterparts (readable labels). */
-      nameBySiren: Map<string, string>;
+      /** Operators whose tutelle is this entity (parent_siren === siren). */
+      children: RelatedEntity[];
+      /** DECP contracts where this entity is the acheteur. */
+      contracts: ContractRow[];
+      /** SIREN → linked entity (tutelle + relationship counterparts) for readable labels + shapes. */
+      related: Map<string, RelatedEntity>;
     };
 
 const EMPTY_READY: EntitySheetState = {
@@ -20,7 +24,9 @@ const EMPTY_READY: EntitySheetState = {
   entity: null,
   edges: [],
   budgetFacts: [],
-  nameBySiren: new Map(),
+  children: [],
+  contracts: [],
+  related: new Map(),
 };
 
 /** The entity on the other end of an edge from `siren`'s perspective. */
@@ -29,11 +35,11 @@ export function counterpartSiren(edge: EdgeRow, siren: string): string {
 }
 
 /**
- * Loads an entity, the edges it participates in (as source or target), and its budget facts
- * (PLF/LFI mission/programme figures attributed to it) from Supabase via PostgREST. A second
- * round resolves the names of the entity's tutelle + relationship counterparts so the sheet reads
- * in plain language rather than bare SIRENs. `edges` carry `provenance` + `exercice`, so the sheet
- * renders provenance per relationship without an extra join.
+ * Loads everything the entity sheet renders: the entity, the edges it participates in (with amounts
+ * + provenance), its budget facts (multi-year AE/CP), the operators it supervises, the DECP
+ * contracts it bought, and a name/level lookup for every linked SIREN so chips + breadcrumbs read in
+ * plain language. All reads go through PostgREST under RLS; the `:siren` param is validated before it
+ * reaches a query (filter-injection guard on the `.or(...)` clause).
  */
 export function useEntitySheet(siren: string): EntitySheetState {
   const [state, setState] = useState<EntitySheetState>({ status: "loading" });
@@ -42,15 +48,12 @@ export function useEntitySheet(siren: string): EntitySheetState {
     let cancelled = false;
 
     async function load() {
-      // Validate the URL param before it reaches a query. Beyond being a not-found short-circuit,
-      // this stops the raw `:siren` from being interpolated into the PostgREST `.or(...)` filter
-      // string below (filter injection at a trust boundary).
       if (!isSiren(siren)) {
         setState(EMPTY_READY);
         return;
       }
       setState({ status: "loading" });
-      const [entityRes, edgesRes, budgetRes] = await Promise.all([
+      const [entityRes, edgesRes, budgetRes, childrenRes, contractsRes] = await Promise.all([
         supabase
           .from("entities")
           .select("siren,name,level,category,parent_siren,provenance")
@@ -64,13 +67,28 @@ export function useEntitySheet(siren: string): EntitySheetState {
           .from("budget_facts")
           .select("exercice,mission,programme,amount_ae_eur,amount_cp_eur,executed")
           .eq("entity_siren", siren),
+        supabase.from("entities").select("siren,name,level,category").eq("parent_siren", siren),
+        supabase
+          .from("contracts")
+          .select("acheteur_siren,titulaire_siren,montant_eur,nature,exercice")
+          .eq("acheteur_siren", siren),
       ]);
 
       if (cancelled) return;
-      if (entityRes.error || edgesRes.error || budgetRes.error) {
+      if (
+        entityRes.error ||
+        edgesRes.error ||
+        budgetRes.error ||
+        childrenRes.error ||
+        contractsRes.error
+      ) {
         console.error(
           "Entity sheet load failed",
-          entityRes.error ?? edgesRes.error ?? budgetRes.error,
+          entityRes.error ??
+            edgesRes.error ??
+            budgetRes.error ??
+            childrenRes.error ??
+            contractsRes.error,
         );
         setState({ status: "error" });
         return;
@@ -79,33 +97,34 @@ export function useEntitySheet(siren: string): EntitySheetState {
       const entity = (entityRes.data as EntityRow | null) ?? null;
       const edges = (edgesRes.data as EdgeRow[] | null) ?? [];
       const budgetFacts = (budgetRes.data as BudgetFactRow[] | null) ?? [];
+      const children = (childrenRes.data as RelatedEntity[] | null) ?? [];
+      const contracts = (contractsRes.data as ContractRow[] | null) ?? [];
 
-      // Resolve the names of every SIREN the sheet links to: the tutelle parent + each relationship
-      // counterpart. These SIRENs are trusted DB values (not user input), so a single `.in(...)`
-      // batch is safe and avoids N round-trips.
+      // Resolve name + level for every SIREN the sheet links to (tutelle parent + edge counterparts).
+      // Children are already full rows; contract titulaires are external suppliers (kept as SIRENs).
       const relatedSirens = new Set<string>();
       if (entity?.parent_siren) relatedSirens.add(entity.parent_siren);
       for (const edge of edges) relatedSirens.add(counterpartSiren(edge, siren));
 
-      const nameBySiren = new Map<string, string>();
+      const related = new Map<string, RelatedEntity>();
+      for (const child of children) related.set(child.siren, child);
       if (relatedSirens.size > 0) {
-        const namesRes = await supabase
+        const relatedRes = await supabase
           .from("entities")
-          .select("siren,name")
+          .select("siren,name,level,category")
           .in("siren", [...relatedSirens]);
         if (cancelled) return;
-        if (namesRes.error) {
-          console.error("Entity name lookup failed", namesRes.error);
+        if (relatedRes.error) {
+          console.error("Entity related lookup failed", relatedRes.error);
           setState({ status: "error" });
           return;
         }
-        for (const row of (namesRes.data as Array<Pick<EntityRow, "siren" | "name">> | null) ??
-          []) {
-          nameBySiren.set(row.siren, row.name);
+        for (const row of (relatedRes.data as RelatedEntity[] | null) ?? []) {
+          related.set(row.siren, row);
         }
       }
 
-      setState({ status: "ready", entity, edges, budgetFacts, nameBySiren });
+      setState({ status: "ready", entity, edges, budgetFacts, children, contracts, related });
     }
 
     void load();
