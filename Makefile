@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-.PHONY: help install up down supabase-up supabase-down supabase-reset lint format typecheck test spike spike-live spike-resolve spike-resolve-live resolve resolve-seed operators ingest refresh db-migrate db-verify web
+.PHONY: help install up down supabase-up supabase-down supabase-reset lint format typecheck test spike spike-live spike-resolve spike-resolve-live resolve resolve-seed operators budget ingest refresh db-migrate db-verify web
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-16s\033[0m %s\n",$$1,$$2}'
@@ -57,6 +57,11 @@ resolve-seed: ## Regenerate the crosswalk from the spike CSV (merge-aware; run a
 
 operators: ## Transform the offline operator sample into entities + tutelle edges (report + rate, FSC-25)
 	uv run python -m ingestion.cli operators --operators spikes/phase0_siren_match/fixtures/operateurs_resolve_sample.csv
+
+budget: ## Transform the offline budget samples into budget facts (voted + executed, FSC-26)
+	uv run python -m ingestion.cli budget \
+		--plf packages/ingestion/tests/fixtures/plf_depenses_sample.csv \
+		--execution packages/ingestion/tests/fixtures/ods_situation_mensuelle.csv
 
 ingest: ## Run the ingestion pipeline (reads data/registry, writes Supabase)
 	uv run python -m ingestion.cli ingest

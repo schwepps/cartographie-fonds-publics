@@ -6,6 +6,15 @@ Commits follow [Conventional Commits](https://www.conventionalcommits.org/).
 
 ## [Unreleased]
 ### Added
+- State-budget connector + transforms (FSC-26): a generic `ods_explore` connector (Opendatasoft
+  Explore v2.1 — resolve the dataset endpoint from the registry, read back the latest exercice and
+  fetch *that* year's export filtered via `where=` → validate → snapshot, no frozen URL; bounded,
+  fail-loud fetches) plus two per-source transforms turning the
+  voted PLF/LFI ("dépenses selon destination") and the monthly execution ("situation mensuelle de
+  l'État") into `budget_facts` by mission/programme with AE+CP and a voted/executed flag.
+  Anti-double-counting is explicit: PLF sums leaf actions to the programme grain; execution keeps
+  the latest (cumulative) month only. `make budget` runs both offline against fixtures. The shared
+  `TransformResult` gains a `budget_facts` slice; Supabase loading stays deferred to FSC-35.
 - State-operators connector + transform (FSC-25): a generic `datagouv_api` connector
   (discover latest millésime → extract → validate → snapshot, no frozen slug) plus a per-source
   transform turning the *Jaune opérateurs* into `state` entities and `tutelle` (ministry → operator)
