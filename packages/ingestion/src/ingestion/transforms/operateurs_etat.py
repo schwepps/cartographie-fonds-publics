@@ -125,7 +125,11 @@ def build(
             continue
         category = str(row.get(category_col) or "").strip() if category_col else None
         operators_by_key[key] = Entity(
-            name=denomination, siren=None, level=Level.state, category=category or None
+            name=denomination,
+            siren=None,
+            level=Level.state,
+            category=category or None,
+            provenance=SOURCE_ID,
         )
         if tutelle_col:
             tutelle_by_key[key] = str(row.get(tutelle_col) or "").strip()
@@ -156,6 +160,7 @@ def build(
                     siren=ministry.siren,
                     level=Level.state,
                     category=MINISTRY_CATEGORY,
+                    provenance=SOURCE_ID,
                 ),
             )
             # A tutelle edge needs a SIREN on both ends (Edge.*_siren is required).

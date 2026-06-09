@@ -117,6 +117,14 @@ def test_emitted_entities_validate_against_frozen_model() -> None:
         Edge.model_validate(edge.model_dump())
 
 
+def test_emitted_entities_carry_source_provenance() -> None:
+    # Producer stamps entity provenance like it already does for edges, so the loader (FSC-35)
+    # persists it and the web can attribute each entity to its source.
+    result = _build()
+    assert result.entities  # guard: the fixture yields entities
+    assert all(e.provenance == "operateurs_etat" for e in result.entities)
+
+
 def test_registered_transform_resolves_against_committed_data() -> None:
     # The registry entry point loads the committed crosswalk + ministeres.yaml (CNRS/BnF/France
     # Travail resolve; their tutelle ministries exist) — proves real data wires end to end.

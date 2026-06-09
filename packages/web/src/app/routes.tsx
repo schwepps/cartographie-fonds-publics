@@ -2,6 +2,8 @@ import type { RouteObject } from "react-router-dom";
 import type { FeatureRoute } from "./feature-route";
 import homeRoute from "../features/home/route";
 import searchRoute from "../features/search/route";
+import sourcesRoute from "../features/sources/route";
+import entityRoute from "../features/entity/route";
 
 /**
  * Feature registry — THE one shared file edited per feature.
@@ -9,7 +11,7 @@ import searchRoute from "../features/search/route";
  * To register a feature: import its route descriptor and add it to the array
  * below. `App.tsx` stays frozen; everything else lives under `src/features/<name>/`.
  */
-const registered: FeatureRoute[] = [homeRoute, searchRoute];
+const registered: FeatureRoute[] = [homeRoute, searchRoute, sourcesRoute, entityRoute];
 
 /**
  * Fails loud on cross-lane collisions — two index routes, duplicate paths, or a

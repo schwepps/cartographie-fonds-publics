@@ -36,9 +36,12 @@ from core.resolve import normalize_name
 from .crosswalk_io import load_crosswalk
 from .transforms.operateurs_etat import MINISTRY_CATEGORY, MinistryIndex
 
-# Source id stamped on seeded tutelle edges (distinct from the live "operateurs_etat" run so a
-# seeded edge is recognisable as such).
-PROVENANCE = "seed"
+# Registry source id stamped on every seeded entity and tutelle edge. The État-central skeleton
+# (ministries, operators, tutelle) originates from the Jaune « Opérateurs de l'État » — so we use
+# its real registry id, honouring `provenance`'s documented contract ("source id from the
+# registry") and letting the UI resolve it to a real source name. (The whole seed slice is
+# dev/preview-only and truncates the curated tables, which is what marks it as seed data.)
+PROVENANCE = "operateurs_etat"
 
 # The committed artifact this builder generates. Same env-override pattern as crosswalk_io.
 _DEFAULT_SEED_SQL_PATH = Path(__file__).resolve().parents[4] / "supabase" / "seed.sql"
@@ -160,6 +163,7 @@ def build_seed(
                 name=ministry.denomination,
                 level=Level.state,
                 category=MINISTRY_CATEGORY,
+                provenance=PROVENANCE,
             ),
         )
         operators.append(
@@ -169,6 +173,7 @@ def build_seed(
                 level=Level.state,
                 category=category,
                 parent_siren=ministry.siren,
+                provenance=PROVENANCE,
             )
         )
         edges.append(
@@ -213,7 +218,7 @@ _SQL_HEADER = """\
 --     22847056-61df-452d-837d-8b8ceadbfc52 (extrait 2026-06-09).
 """
 
-_ENTITY_COLUMNS = ("siren", "name", "level", "category", "parent_siren")
+_ENTITY_COLUMNS = ("siren", "name", "level", "category", "parent_siren", "provenance")
 _EDGE_COLUMNS = ("source_siren", "target_siren", "type", "amount_eur", "exercice", "provenance")
 _BUDGET_COLUMNS = (
     "entity_siren",

@@ -1,0 +1,51 @@
+{
+  "shell": {
+    "tagline": "Understand how public money is used",
+    "footer": "Open data (Licence Ouverte / Etalab 2.0). Code under AGPL-3.0.",
+    "skipToContent": "Skip to content",
+    "loading": "Loading…"
+  },
+  "provenance": {
+    "millesime": "Year",
+    "aria": "Provenance: {{publisher}}, licence {{licence}}{{millesime}}",
+    "ariaMillesime": ", year {{millesime}}",
+    "unknown": "Unknown source ({{id}})",
+    "seeSources": "See source details"
+  },
+  "sources": {
+    "title": "Data & licences",
+    "intro": "All data comes from open public sources. Every figure in the app links back to one of the sources below.",
+    "updatedAt": "Source registry as of {{date}}.",
+    "attribution": "Reuse under Licence Ouverte / Etalab 2.0 — attribute the listed publisher.",
+    "col": {
+      "publisher": "Publisher",
+      "licence": "Licence",
+      "cadence": "Update",
+      "description": "Description"
+    },
+    "tableCaption": "Data sources and licences"
+  },
+  "entity": {
+    "loading": "Loading entity…",
+    "error": "Could not load this entity. Try again later.",
+    "notFound": "No entity found for SIREN {{siren}}.",
+    "identity": "Identity",
+    "siren": "SIREN",
+    "level": "Level",
+    "category": "Category",
+    "source": "Source",
+    "figuresTitle": "Relationships and flows",
+    "empty": "No relationship recorded for this entity.",
+    "tableCaption": "Entity relationships, with their provenance",
+    "col": {
+      "type": "Type",
+      "counterpart": "Linked entity (SIREN)",
+      "amount": "Amount (€)",
+      "exercice": "Year",
+      "provenance": "Provenance"
+    }
+  },
+  "fallback": {
+    "label": "Tabular equivalent"
+  }
+}
