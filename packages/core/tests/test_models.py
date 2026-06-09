@@ -10,7 +10,7 @@ from core.models import (
     Mention,
     Nature,
 )
-from core.resolve import match_rate, normalize_siren
+from core.resolve import match_rate, normalize_name, normalize_siren
 from pydantic import ValidationError
 
 
@@ -18,6 +18,23 @@ def test_normalize_siren():
     assert normalize_siren("180 089 013") == "180089013"
     assert normalize_siren("12345") is None
     assert normalize_siren(None) is None
+
+
+def test_normalize_name_folds_accents_case_and_legal_forms():
+    # Accents, case, and articles/legal-form tokens all fold into one comparison key.
+    assert normalize_name("Bibliothèque nationale de France") == "bibliotheque nationale france"
+    assert normalize_name("BIBLIOTHEQUE NATIONALE DE FRANCE") == "bibliotheque nationale france"
+    assert normalize_name("Établissement public du Louvre") == "louvre"
+    assert normalize_name("  France   Travail  ") == "france travail"
+    assert normalize_name(None) == ""
+    assert normalize_name("") == ""
+
+
+def test_normalize_name_distinguishes_substantive_names():
+    # Stripping only articles/legal forms must NOT collapse genuinely different entities.
+    assert normalize_name("Agence nationale de la recherche") != normalize_name(
+        "Agence nationale de l'habitat"
+    )
 
 
 @pytest.mark.parametrize(

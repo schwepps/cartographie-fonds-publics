@@ -55,6 +55,11 @@ join works whenever SIRENs are present.
 Until the crosswalk exists, the operators→DECP match rate is structurally 0, so this gate is **not a
 clean pass**: the spike exits non-zero (`1`) to signal "needs work before Phase 1".
 
+> **Follow-up — measured GO.** [FSC-48](phase0_5-operator-resolution-results.md) sized that crosswalk:
+> **66 %** of the ~430 operators auto-resolve to a SIREN by name (recherche-entreprises / SIRENE),
+> leaving a bounded **146-operator** manual backlog. The CONDITIONAL GO above is now a measured
+> **PROCEED TO PHASE 1**.
+
 ## Findings carried into Phase 1
 1. **Operators have no SIREN** → build the name-match crosswalk first (the single biggest Phase-1
    dependency). The DECP join itself is low-risk.

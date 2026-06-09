@@ -1,0 +1,11 @@
+{
+  "results": [
+    {
+      "siren": "130005481",
+      "nom_complet": "FRANCE TRAVAIL",
+      "nature_juridique": "7171",
+      "complements": { "est_administration": true }
+    }
+  ],
+  "total_results": 1
+}

@@ -1,0 +1,41 @@
+{
+  "Centre national de la recherche scientifique": [
+    {
+      "siren": "180089013",
+      "nom_complet": "CENTRE NATIONAL DE LA RECHERCHE SCIENTIFIQUE",
+      "nature_juridique": "7389",
+      "complements": { "est_administration": true }
+    }
+  ],
+  "France Travail": [
+    {
+      "siren": "130005481",
+      "nom_complet": "FRANCE TRAVAIL",
+      "nature_juridique": "7171",
+      "complements": { "est_administration": true }
+    }
+  ],
+  "Bibliothèque nationale de France": [
+    {
+      "siren": "180046252",
+      "nom_complet": "BIBLIOTHEQUE NATIONALE DE FRANCE",
+      "nature_juridique": "7120",
+      "complements": { "est_administration": true }
+    }
+  ],
+  "Opérateur ambigu": [
+    {
+      "siren": "111222333",
+      "nom_complet": "OPERATEUR AMBIGU",
+      "nature_juridique": "7389",
+      "complements": { "est_administration": true }
+    },
+    {
+      "siren": "444555666",
+      "nom_complet": "OPERATEUR AMBIGU",
+      "nature_juridique": "7150",
+      "complements": { "est_administration": true }
+    }
+  ],
+  "Opérateur introuvable": []
+}
