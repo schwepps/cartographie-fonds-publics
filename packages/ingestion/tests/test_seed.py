@@ -68,8 +68,11 @@ def test_referential_integrity() -> None:
         assert edge.source_siren in siren_set
         assert edge.target_siren in siren_set
 
-    # Budget facts stay at mission/programme grain (no operator attribution — anti-double-counting).
-    assert all(b.entity_siren is None for b in bundle.budget_facts)
+    # Budget facts attach to the mission's owning ministry (MESR, the budget holder) — itself a
+    # seeded entity — never to a receiving operator (golden rule #8, anti-double-counting).
+    ministries_by_siren = {e.siren: e for e in bundle.entities if e.category == MINISTRY_CATEGORY}
+    for fact in bundle.budget_facts:
+        assert fact.entity_siren in ministries_by_siren
 
     # Contracts hang off the graph via a seeded acheteur (titulaires are external suppliers).
     assert all(c.acheteur_siren in siren_set for c in bundle.contracts)

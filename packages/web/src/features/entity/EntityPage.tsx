@@ -3,8 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Link, useParams } from "react-router-dom";
 import { DataTableFallback } from "../../lib/a11y/DataTableFallback";
 import { ProvenanceBadge } from "../../lib/provenance/ProvenanceBadge";
-import type { EdgeRow } from "./types";
-import { useEntitySheet } from "./useEntitySheet";
+import { counterpartSiren, useEntitySheet } from "./useEntitySheet";
 
 const amountFormatter = new Intl.NumberFormat("fr-FR");
 
@@ -12,16 +11,12 @@ function formatAmount(amount: number | null): string {
   return amount == null ? "—" : amountFormatter.format(amount);
 }
 
-function counterpartSiren(edge: EdgeRow, siren: string): string {
-  return edge.source_siren === siren ? edge.target_siren : edge.source_siren;
-}
-
 /**
- * Minimal entity sheet — identity + the relationships the entity participates in,
- * each row annotated with a `ProvenanceBadge` (source · licence · millésime). The
- * relationships render through `DataTableFallback`, the accessible table that
- * graphical views must also provide. This is the surface FSC-28 requires provenance
- * to be visible on; the rich graph/flows sheet is a separate lane.
+ * Entity sheet — identity (with its tutelle), the budget facts attributed to it, and the
+ * relationships it participates in. Counterparts and the tutelle render by name (not bare SIRENs)
+ * for readability; each relationship carries a `ProvenanceBadge` (source · licence · millésime),
+ * and the tables render through `DataTableFallback`, the accessible surface graphical views must
+ * also provide. Budget facts have no provenance column, so they render without a badge.
  */
 export default function EntityPage() {
   const { t } = useTranslation();
@@ -42,19 +37,21 @@ export default function EntityPage() {
     return <p className="fr-text--lead">{t("entity.notFound", { siren })}</p>;
   }
 
-  const { entity, edges } = state;
-  const columns = [
+  const { entity, edges, budgetFacts, nameBySiren } = state;
+  const nameOf = (target: string): string => nameBySiren.get(target) ?? target;
+
+  const relationshipColumns = [
     { key: "type", header: t("entity.col.type") },
     { key: "counterpart", header: t("entity.col.counterpart") },
     { key: "amount", header: t("entity.col.amount") },
     { key: "exercice", header: t("entity.col.exercice") },
     { key: "provenance", header: t("entity.col.provenance") },
   ];
-  const rows: Array<Record<string, ReactNode>> = edges.map((edge) => {
+  const relationshipRows: Array<Record<string, ReactNode>> = edges.map((edge) => {
     const counterpart = counterpartSiren(edge, siren);
     return {
       type: edge.type,
-      counterpart: <Link to={`/entity/${counterpart}`}>{counterpart}</Link>,
+      counterpart: <Link to={`/entity/${counterpart}`}>{nameOf(counterpart)}</Link>,
       amount: formatAmount(edge.amount_eur),
       exercice: edge.exercice ?? "—",
       provenance: edge.provenance ? (
@@ -64,6 +61,23 @@ export default function EntityPage() {
       ),
     };
   });
+
+  const budgetColumns = [
+    { key: "exercice", header: t("entity.budget.col.exercice") },
+    { key: "mission", header: t("entity.budget.col.mission") },
+    { key: "programme", header: t("entity.budget.col.programme") },
+    { key: "ae", header: t("entity.budget.col.ae") },
+    { key: "cp", header: t("entity.budget.col.cp") },
+    { key: "status", header: t("entity.budget.col.status") },
+  ];
+  const budgetRows: Array<Record<string, ReactNode>> = budgetFacts.map((fact) => ({
+    exercice: fact.exercice,
+    mission: fact.mission ?? "—",
+    programme: fact.programme ?? "—",
+    ae: formatAmount(fact.amount_ae_eur),
+    cp: formatAmount(fact.amount_cp_eur),
+    status: fact.executed ? t("entity.budget.status.executed") : t("entity.budget.status.voted"),
+  }));
 
   return (
     <section>
@@ -80,6 +94,12 @@ export default function EntityPage() {
             {t("entity.category")} : {entity.category}
           </li>
         ) : null}
+        {entity.parent_siren ? (
+          <li>
+            {t("entity.tutelle")} :{" "}
+            <Link to={`/entity/${entity.parent_siren}`}>{nameOf(entity.parent_siren)}</Link>
+          </li>
+        ) : null}
         {entity.provenance ? (
           <li>
             {t("entity.source")} : <ProvenanceBadge provenanceId={entity.provenance} />
@@ -87,11 +107,26 @@ export default function EntityPage() {
         ) : null}
       </ul>
 
+      <h2 className="fr-h2">{t("entity.budget.title")}</h2>
+      {budgetFacts.length === 0 ? (
+        <p>{t("entity.budget.empty")}</p>
+      ) : (
+        <DataTableFallback
+          caption={t("entity.budget.tableCaption")}
+          columns={budgetColumns}
+          rows={budgetRows}
+        />
+      )}
+
       <h2 className="fr-h2">{t("entity.figuresTitle")}</h2>
       {edges.length === 0 ? (
         <p>{t("entity.empty")}</p>
       ) : (
-        <DataTableFallback caption={t("entity.tableCaption")} columns={columns} rows={rows} />
+        <DataTableFallback
+          caption={t("entity.tableCaption")}
+          columns={relationshipColumns}
+          rows={relationshipRows}
+        />
       )}
     </section>
   );

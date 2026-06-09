@@ -13,9 +13,12 @@ Everything here is **real and attributed** (golden rule #10 — no invented data
   (``data/crosswalk/*.yaml``) — SIRENs are *never* hardcoded in this file; we look them up by
   name, mirroring the ``operateurs_etat`` transform's anchoring (golden rule #1/#5).
 * Budget facts are the real PLF 2025 voted totals for the MIRES mission (programmes 150 & 172),
-  kept at the ``(exercice, mission, programme)`` grain with ``entity_siren=None`` exactly as the
-  ``budget_plf_lfi`` transform emits them — a programme total is **not** attributed to a single
-  operator (golden rule #8, anti-double-counting).
+  attributed to the mission's **owning ministry** (MESR — the budget holder), whose SIREN is
+  resolved from the reviewed ministry reference, never hardcoded (golden rule #5). Attaching a
+  programme total to the ministry that *runs* it is not the double-count golden rule #8 guards
+  against — that is attributing it onward to the operators the programme funds. NOTE: the
+  production ``budget_plf_lfi`` transform currently emits these facts with ``entity_siren=None``;
+  populating the ministry sheet from the full load is an FSC-36 follow-up (see the PR notes).
 * Contracts are real DECP rows where the CNRS is the acheteur.
 
 Provenance + licence for every figure live in the SQL header (see ``_SQL_HEADER``).
@@ -57,19 +60,25 @@ _SEED_OPERATORS: tuple[tuple[str, str | None], ...] = (
     ("France Travail", None),
 )
 
+# The MIRES mission is run by the MESR ministry, so its programme credits sit on MESR (the budget
+# holder). We carry the ministry's reviewed tutelle *code* here — never its SIREN — and resolve the
+# SIREN from the ministry reference at build time (golden rule #5).
+_BUDGET_MISSION_OWNER_TUTELLE = "MESR"
 
-def _seed_budget_facts() -> list[BudgetFact]:
+
+def _seed_budget_facts(owner_siren: str) -> list[BudgetFact]:
     """Real PLF 2025 voted credits for the MIRES mission (programmes 150 & 172).
 
-    Mission/programme grain, ``entity_siren=None`` — matches ``budget_plf_lfi``. Amounts in euros:
-    programme 172 to the euro; programme 150 at the published million precision (LPR 5e annuité).
-    Source: Sénat, rapport général PLF 2025 — Recherche et enseignement supérieur
+    Mission/programme grain, attributed to the mission's owning ministry (``owner_siren`` — MESR,
+    resolved from the ministry reference, never hardcoded). Amounts in euros: programme 172 to the
+    euro; programme 150 at the published million precision (LPR 5e annuité). Source: Sénat, rapport
+    général PLF 2025 — Recherche et enseignement supérieur
     (https://www.senat.fr/rap/l24-144-324/l24-144-324_mono.html) + budget.gouv.fr PAP. Licence
     Ouverte 2.0.
     """
     return [
         BudgetFact(
-            entity_siren=None,
+            entity_siren=owner_siren,
             exercice=2025,
             mission="MIRES",
             programme="150",
@@ -78,7 +87,7 @@ def _seed_budget_facts() -> list[BudgetFact]:
             executed=False,
         ),
         BudgetFact(
-            entity_siren=None,
+            entity_siren=owner_siren,
             exercice=2025,
             mission="MIRES",
             programme="172",
@@ -185,13 +194,23 @@ def build_seed(
             )
         )
 
+    # Resolve the MIRES budget owner (MESR) from the ministry reference — never a hardcoded SIREN.
+    # It is also a seeded entity (its operator CNRS pins it above), so the budget fact hangs off the
+    # graph; the referential-integrity test guards that invariant.
+    budget_owner = ministries.resolve(_BUDGET_MISSION_OWNER_TUTELLE)
+    if budget_owner is None or budget_owner.siren is None:
+        raise ValueError(
+            f"seed budget owner ministry {_BUDGET_MISSION_OWNER_TUTELLE!r} "
+            "does not resolve to a SIREN"
+        )
+
     # Deterministic order: ministries (graph roots) first, then operators — both by SIREN.
     ministry_entities = sorted(ministries_by_siren.values(), key=lambda e: e.siren or "")
     operator_entities = sorted(operators, key=lambda e: e.siren or "")
     return SeedBundle(
         entities=ministry_entities + operator_entities,
         edges=sorted(edges, key=lambda e: (e.source_siren, e.target_siren)),
-        budget_facts=_seed_budget_facts(),
+        budget_facts=_seed_budget_facts(budget_owner.siren),
         contracts=_seed_contracts(),
     )
 
@@ -211,8 +230,9 @@ _SQL_HEADER = """\
 --   * Ministries, operators, tutelle edges — resolved from data/crosswalk/*.yaml (Jaune
 --     « Opérateurs de l'État », Direction du budget; ministry SIRENs verified via
 --     recherche-entreprises, nature juridique 7113).
---   * Budget facts — PLF 2025, mission MIRES, voté (programmes 150 & 172). Source: Sénat, rapport
---     général PLF 2025 — Recherche et enseignement supérieur
+--   * Budget facts — PLF 2025, mission MIRES, voté (programmes 150 & 172), attributed to the
+--     owning ministry MESR (the budget holder; SIREN resolved from the ministry reference).
+--     Source: Sénat, rapport général PLF 2025 — Recherche et enseignement supérieur
 --     (https://www.senat.fr/rap/l24-144-324/l24-144-324_mono.html) + budget.gouv.fr PAP.
 --   * Contracts — DECP consolidées (DAJ/Etalab), data.gouv.fr resource
 --     22847056-61df-452d-837d-8b8ceadbfc52 (extrait 2026-06-09).

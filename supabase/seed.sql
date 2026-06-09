@@ -9,8 +9,9 @@
 --   * Ministries, operators, tutelle edges — resolved from data/crosswalk/*.yaml (Jaune
 --     « Opérateurs de l'État », Direction du budget; ministry SIRENs verified via
 --     recherche-entreprises, nature juridique 7113).
---   * Budget facts — PLF 2025, mission MIRES, voté (programmes 150 & 172). Source: Sénat, rapport
---     général PLF 2025 — Recherche et enseignement supérieur
+--   * Budget facts — PLF 2025, mission MIRES, voté (programmes 150 & 172), attributed to the
+--     owning ministry MESR (the budget holder; SIREN resolved from the ministry reference).
+--     Source: Sénat, rapport général PLF 2025 — Recherche et enseignement supérieur
 --     (https://www.senat.fr/rap/l24-144-324/l24-144-324_mono.html) + budget.gouv.fr PAP.
 --   * Contracts — DECP consolidées (DAJ/Etalab), data.gouv.fr resource
 --     22847056-61df-452d-837d-8b8ceadbfc52 (extrait 2026-06-09).
@@ -38,8 +39,8 @@ insert into edges (source_siren, target_siren, type, amount_eur, exercice, prove
 
 -- Budget facts: PLF 2025 MIRES, voté (mission/programme grain).
 insert into budget_facts (entity_siren, exercice, mission, programme, amount_ae_eur, amount_cp_eur, executed) values
-  (null, 2025, 'MIRES', '150', 15217000000, 15279000000, false),
-  (null, 2025, 'MIRES', '172', 8259807441, 8701105312, false);
+  ('110044013', 2025, 'MIRES', '150', 15217000000, 15279000000, false),
+  ('110044013', 2025, 'MIRES', '172', 8259807441, 8701105312, false);
 
 -- Contracts: real DECP marchés (CNRS acheteur).
 insert into contracts (acheteur_siren, titulaire_siren, montant_eur, nature, exercice) values
