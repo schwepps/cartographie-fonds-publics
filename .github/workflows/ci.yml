@@ -102,8 +102,15 @@ jobs:
           make load  # re-run: a provenance-scoped reload must not change row counts
           after="$(counts)"
           test "$before" = "$after" || { echo "load is NOT idempotent: [$before] vs [$after]"; exit 1; }
+          # Sibling-provenance survival: a row from a DIFFERENT source (e.g. a future DECP delegates
+          # edge) must survive a load — the per-table provenance scope must not touch it.
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c \
+            "insert into edges (source_siren, target_siren, type, provenance) values ('111111111','222222222','delegates','decp_sentinel')"
+          make load
+          survived="$(psql "$DATABASE_URL" -tA -c "select count(*) from edges where provenance = 'decp_sentinel'")"
+          test "${survived:-0}" -eq 1 || { echo "load wiped a sibling provenance's rows (decp_sentinel)"; exit 1; }
           # The loaded tutelle edges are reachable through the graph_neighbors RPC the UI calls.
           neighbours="$(psql "$DATABASE_URL" -tA -c \
-            "select count(*) from graph_neighbors((select source_siren from edges limit 1), 1)")"
+            "select count(*) from graph_neighbors((select source_siren from edges where provenance = 'operateurs_etat' limit 1), 1)")"
           test "${neighbours:-0}" -ge 1 || { echo "graph_neighbors returned no rows"; exit 1; }
-          echo "load idempotent (entities/edges/budget_facts = $(echo "$before" | paste -sd/ -)); graph_neighbors ok ($neighbours rows)"
+          echo "load idempotent (entities/edges/budget_facts = $(echo "$before" | paste -sd/ -)); sibling provenance preserved; graph_neighbors ok ($neighbours rows)"

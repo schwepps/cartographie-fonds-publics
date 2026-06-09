@@ -16,9 +16,12 @@ So each table is rebuilt **per provenance scope**, never wholesale:
 * ``entities`` — ``INSERT … ON CONFLICT (siren) DO UPDATE`` (accretive across sources, keyed on the
   canonical SIREN). Unresolved entities (``siren=None``) are dropped and **counted** in the summary
   (golden rule #5: never silently drop), since there is no key to upsert on.
-* ``edges`` / ``budget_facts`` — ``DELETE WHERE provenance IN (this load's sources)`` then
-  ``INSERT``. This makes the load *authoritative for its own provenance scope*: orphaned rows (a
-  relationship that vanished upstream) are removed, while another source's rows are never touched.
+* ``edges`` / ``budget_facts`` — ``DELETE WHERE provenance IN (the provenances actually produced
+  this run)`` then ``INSERT``. The scope is read from the rows in the bundle, never the input
+  source set: a source that produced **no** rows for a table is absent from that table's scope, so
+  its existing rows are never wiped (no delete-with-no-replacement), and another source's rows are
+  never touched. Orphaned rows (a relationship that vanished upstream) within a produced provenance
+  are still removed — its rows are fully deleted, then re-inserted.
 
 Re-running is a no-op on row counts (delete-then-insert of a deterministically-ordered bundle). The
 whole script runs in one ``begin … commit`` under ``ON_ERROR_STOP`` — atomic, fail-loud.
@@ -27,7 +30,7 @@ whole script runs in one ``begin … commit`` under ``ON_ERROR_STOP`` — atomic
 from __future__ import annotations
 
 import os
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -92,7 +95,11 @@ def build_bundle(
     snapshot is empty/broken and a provenance-scoped reload would delete its existing rows with
     nothing to re-insert — unless ``allow_empty``.
     """
-    read = read_rows or (lambda source_id: read_snapshot_rows(source_id, root=snapshot_root))
+    read = (
+        read_rows
+        if read_rows is not None
+        else (lambda source_id: read_snapshot_rows(source_id, root=snapshot_root))
+    )
 
     entities_by_siren: dict[str, Entity] = {}
     edges_by_key: dict[tuple[str, str, str, int | None], Edge] = {}
@@ -153,20 +160,41 @@ _SQL_HEADER = """\
 """
 
 
+def _delete_by_provenance(table: str, rows: Sequence[Edge | BudgetFact]) -> str:
+    """Render a DELETE scoped to exactly the provenances present in ``rows`` (or a no-op comment).
+
+    Scope is derived from the rows produced *this run*, never the full input source set. The
+    consequences are deliberate and load-bearing:
+
+    * a source that produced **0** rows for ``table`` is absent from the scope, so the DELETE is
+      skipped entirely — its existing rows are never wiped with nothing to re-insert (e.g. a
+      degraded operators snapshot that resolves entities but yields no tutelle edges must not erase
+      the live tutelle layer);
+    * the scope can never name a provenance this load did not write to ``table`` — so another
+      source's rows (e.g. ``delegates`` edges from a future DECP loader) are never touched;
+    * within a produced provenance, orphans are still removed: all its rows are deleted, then the
+      current set re-inserted.
+    """
+    provenances = sorted({row.provenance for row in rows if row.provenance is not None})
+    if not provenances:
+        return f"-- (no {table} rows this load; provenance scope empty, nothing deleted)"
+    scope = ", ".join(sql_literal(provenance) for provenance in provenances)
+    return f"delete from {table} where provenance in ({scope});"
+
+
 def render_load_sql(bundle: LoadBundle) -> str:
     """Serialize a :class:`LoadBundle` to an idempotent, provenance-scoped load script."""
-    scope = ", ".join(sql_literal(provenance) for provenance in bundle.provenances)
     sections = [
         _SQL_HEADER,
         "\nbegin;",
         "\n-- Entities: upsert on the canonical SIREN (accretive across sources).",
         render_insert("entities", ENTITY_COLUMNS, bundle.entities, on_conflict=_ENTITY_ON_CONFLICT),
-        "-- Edges: provenance-scoped rebuild (replace this load's sources; orphans removed, other",
-        "-- sources' edges untouched).",
-        f"delete from edges where provenance in ({scope});",
+        "-- Edges: rebuild only the provenances produced this run (orphans within them removed);",
+        "-- other sources' edges are untouched, and an empty edge set deletes nothing.",
+        _delete_by_provenance("edges", bundle.edges),
         render_insert("edges", EDGE_COLUMNS, bundle.edges),
         "-- Budget facts: provenance-scoped rebuild (same contract as edges).",
-        f"delete from budget_facts where provenance in ({scope});",
+        _delete_by_provenance("budget_facts", bundle.budget_facts),
         render_insert("budget_facts", BUDGET_COLUMNS, bundle.budget_facts),
         "\ncommit;\n",
     ]
@@ -181,21 +209,24 @@ def load_summary(bundle: LoadBundle) -> str:
         edges_by_type[edge.type.value] = edges_by_type.get(edge.type.value, 0) + 1
     voted = sum(1 for f in bundle.budget_facts if not f.executed)
     executed = sum(1 for f in bundle.budget_facts if f.executed)
-    op_report = bundle.reports.get("operateurs_etat", {})
-    rate = op_report.get("resolution_rate")
+    rate = bundle.reports.get("operateurs_etat", {}).get("resolution_rate")
+
+    entities_line = (
+        f"  entities: {len(bundle.entities)} "
+        f"({len(ministries)} ministries, {len(bundle.entities) - len(ministries)} operators)"
+    )
+    if bundle.skipped_unresolved:
+        entities_line += f"; {bundle.skipped_unresolved} unresolved skipped"
+    if bundle.edges:
+        by_type = ", ".join(f"{count} {etype}" for etype, count in sorted(edges_by_type.items()))
+        edges_line = f"  edges: {len(bundle.edges)} ({by_type})"
+    else:
+        edges_line = "  edges: 0"
 
     lines = [
         f"[load] sources: {', '.join(bundle.provenances)}",
-        f"  entities: {len(bundle.entities)} "
-        f"({len(ministries)} ministries, {len(bundle.entities) - len(ministries)} operators)"
-        + (
-            f"; {bundle.skipped_unresolved} unresolved skipped" if bundle.skipped_unresolved else ""
-        ),
-        f"  edges: {len(bundle.edges)} ("
-        + ", ".join(f"{count} {etype}" for etype, count in sorted(edges_by_type.items()))
-        + ")"
-        if bundle.edges
-        else "  edges: 0",
+        entities_line,
+        edges_line,
         f"  budget_facts: {len(bundle.budget_facts)} ({voted} voted, {executed} executed)",
     ]
     if rate is not None:

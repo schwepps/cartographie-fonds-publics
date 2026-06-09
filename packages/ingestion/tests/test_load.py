@@ -19,10 +19,11 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-from core.models import Level
+from core.models import Entity, Level
 from ingestion.errors import LoadError
 from ingestion.load import (
     ETAT_CENTRAL_SOURCE_IDS,
+    LoadBundle,
     build_bundle,
     load_summary,
     render_load_sql,
@@ -149,10 +150,40 @@ def test_render_emits_provenance_scoped_contract(tmp_path: Path, fixtures_dir: P
     # Entities upsert on the canonical SIREN (accretive), never deleted.
     assert "on conflict (siren) do update set" in sql
     assert "delete from entities" not in sql
-    # Edges + budget_facts are rebuilt per provenance scope (this load's sources).
-    assert "delete from edges where provenance in (" in sql
-    assert "delete from budget_facts where provenance in (" in sql
-    assert "'operateurs_etat'" in sql
+    # Each table's DELETE is scoped to ONLY the provenances that produced rows of that table —
+    # the edge DELETE never names a budget source, and vice versa (the contract the docstring
+    # promises: another source's rows are never touched).
+    assert "delete from edges where provenance in ('operateurs_etat');" in sql
+    assert (
+        "delete from budget_facts where provenance in "
+        "('budget_execution_mensuelle', 'budget_plf_lfi');" in sql
+    )
     # Only the three owned tables are touched — no whole-table truncate, no other tables.
     assert "truncate" not in sql
     assert "contracts" not in sql and "attributions" not in sql
+
+
+def test_render_skips_delete_for_a_table_with_no_rows() -> None:
+    # A degraded operators load: entities resolved but ZERO edges (e.g. the tutelle column drifted
+    # so no ministry resolves). The rebuild must NOT delete edges — wiping the live tutelle layer
+    # with no replacement is exactly the destructive failure per-table scoping guards against.
+    bundle = LoadBundle(
+        entities=[
+            Entity(
+                siren="110000072",
+                name="Ministère X",
+                level=Level.state,
+                category=MINISTRY_CATEGORY,
+                provenance="operateurs_etat",
+            )
+        ],
+        edges=[],
+        budget_facts=[],
+        provenances=("operateurs_etat",),
+        skipped_unresolved=0,
+        reports={},
+    )
+    sql = render_load_sql(bundle)
+    assert "on conflict (siren) do update set" in sql  # entities still upserted
+    assert "delete from edges" not in sql  # nothing produced this run -> nothing deleted
+    assert "delete from budget_facts" not in sql
