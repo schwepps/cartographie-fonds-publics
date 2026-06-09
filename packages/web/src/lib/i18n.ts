@@ -35,4 +35,13 @@ function syncDocumentLang(lng: string): void {
 syncDocumentLang(i18n.resolvedLanguage ?? FALLBACK_LANGUAGE);
 i18n.on("languageChanged", syncDocumentLang);
 
+// `i18n` is the i18next singleton and survives HMR re-evaluation of this module, so
+// drop the listener this evaluation registered when the module is replaced — otherwise
+// dev HMR accumulates duplicate <html lang> handlers. No-op in prod/tests (no `hot`).
+if (import.meta.hot) {
+  import.meta.hot.dispose(() => {
+    i18n.off("languageChanged", syncDocumentLang);
+  });
+}
+
 export default i18n;
