@@ -1,4 +1,4 @@
-"""Ingestion CLI (stub). `python -m ingestion.cli ingest|refresh|resolve|resolve-seed`."""
+"""Ingestion CLI (stub). Commands: ingest, refresh, resolve, operators, budget, resolve-seed."""
 
 from __future__ import annotations
 
@@ -186,6 +186,39 @@ def operators(
     if rate < min_rate:
         typer.echo(f"[operators] resolution rate {rate:.0%} < {min_rate:.0%} threshold", err=True)
         raise typer.Exit(code=1)
+
+
+@app.command()
+def budget(
+    plf: Annotated[
+        Path | None, typer.Option(help="PLF/LFI 'dépenses' CSV (offline sample).")
+    ] = None,
+    execution: Annotated[
+        Path | None, typer.Option(help="Situation mensuelle CSV (offline sample).")
+    ] = None,
+    out: Annotated[Path, typer.Option(help="Report output path.")] = Path("out/budget_report.json"),
+) -> None:
+    """Transform State-budget CSVs into budget facts (voted + executed); write a counts report.
+
+    Pure offline run: each provided CSV is curated via its registered transform into ``BudgetFact``
+    rows — voted from PLF/LFI (`--plf`), executed from the monthly situation (`--execution`).
+    Persistence to Supabase is FSC-35's job; this proves the facts are produced and validate.
+    """
+    inputs = {"budget_plf_lfi": plf, "budget_execution_mensuelle": execution}
+    if not any(inputs.values()):
+        raise typer.BadParameter("provide --plf and/or --execution")
+    per_source: dict[str, object] = {}
+    for source_id, path in inputs.items():
+        if path is None:
+            continue
+        headers, rows = parse_csv_bytes(Path(path).read_bytes())
+        result = get_transform(source_id)(headers, rows)
+        per_source[source_id] = result.report
+        typer.echo(
+            f"[budget] {source_id}: {result.report['facts_out']} facts from "
+            f"{result.report['rows_in']} rows (exercices {result.report['exercices']}) -> {out}"
+        )
+    _write_report({"sources": per_source}, out)
 
 
 @app.command(name="resolve-seed")

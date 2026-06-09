@@ -1,0 +1,33 @@
+{
+  "total_count": 4,
+  "results": [
+    {
+      "exercice": 2025,
+      "mois": 2,
+      "code_mission": "MIRES",
+      "code_programme": "150",
+      "depenses_nettes": 260000
+    },
+    {
+      "exercice": 2025,
+      "mois": 1,
+      "code_mission": "MIRES",
+      "code_programme": "172",
+      "depenses_nettes": 300000
+    },
+    {
+      "exercice": 2024,
+      "mois": 12,
+      "code_mission": "MIRES",
+      "code_programme": "172",
+      "depenses_nettes": 1400000
+    },
+    {
+      "exercice": 2023,
+      "mois": 12,
+      "code_mission": "MIRES",
+      "code_programme": "172",
+      "depenses_nettes": 1200000
+    }
+  ]
+}
