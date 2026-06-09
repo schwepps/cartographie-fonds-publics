@@ -49,7 +49,7 @@ export default function GraphPage() {
 
   if (state.status === "loading") {
     return (
-      <section>
+      <section className="fr-container legacy-page">
         <h1 className="fr-h1">{t("graph.title")}</h1>
         <p className="fr-lead">{t("graph.loading")}</p>
       </section>
@@ -57,7 +57,7 @@ export default function GraphPage() {
   }
   if (state.status === "error") {
     return (
-      <section>
+      <section className="fr-container legacy-page">
         <h1 className="fr-h1">{t("graph.title")}</h1>
         <p role="alert" className="text-error">
           {t("graph.error")}
@@ -100,7 +100,7 @@ export default function GraphPage() {
   }));
 
   return (
-    <section>
+    <section className="fr-container legacy-page">
       <h1 className="fr-h1">{t("graph.title")}</h1>
       <p className="fr-sm">{t("graph.expandHint")}</p>
       {state.truncated ? (

@@ -1,10 +1,27 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createMemoryRouter, RouterProvider } from "react-router-dom";
 import { Layout } from "./Layout";
 import { NotFound } from "./NotFound";
 import { featureRouteObjects } from "./routes";
+
+// The home route now reads Supabase (overview figures + teaser). Stub the client so the shell tests
+// stay deterministic and offline — every query resolves empty.
+vi.mock("../lib/supabase", () => {
+  const empty = { data: [], error: null, count: 0 };
+  const builder = {
+    select: () => builder,
+    limit: () => builder,
+    in: () => builder,
+    or: () => builder,
+    eq: () => builder,
+    order: () => builder,
+    maybeSingle: () => Promise.resolve({ data: null, error: null }),
+    then: (resolve: (value: typeof empty) => unknown) => Promise.resolve(empty).then(resolve),
+  };
+  return { supabase: { from: () => builder, rpc: () => Promise.resolve(empty) } };
+});
 
 function renderAt(initialPath: string) {
   const router = createMemoryRouter(
@@ -26,7 +43,7 @@ describe("Layout shell", () => {
     expect(screen.getByRole("banner")).toBeInTheDocument();
     expect(screen.getByRole("contentinfo")).toBeInTheDocument();
     expect(
-      await screen.findByRole("heading", { level: 1, name: /Cartographie des Fonds Publics/i }),
+      await screen.findByRole("heading", { level: 1, name: /Comprendre où va/i }),
     ).toBeInTheDocument();
   });
 
@@ -55,7 +72,9 @@ describe("Layout shell", () => {
   it("navigates to the search feature from the header tool link", async () => {
     const user = userEvent.setup();
     renderAt("/");
-    await user.click(screen.getByRole("link", { name: "Rechercher" }));
+    // The home hero also has a "Rechercher" CTA, so scope to the header banner.
+    const header = screen.getByRole("banner");
+    await user.click(within(header).getByRole("link", { name: "Rechercher" }));
     expect(
       await screen.findByRole("heading", { level: 1, name: /Recherche/i }),
     ).toBeInTheDocument();

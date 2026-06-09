@@ -19,7 +19,7 @@ export function Layout() {
         {t("shell.skipToContent")}
       </a>
       <Header />
-      <main className="main fr-container" id="content" tabIndex={-1} role="main">
+      <main className="main" id="content" tabIndex={-1} role="main">
         <Suspense fallback={<p className="fr-lead">{t("shell.loading")}</p>}>
           <Outlet />
         </Suspense>

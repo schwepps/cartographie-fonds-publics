@@ -12,7 +12,7 @@ export default function SourcesPage() {
   const sources = allSources();
 
   return (
-    <section>
+    <section className="fr-container legacy-page">
       <h1 className="fr-h1">{t("sources.title")}</h1>
       <p className="fr-lead">{t("sources.intro")}</p>
       <p className="fr-sm">{t("sources.updatedAt", { date: registryUpdatedAt })}</p>

@@ -5,7 +5,7 @@ export default function SearchPage() {
   const query = params.get("q")?.trim() ?? "";
 
   return (
-    <section>
+    <section className="fr-container legacy-page">
       <h1 className="fr-h1">Recherche</h1>
       {query ? (
         <p>

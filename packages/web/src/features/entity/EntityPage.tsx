@@ -24,17 +24,27 @@ export default function EntityPage() {
     amount == null ? "—" : amountFormatter.format(amount);
 
   if (state.status === "loading") {
-    return <p className="fr-lead">{t("entity.loading")}</p>;
+    return (
+      <div className="fr-container legacy-page">
+        <p className="fr-lead">{t("entity.loading")}</p>
+      </div>
+    );
   }
   if (state.status === "error") {
     return (
-      <p role="alert" className="text-error">
-        {t("entity.error")}
-      </p>
+      <div className="fr-container legacy-page">
+        <p role="alert" className="text-error">
+          {t("entity.error")}
+        </p>
+      </div>
     );
   }
   if (!state.entity) {
-    return <p className="fr-lead">{t("entity.notFound", { siren })}</p>;
+    return (
+      <div className="fr-container legacy-page">
+        <p className="fr-lead">{t("entity.notFound", { siren })}</p>
+      </div>
+    );
   }
 
   const { entity, edges, budgetFacts, nameBySiren } = state;
@@ -80,7 +90,7 @@ export default function EntityPage() {
   }));
 
   return (
-    <section>
+    <section className="fr-container legacy-page">
       <h1 className="fr-h1">{entity.name}</h1>
       <ul className="fr-sm">
         <li>

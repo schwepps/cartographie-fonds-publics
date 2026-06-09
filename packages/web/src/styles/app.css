@@ -920,20 +920,21 @@ mark {
     font-weight: 700;
 }
 
-/* Vertical rhythm for feature pages not yet redesigned to the structured screen layouts.
-   The design reset zeroes element margins (screens use .stack / grids instead); these scoped
-   defaults keep plain document-flow pages readable until each gets its own redesign ticket. */
-.main {
+/* Vertical rhythm for feature pages not yet redesigned to the structured screen layouts. The
+   redesigned screens own their layout (full-bleed sections + .fr-container), so `main` stays a
+   plain full-width flex column; `.legacy-page` (wrapping a not-yet-ported page) restores readable
+   document-flow spacing the design reset removes, until each gets its own redesign ticket. */
+.legacy-page {
     padding-block: var(--sp-6);
 }
-.main h1 {
+.legacy-page h1 {
     margin-bottom: var(--sp-4);
 }
-.main h2,
-.main h3 {
+.legacy-page h2,
+.legacy-page h3 {
     margin-top: var(--sp-5);
     margin-bottom: var(--sp-3);
 }
-.main p + p {
+.legacy-page p + p {
     margin-top: var(--sp-4);
 }

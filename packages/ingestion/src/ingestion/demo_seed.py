@@ -32,11 +32,13 @@ from .sql_render import BUDGET_COLUMNS, EDGE_COLUMNS, ENTITY_COLUMNS, render_ins
 
 # Registry source ids stamped per layer (same ids the real transforms use, so the UI resolves them
 # to real source names; the whole slice is dev/preview-only).
+# Registry source ids (must match data/registry/sources-registry.yaml so the provenance UI resolves
+# them to real source names).
 _P_OPERATORS = "operateurs_etat"
 _P_BUDGET = "budget_plf_lfi"
-_P_DECP = "decp"
-_P_OFGL = "ofgl"
-_P_SECU = "comptes_secu"
+_P_DECP = "decp_commande_publique"
+_P_OFGL = "finances_locales_ofgl"
+_P_SECU = "comptes_sociaux"
 
 _MINISTRY_CATEGORY = "ministère"
 

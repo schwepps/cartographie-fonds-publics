@@ -9,7 +9,7 @@ import { Callout } from "../../lib/ui";
 export default function FluxPage() {
   const { t } = useTranslation();
   return (
-    <section>
+    <section className="fr-container legacy-page">
       <h1 className="fr-h1">{t("flux.title")}</h1>
       <p className="fr-lead">{t("flux.intro")}</p>
       <Callout tone="info">{t("flux.comingSoon")}</Callout>
