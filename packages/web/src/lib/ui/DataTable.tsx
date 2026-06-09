@@ -21,6 +21,8 @@ export interface DataTableProps<Row> {
   columns: DataTableColumn<Row>[];
   rows: Row[];
   getRowKey: (row: Row) => string;
+  /** Optional DOM id per `<tr>` (e.g. for deep-link anchors like `#source-<id>`). */
+  getRowId?: (row: Row) => string;
 }
 
 type SortState = { key: string; dir: "asc" | "desc" } | null;
@@ -35,7 +37,13 @@ function cellValue<Row>(row: Row, key: string): unknown {
  * the active column carries `aria-sort` for assistive tech. Sorting is stable and locale-aware (fr).
  * Ported from the `design/` export (`components.jsx`).
  */
-export function DataTable<Row>({ caption, columns, rows, getRowKey }: DataTableProps<Row>) {
+export function DataTable<Row>({
+  caption,
+  columns,
+  rows,
+  getRowKey,
+  getRowId,
+}: DataTableProps<Row>) {
   const [sort, setSort] = useState<SortState>(null);
 
   const sorted = useMemo(() => {
@@ -96,7 +104,7 @@ export function DataTable<Row>({ caption, columns, rows, getRowKey }: DataTableP
         </thead>
         <tbody>
           {sorted.map((row) => (
-            <tr key={getRowKey(row)}>
+            <tr key={getRowKey(row)} id={getRowId?.(row)}>
               {columns.map((col) => (
                 <td key={col.key} className={col.num ? "num" : undefined}>
                   {col.render ? col.render(row) : (cellValue(row, col.key) as ReactNode)}
