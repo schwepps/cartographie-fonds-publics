@@ -1,4 +1,5 @@
-"""Ingestion CLI (stub). Commands: ingest, refresh, resolve, operators, budget, resolve-seed."""
+"""Ingestion CLI (stub). Commands: ingest, refresh, resolve, operators, budget, resolve-seed,
+seed-emit."""
 
 from __future__ import annotations
 
@@ -22,6 +23,7 @@ from .crosswalk_io import (
     merge_seed,
 )
 from .registry import Source, sources
+from .seed import SEED_SQL_PATH, emit_seed_sql
 from .tabular import parse_csv_bytes
 from .transforms import get_transform
 
@@ -247,6 +249,21 @@ def resolve_seed(
     typer.echo(
         f"[resolve-seed] wrote {len(merged)} entries to {crosswalk} (preserved {preserved} curated)"
     )
+
+
+@app.command(name="seed-emit")
+def seed_emit(
+    out: Annotated[Path, typer.Option(help="Seed SQL file to write.")] = SEED_SQL_PATH,
+) -> None:
+    """Regenerate the committed curated seed (supabase/seed.sql) — FSC-24.
+
+    A tiny, real, licence-attributed État-central slice (ministries + operators + tutelle edges +
+    PLF 2025 MIRES budget facts + real DECP contracts) so a fresh dev DB / preview renders a
+    populated graph without the full ingestion load. The artifact is generated — edit
+    `ingestion.seed`, never the SQL. A golden test fails loud if the two drift.
+    """
+    written = emit_seed_sql(out)
+    typer.echo(f"[seed-emit] wrote {written}")
 
 
 if __name__ == "__main__":

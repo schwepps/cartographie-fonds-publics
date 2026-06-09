@@ -41,6 +41,7 @@ make spike       # Phase-0 SIREN-match spike (offline sample)
 make supabase-up # start the local DEV Supabase stack in Docker (applies migrations on first
                  # start; use `make supabase-reset` after adding one)
 make db-migrate  # apply supabase/migrations/*.sql to $DATABASE_URL (prod apply path)
+make seed        # regenerate + load the committed curated seed (dev/preview only; FSC-24)
 make resolve     # resolve entities on SIREN via the crosswalk (report + resolution rate; FSC-23)
 make ingest      # ingestion pipeline (reads data/registry, writes Supabase)
 make refresh     # discover latest millésimes for all sources

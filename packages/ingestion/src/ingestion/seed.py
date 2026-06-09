@@ -1,0 +1,287 @@
+"""Build the committed curated seed (FSC-24): a tiny, real, licence-attributed État-central slice.
+
+A fresh dev DB — and every Vercel preview — must render a populated graph + entity sheet
+*without* waiting on the full ingestion load (FSC-35). This module is the source of that slice:
+``build_seed()`` constructs frozen-model instances (so validation against the domain model is
+free) and ``render_sql()`` serializes them to a deterministic ``supabase/seed.sql``. ``make seed``
+and ``supabase db reset`` load that SQL; a golden test (``tests/test_seed.py``) fails loud if the
+committed SQL ever drifts from this builder.
+
+Everything here is **real and attributed** (golden rule #10 — no invented data):
+
+* Ministries, operators and tutelle edges are resolved from the committed crosswalk YAMLs
+  (``data/crosswalk/*.yaml``) — SIRENs are *never* hardcoded in this file; we look them up by
+  name, mirroring the ``operateurs_etat`` transform's anchoring (golden rule #1/#5).
+* Budget facts are the real PLF 2025 voted totals for the MIRES mission (programmes 150 & 172),
+  kept at the ``(exercice, mission, programme)`` grain with ``entity_siren=None`` exactly as the
+  ``budget_plf_lfi`` transform emits them — a programme total is **not** attributed to a single
+  operator (golden rule #8, anti-double-counting).
+* Contracts are real DECP rows where the CNRS is the acheteur.
+
+Provenance + licence for every figure live in the SQL header (see ``_SQL_HEADER``).
+"""
+
+from __future__ import annotations
+
+import math
+import os
+from dataclasses import dataclass, field
+from enum import Enum
+from pathlib import Path
+
+from core.crosswalk import Crosswalk
+from core.models import BudgetFact, Contract, Edge, EdgeType, Entity, Level, Nature
+from core.resolve import normalize_name
+
+from .crosswalk_io import load_crosswalk
+from .transforms.operateurs_etat import MINISTRY_CATEGORY, MinistryIndex
+
+# Source id stamped on seeded tutelle edges (distinct from the live "operateurs_etat" run so a
+# seeded edge is recognisable as such).
+PROVENANCE = "seed"
+
+# The committed artifact this builder generates. Same env-override pattern as crosswalk_io.
+_DEFAULT_SEED_SQL_PATH = Path(__file__).resolve().parents[4] / "supabase" / "seed.sql"
+SEED_SQL_PATH = Path(os.environ.get("CFP_SEED_SQL_PATH", _DEFAULT_SEED_SQL_PATH))
+
+# Operators to seed: (crosswalk denomination, real juridical category). The SIREN and tutelle are
+# read from the crosswalk at build time — only the curated *selection* and the category (which the
+# crosswalk does not carry) live here. France Travail's INSEE category is left out rather than
+# asserted wrongly.
+_SEED_OPERATORS: tuple[tuple[str, str | None], ...] = (
+    ("Centre national de la recherche scientifique", "EPST"),
+    ("Bibliothèque nationale de France", "EPA"),
+    ("France Travail", None),
+)
+
+
+def _seed_budget_facts() -> list[BudgetFact]:
+    """Real PLF 2025 voted credits for the MIRES mission (programmes 150 & 172).
+
+    Mission/programme grain, ``entity_siren=None`` — matches ``budget_plf_lfi``. Amounts in euros:
+    programme 172 to the euro; programme 150 at the published million precision (LPR 5e annuité).
+    Source: Sénat, rapport général PLF 2025 — Recherche et enseignement supérieur
+    (https://www.senat.fr/rap/l24-144-324/l24-144-324_mono.html) + budget.gouv.fr PAP. Licence
+    Ouverte 2.0.
+    """
+    return [
+        BudgetFact(
+            entity_siren=None,
+            exercice=2025,
+            mission="MIRES",
+            programme="150",
+            amount_ae_eur=15_217_000_000,
+            amount_cp_eur=15_279_000_000,
+            executed=False,
+        ),
+        BudgetFact(
+            entity_siren=None,
+            exercice=2025,
+            mission="MIRES",
+            programme="172",
+            amount_ae_eur=8_259_807_441,
+            amount_cp_eur=8_701_105_312,
+            executed=False,
+        ),
+    ]
+
+
+def _seed_contracts() -> list[Contract]:
+    """Two real DECP marchés where the CNRS (acheteur SIREN 180089013) is the buyer.
+
+    Source: « Données essentielles de la commande publique consolidées (format tabulaire) »,
+    DAJ/Etalab, data.gouv.fr resource 22847056-61df-452d-837d-8b8ceadbfc52 (extrait 2026-06-09).
+    Licence Ouverte 2.0. The acheteur is a seeded entity (CNRS); titulaires are external suppliers
+    carried as SIRENs only (DECP -> delegated entities/edges is FSC-35's job).
+    """
+    cnrs = "180089013"
+    return [
+        Contract(
+            acheteur_siren=cnrs,
+            titulaire_siren="329200521",
+            montant_eur=1_800_000,
+            nature=Nature.marche,
+            exercice=2026,
+        ),
+        Contract(
+            acheteur_siren=cnrs,
+            titulaire_siren="326556578",
+            montant_eur=84_925.39,
+            nature=Nature.marche,
+            exercice=2026,
+        ),
+    ]
+
+
+@dataclass(frozen=True)
+class SeedBundle:
+    """The curated seed slice. Mirrors ``transforms.TransformResult`` but adds ``contracts``."""
+
+    entities: list[Entity] = field(default_factory=list)
+    edges: list[Edge] = field(default_factory=list)
+    budget_facts: list[BudgetFact] = field(default_factory=list)
+    contracts: list[Contract] = field(default_factory=list)
+
+
+def build_seed(
+    *, crosswalk: Crosswalk | None = None, ministries: MinistryIndex | None = None
+) -> SeedBundle:
+    """Build the seed: ministry + operator entities, tutelle edges, budget facts, contracts.
+
+    Loads the committed crosswalk + ministry reference by default; both are injectable for
+    offline tests. Fails loud if a selected operator is missing/unresolved in the crosswalk or its
+    tutelle does not resolve to a ministry — the seed must never carry a guessed SIREN.
+    """
+    crosswalk = crosswalk if crosswalk is not None else load_crosswalk()
+    ministries = ministries if ministries is not None else MinistryIndex.load()
+
+    ministries_by_siren: dict[str, Entity] = {}
+    operators: list[Entity] = []
+    edges: list[Edge] = []
+
+    for denomination, category in _SEED_OPERATORS:
+        key = normalize_name(denomination)
+        entry = crosswalk.get(key)
+        operator_siren = crosswalk.resolve(key)
+        if entry is None or operator_siren is None:
+            raise ValueError(
+                f"seed operator {denomination!r} is not an accepted (auto/reviewed) crosswalk row"
+            )
+        ministry = ministries.resolve(entry.tutelle)
+        if ministry is None or ministry.siren is None:
+            raise ValueError(
+                f"seed operator {denomination!r} has no resolvable tutelle ministry "
+                f"(tutelle={entry.tutelle!r})"
+            )
+        ministries_by_siren.setdefault(
+            ministry.siren,
+            Entity(
+                siren=ministry.siren,
+                name=ministry.denomination,
+                level=Level.state,
+                category=MINISTRY_CATEGORY,
+            ),
+        )
+        operators.append(
+            Entity(
+                siren=operator_siren,
+                name=denomination,
+                level=Level.state,
+                category=category,
+                parent_siren=ministry.siren,
+            )
+        )
+        edges.append(
+            Edge(
+                source_siren=ministry.siren,
+                target_siren=operator_siren,
+                type=EdgeType.tutelle,
+                provenance=PROVENANCE,
+            )
+        )
+
+    # Deterministic order: ministries (graph roots) first, then operators — both by SIREN.
+    ministry_entities = sorted(ministries_by_siren.values(), key=lambda e: e.siren or "")
+    operator_entities = sorted(operators, key=lambda e: e.siren or "")
+    return SeedBundle(
+        entities=ministry_entities + operator_entities,
+        edges=sorted(edges, key=lambda e: (e.source_siren, e.target_siren)),
+        budget_facts=_seed_budget_facts(),
+        contracts=_seed_contracts(),
+    )
+
+
+# --------------------------------------------------------------------------- #
+# SQL rendering — deterministic, so the committed seed.sql is a stable golden file.
+# --------------------------------------------------------------------------- #
+_SQL_HEADER = """\
+-- supabase/seed.sql — committed curated seed (FSC-24). GENERATED, do not edit by hand:
+-- regenerate with `make seed` (source: packages/ingestion/src/ingestion/seed.py).
+--
+-- A tiny, real, licence-attributed État-central slice so a fresh dev DB and Vercel previews render
+-- a populated graph + entity sheet without the full ingestion load (FSC-35). DEV/PREVIEW ONLY —
+-- never apply to the curated production database (it truncates the curated tables first).
+--
+-- Provenance & licence (all Licence Ouverte / Etalab 2.0):
+--   * Ministries, operators, tutelle edges — resolved from data/crosswalk/*.yaml (Jaune
+--     « Opérateurs de l'État », Direction du budget; ministry SIRENs verified via
+--     recherche-entreprises, nature juridique 7113).
+--   * Budget facts — PLF 2025, mission MIRES, voté (programmes 150 & 172). Source: Sénat, rapport
+--     général PLF 2025 — Recherche et enseignement supérieur
+--     (https://www.senat.fr/rap/l24-144-324/l24-144-324_mono.html) + budget.gouv.fr PAP.
+--   * Contracts — DECP consolidées (DAJ/Etalab), data.gouv.fr resource
+--     22847056-61df-452d-837d-8b8ceadbfc52 (extrait 2026-06-09).
+"""
+
+_ENTITY_COLUMNS = ("siren", "name", "level", "category", "parent_siren")
+_EDGE_COLUMNS = ("source_siren", "target_siren", "type", "amount_eur", "exercice", "provenance")
+_BUDGET_COLUMNS = (
+    "entity_siren",
+    "exercice",
+    "mission",
+    "programme",
+    "amount_ae_eur",
+    "amount_cp_eur",
+    "executed",
+)
+_CONTRACT_COLUMNS = ("acheteur_siren", "titulaire_siren", "montant_eur", "nature", "exercice")
+
+
+def _lit(value: object) -> str:
+    """Render a Python value as a SQL literal (deterministic; integral floats stay integers)."""
+    if value is None:
+        return "null"
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if isinstance(value, Enum):
+        value = value.value
+    if isinstance(value, float):
+        # Fail loud rather than emit `nan`/`inf` — invalid in a numeric INSERT (cf.
+        # crosswalk_io._parse_ratio, which rejects non-finite floats the same way).
+        if not math.isfinite(value):
+            raise ValueError(f"non-finite amount cannot be rendered to SQL: {value!r}")
+        return str(int(value)) if value.is_integer() else repr(value)
+    if isinstance(value, int):
+        return str(value)
+    return "'" + str(value).replace("'", "''") + "'"
+
+
+def _insert(table: str, columns: tuple[str, ...], rows: list[object]) -> str:
+    """Render a single multi-row INSERT for ``rows`` (pydantic models), or a comment if empty."""
+    if not rows:
+        return f"-- (no {table} rows)\n"
+    values = [
+        "  (" + ", ".join(_lit(r.model_dump(mode="json")[c]) for c in columns) + ")"  # type: ignore[attr-defined]
+        for r in rows
+    ]
+    cols = ", ".join(columns)
+    return f"insert into {table} ({cols}) values\n" + ",\n".join(values) + ";\n"
+
+
+def render_sql(bundle: SeedBundle) -> str:
+    """Serialize a :class:`SeedBundle` to a deterministic, idempotent seed SQL script."""
+    sections = [
+        _SQL_HEADER,
+        "\nbegin;",
+        "\n-- Idempotent: clear the curated tables, then re-insert the seed slice.",
+        "truncate entities, edges, budget_facts, contracts, attributions, mentions "
+        "restart identity cascade;",
+        "\n-- Entities: ministries (graph roots) then operators.",
+        _insert("entities", _ENTITY_COLUMNS, list(bundle.entities)),
+        "-- Tutelle edges: ministry -> operator.",
+        _insert("edges", _EDGE_COLUMNS, list(bundle.edges)),
+        "-- Budget facts: PLF 2025 MIRES, voté (mission/programme grain).",
+        _insert("budget_facts", _BUDGET_COLUMNS, list(bundle.budget_facts)),
+        "-- Contracts: real DECP marchés (CNRS acheteur).",
+        _insert("contracts", _CONTRACT_COLUMNS, list(bundle.contracts)),
+        "\ncommit;\n",
+    ]
+    return "\n".join(sections)
+
+
+def emit_seed_sql(path: Path | str = SEED_SQL_PATH) -> Path:
+    """Render the seed and write it to ``path`` (the committed ``supabase/seed.sql``)."""
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(render_sql(build_seed()), encoding="utf-8")
+    return path

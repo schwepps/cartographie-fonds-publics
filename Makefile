@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-.PHONY: help install up down supabase-up supabase-down supabase-reset lint format typecheck test spike spike-live spike-resolve spike-resolve-live resolve resolve-seed operators budget ingest refresh db-migrate db-verify web
+.PHONY: help install up down supabase-up supabase-down supabase-reset lint format typecheck test spike spike-live spike-resolve spike-resolve-live resolve resolve-seed operators budget ingest refresh seed db-migrate db-verify web
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-16s\033[0m %s\n",$$1,$$2}'
@@ -68,6 +68,21 @@ ingest: ## Run the ingestion pipeline (reads data/registry, writes Supabase)
 
 refresh: ## Discover latest millésimes for all sources
 	uv run python -m ingestion.cli refresh
+
+seed: ## Regenerate supabase/seed.sql and load it into $$DATABASE_URL (LOCAL dev/preview only, FSC-24)
+	@host="$${DATABASE_URL#*://}"; host="$${host##*@}"; host="$${host%%/*}"; host="$${host%%:*}"; \
+	case "$$host" in \
+		127.0.0.1|localhost|::1) ;; \
+		*) if [ "$$SEED_ALLOW_NONLOCAL" = "1" ]; then \
+		     echo "⚠️  make seed: SEED_ALLOW_NONLOCAL=1 set — seeding non-local host '$$host'." >&2; \
+		   else \
+		     echo "✋ make seed refuses non-local DATABASE_URL (host '$$host'): seed.sql TRUNCATES the curated tables." >&2; \
+		     echo "   Point DATABASE_URL at the local stack, or set SEED_ALLOW_NONLOCAL=1 to override (e.g. a preview DB)." >&2; \
+		     exit 1; \
+		   fi ;; \
+	esac
+	uv run python -m ingestion.cli seed-emit
+	psql "$$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/seed.sql
 
 db-migrate: ## Apply Supabase SQL migrations (in order) to $$DATABASE_URL
 	@for f in supabase/migrations/*.sql; do \
