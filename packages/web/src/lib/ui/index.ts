@@ -15,3 +15,8 @@ export * from "./Breadcrumb";
 export * from "./ExampleFlag";
 export * from "./StateBlock";
 export * from "./DataTable";
+export * from "./Figure";
+export * from "./Bars";
+export * from "./Spark";
+export * from "./Sankey";
+export * from "./forms";
