@@ -11,6 +11,9 @@ import type { GraphEdge, GraphNeighbourRow, GraphNode } from "./graph-model";
  */
 export const NODE_LIMIT = 200;
 
+/** Safety cap on the initial edges fetch (bounds the query for the full load; ample for the seed). */
+export const EDGE_LIMIT = 1000;
+
 export type GraphDataState =
   | { status: "loading" }
   | { status: "error" }
@@ -42,25 +45,45 @@ export function useGraphData(): UseGraphData {
     let cancelled = false;
 
     async function load() {
-      const [entityRes, edgeRes] = await Promise.all([
-        supabase.from("entities").select("siren,name,level,category").limit(NODE_LIMIT),
-        supabase.from("edges").select("source_siren,target_siren,type"),
-      ]);
+      // Over-fetch by one so `truncated` is exact (>= NODE_LIMIT couldn't tell "exactly full" from
+      // "more exist"); then trim back to the cap.
+      const entityRes = await supabase
+        .from("entities")
+        .select("siren,name,level,category")
+        .limit(NODE_LIMIT + 1);
       if (cancelled) return;
-      if (entityRes.error || edgeRes.error) {
-        console.error("Graph initial load failed", entityRes.error ?? edgeRes.error);
+      if (entityRes.error) {
+        console.error("Graph initial load failed (entities)", entityRes.error);
         setState({ status: "error" });
         return;
       }
-      const nodes = (entityRes.data as GraphNode[] | null) ?? [];
-      const edges = (edgeRes.data as GraphEdge[] | null) ?? [];
-      setState({
-        status: "ready",
-        nodes,
-        edges,
-        truncated: nodes.length >= NODE_LIMIT,
-        expandError: false,
-      });
+      const fetched = (entityRes.data as GraphNode[] | null) ?? [];
+      const truncated = fetched.length > NODE_LIMIT;
+      const nodes = truncated ? fetched.slice(0, NODE_LIMIT) : fetched;
+
+      // Scope the edges fetch to the loaded node set (and bound it): an unbounded `edges` scan would
+      // be slow/memory-heavy and silently truncatable on the full load. Both endpoints must be in
+      // the set — exactly what buildGraph renders — and `.in(col, array)` is parameterized by
+      // PostgREST, so no filter string is hand-built at the trust boundary.
+      let edges: GraphEdge[] = [];
+      const sirens = nodes.map((node) => node.siren).filter(isSiren);
+      if (sirens.length > 0) {
+        const edgeRes = await supabase
+          .from("edges")
+          .select("source_siren,target_siren,type")
+          .in("source_siren", sirens)
+          .in("target_siren", sirens)
+          .limit(EDGE_LIMIT);
+        if (cancelled) return;
+        if (edgeRes.error) {
+          console.error("Graph initial load failed (edges)", edgeRes.error);
+          setState({ status: "error" });
+          return;
+        }
+        edges = (edgeRes.data as GraphEdge[] | null) ?? [];
+      }
+
+      setState({ status: "ready", nodes, edges, truncated, expandError: false });
     }
 
     void load();

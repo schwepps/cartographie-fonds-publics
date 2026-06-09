@@ -79,6 +79,14 @@
       "name": "Institution",
       "level": "Level",
       "category": "Category"
+    },
+    "relTitle": "Relationships",
+    "relCaption": "Graph relationships: source institution, type, target institution",
+    "relEmpty": "No relationship to display.",
+    "relCol": {
+      "source": "Source",
+      "type": "Relationship",
+      "target": "Target"
     }
   },
   "fallback": {

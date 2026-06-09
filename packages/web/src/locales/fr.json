@@ -79,6 +79,14 @@
       "name": "Institution",
       "level": "Niveau",
       "category": "Catégorie"
+    },
+    "relTitle": "Relations",
+    "relCaption": "Relations du graphe : institution source, type, institution cible",
+    "relEmpty": "Aucune relation à afficher.",
+    "relCol": {
+      "source": "Source",
+      "type": "Relation",
+      "target": "Cible"
     }
   },
   "fallback": {

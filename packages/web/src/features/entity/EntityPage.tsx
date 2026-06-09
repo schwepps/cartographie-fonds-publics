@@ -1,15 +1,10 @@
 import type { ReactNode } from "react";
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useParams } from "react-router-dom";
 import { DataTableFallback } from "../../lib/a11y/DataTableFallback";
 import { ProvenanceBadge } from "../../lib/provenance/ProvenanceBadge";
 import { counterpartSiren, useEntitySheet } from "./useEntitySheet";
-
-const amountFormatter = new Intl.NumberFormat("fr-FR");
-
-function formatAmount(amount: number | null): string {
-  return amount == null ? "—" : amountFormatter.format(amount);
-}
 
 /**
  * Entity sheet — identity (with its tutelle), the budget facts attributed to it, and the
@@ -19,9 +14,14 @@ function formatAmount(amount: number | null): string {
  * also provide. Budget facts have no provenance column, so they render without a badge.
  */
 export default function EntityPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { siren = "" } = useParams<{ siren: string }>();
   const state = useEntitySheet(siren);
+
+  // Format amounts in the active UI language (the app ships fr + en and keeps <html lang> in sync).
+  const amountFormatter = useMemo(() => new Intl.NumberFormat(i18n.language), [i18n.language]);
+  const formatAmount = (amount: number | null): string =>
+    amount == null ? "—" : amountFormatter.format(amount);
 
   if (state.status === "loading") {
     return <p className="fr-text--lead">{t("entity.loading")}</p>;

@@ -29,7 +29,14 @@ vi.mock("../../lib/supabase", () => {
     };
     return builder;
   };
-  const makeEdges = () => ({ select: () => Promise.resolve({ data: edges, error: null }) });
+  const makeEdges = () => {
+    const builder = {
+      select: () => builder,
+      in: () => builder,
+      limit: () => Promise.resolve({ data: edges, error: null }),
+    };
+    return builder;
+  };
   return {
     supabase: {
       from: vi.fn((table: string) => (table === "entities" ? makeEntities() : makeEdges())),
@@ -47,13 +54,18 @@ function renderPage() {
 }
 
 describe("GraphPage", () => {
-  it("renders the accessible node table with links through to entity sheets", async () => {
+  it("renders accessible node + relationship tables with links through to entity sheets", async () => {
     renderPage();
-    const table = await screen.findByRole("table", { name: /Institutions du graphe/i });
-    expect(table).toBeInTheDocument();
-    const cnrs = await screen.findByRole("link", { name: "CNRS" });
-    expect(cnrs).toHaveAttribute("href", "/entity/180089013");
-    expect(screen.getByRole("link", { name: "MESR" })).toHaveAttribute("href", "/entity/110044013");
+    const nodeTable = await screen.findByRole("table", { name: /Institutions du graphe/i });
+    expect(nodeTable).toBeInTheDocument();
+    // Connectivity (edges) is reachable non-visually too, not just the node list.
+    expect(screen.getByRole("table", { name: /Relations du graphe/i })).toBeInTheDocument();
+    // Each institution links to its sheet (it appears in both the node table and the edge table).
+    const cnrsLinks = screen.getAllByRole("link", { name: "CNRS" });
+    expect(cnrsLinks.length).toBeGreaterThanOrEqual(1);
+    expect(cnrsLinks.every((l) => l.getAttribute("href") === "/entity/180089013")).toBe(true);
+    const mesrLinks = screen.getAllByRole("link", { name: "MESR" });
+    expect(mesrLinks.every((l) => l.getAttribute("href") === "/entity/110044013")).toBe(true);
   });
 
   it("has no accessibility violations", async () => {

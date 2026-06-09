@@ -32,7 +32,14 @@ vi.mock("../../lib/supabase", () => {
     };
     return builder;
   };
-  const makeEdges = () => ({ select: () => Promise.resolve({ data: edges, error: null }) });
+  const makeEdges = () => {
+    const builder = {
+      select: () => builder,
+      in: () => builder,
+      limit: () => Promise.resolve({ data: edges, error: null }),
+    };
+    return builder;
+  };
 
   return {
     supabase: {
