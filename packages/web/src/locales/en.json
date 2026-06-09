@@ -33,16 +33,60 @@
     "siren": "SIREN",
     "level": "Level",
     "category": "Category",
+    "tutelle": "Supervising ministry",
     "source": "Source",
     "figuresTitle": "Relationships and flows",
     "empty": "No relationship recorded for this entity.",
     "tableCaption": "Entity relationships, with their provenance",
     "col": {
       "type": "Type",
-      "counterpart": "Linked entity (SIREN)",
+      "counterpart": "Linked entity",
       "amount": "Amount (€)",
       "exercice": "Year",
       "provenance": "Provenance"
+    },
+    "budget": {
+      "title": "Budget",
+      "empty": "No budget credits attributed to this entity.",
+      "tableCaption": "Budget credits (PLF/LFI), by mission and programme",
+      "col": {
+        "exercice": "Year",
+        "mission": "Mission",
+        "programme": "Programme",
+        "ae": "Commitments (€)",
+        "cp": "Payments (€)",
+        "status": "Status"
+      },
+      "status": {
+        "voted": "Voted",
+        "executed": "Executed"
+      }
+    }
+  },
+  "graph": {
+    "title": "Institutional graph",
+    "loading": "Loading the graph…",
+    "error": "Could not load the graph. Try again later.",
+    "expandError": "Could not load this institution's neighbours. Try again.",
+    "empty": "No entity to display.",
+    "expandHint": "Click an institution to reveal its neighbours; click its name in the table to open its sheet.",
+    "limitNotice": "Showing the first {{limit}} entities.",
+    "selectedLabel": "Selected institution",
+    "openSheet": "Open the entity sheet",
+    "fallbackTitle": "List of institutions",
+    "fallbackCaption": "Institutions in the graph, each linking to its sheet",
+    "col": {
+      "name": "Institution",
+      "level": "Level",
+      "category": "Category"
+    },
+    "relTitle": "Relationships",
+    "relCaption": "Graph relationships: source institution, type, target institution",
+    "relEmpty": "No relationship to display.",
+    "relCol": {
+      "source": "Source",
+      "type": "Relationship",
+      "target": "Target"
     }
   },
   "fallback": {

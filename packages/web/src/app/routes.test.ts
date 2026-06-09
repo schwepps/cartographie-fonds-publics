@@ -23,8 +23,9 @@ describe("feature route registry", () => {
       "Accueil",
       "Recherche",
       "Données & licences",
+      "Graphe institutionnel",
     ]);
-    expect(navItems.map((item) => item.to)).toEqual(["/", "/search", "/sources"]);
+    expect(navItems.map((item) => item.to)).toEqual(["/", "/search", "/sources", "/graph"]);
   });
 
   // Guards the shell's hardcoded `/search?q=…` navigation (Layout.tsx): if the

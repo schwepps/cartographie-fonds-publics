@@ -33,16 +33,60 @@
     "siren": "SIREN",
     "level": "Niveau",
     "category": "Catégorie",
+    "tutelle": "Tutelle",
     "source": "Source",
     "figuresTitle": "Relations et flux",
     "empty": "Aucune relation enregistrée pour cette entité.",
     "tableCaption": "Relations de l'entité, avec leur provenance",
     "col": {
       "type": "Type",
-      "counterpart": "Entité liée (SIREN)",
+      "counterpart": "Entité liée",
       "amount": "Montant (€)",
       "exercice": "Millésime",
       "provenance": "Provenance"
+    },
+    "budget": {
+      "title": "Budget",
+      "empty": "Aucun crédit budgétaire attribué à cette entité.",
+      "tableCaption": "Crédits budgétaires (PLF/LFI), par mission et programme",
+      "col": {
+        "exercice": "Millésime",
+        "mission": "Mission",
+        "programme": "Programme",
+        "ae": "AE (€)",
+        "cp": "CP (€)",
+        "status": "Statut"
+      },
+      "status": {
+        "voted": "Voté",
+        "executed": "Exécuté"
+      }
+    }
+  },
+  "graph": {
+    "title": "Graphe institutionnel",
+    "loading": "Chargement du graphe…",
+    "error": "Impossible de charger le graphe. Réessayez plus tard.",
+    "expandError": "Impossible de charger les voisins de cette institution. Réessayez.",
+    "empty": "Aucune entité à afficher.",
+    "expandHint": "Cliquez sur une institution pour afficher ses voisins ; cliquez sur son nom dans le tableau pour ouvrir sa fiche.",
+    "limitNotice": "Affichage limité aux {{limit}} premières entités.",
+    "selectedLabel": "Institution sélectionnée",
+    "openSheet": "Voir la fiche",
+    "fallbackTitle": "Liste des institutions",
+    "fallbackCaption": "Institutions du graphe, avec un lien vers leur fiche",
+    "col": {
+      "name": "Institution",
+      "level": "Niveau",
+      "category": "Catégorie"
+    },
+    "relTitle": "Relations",
+    "relCaption": "Relations du graphe : institution source, type, institution cible",
+    "relEmpty": "Aucune relation à afficher.",
+    "relCol": {
+      "source": "Source",
+      "type": "Relation",
+      "target": "Cible"
     }
   },
   "fallback": {
