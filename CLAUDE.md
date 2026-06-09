@@ -41,6 +41,7 @@ make spike       # Phase-0 SIREN-match spike (offline sample)
 make supabase-up # start the local DEV Supabase stack in Docker (applies migrations on first
                  # start; use `make supabase-reset` after adding one)
 make db-migrate  # apply supabase/migrations/*.sql to $DATABASE_URL (prod apply path)
+make resolve     # resolve entities on SIREN via the crosswalk (report + resolution rate; FSC-23)
 make ingest      # ingestion pipeline (reads data/registry, writes Supabase)
 make refresh     # discover latest millésimes for all sources
 make web         # run the frontend (reads Supabase)
@@ -58,8 +59,9 @@ uv (Python), pnpm (web). Ruff, mypy, pytest. Full table in ARCHITECTURE.md.
 ## Where things live
 
 - `data/registry/` — the source registry (single source of truth).
-- `packages/ingestion` — connectors (discover/extract/validate/snapshot/stage).
-- `packages/core` — domain model + entity resolution (`normalize_siren`, crosswalk).
+- `data/crosswalk/` — the reviewed name→SIREN crosswalk + its review process (governance).
+- `packages/ingestion` — connectors (discover/extract/validate/snapshot/stage); crosswalk I/O.
+- `packages/core` — domain model + entity resolution (`normalize_siren`, `crosswalk`, `resolution`).
 - `supabase/migrations` — schema, RLS, the `graph_neighbors` RPC. **This is the API.**
 - `packages/web` — frontend; `src/lib/supabase.ts` is the read client.
 
