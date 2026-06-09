@@ -61,6 +61,11 @@ def load_entries(path: Path | str = CROSSWALK_PATH) -> list[CrosswalkEntry]:
         data = yaml.safe_load(fh) or {}
     if not isinstance(data, dict):
         raise ValueError(f"{path}: top-level YAML must be a mapping, got {type(data).__name__}")
+    version = data.get("schema_version")
+    if version != SCHEMA_VERSION:
+        raise ValueError(
+            f"{path}: unsupported schema_version {version!r}, expected {SCHEMA_VERSION}"
+        )
     rows = data.get("entries", [])
     if not isinstance(rows, list):
         raise ValueError(f"{path}: 'entries' must be a list, got {type(rows).__name__}")

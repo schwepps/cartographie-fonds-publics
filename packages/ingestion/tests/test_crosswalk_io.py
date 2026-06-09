@@ -62,6 +62,20 @@ def test_load_fails_loud_on_non_mapping_yaml(tmp_path: Path) -> None:
         load_entries(path)
 
 
+def test_load_fails_loud_on_unsupported_schema_version(tmp_path: Path) -> None:
+    path = tmp_path / "c.yaml"
+    path.write_text(yaml.safe_dump({"schema_version": 99, "entries": []}), encoding="utf-8")
+    with pytest.raises(ValueError, match="unsupported schema_version"):
+        load_entries(path)
+
+
+def test_load_fails_loud_on_missing_schema_version(tmp_path: Path) -> None:
+    path = tmp_path / "c.yaml"
+    path.write_text(yaml.safe_dump({"entries": []}), encoding="utf-8")
+    with pytest.raises(ValueError, match="unsupported schema_version"):
+        load_entries(path)
+
+
 def test_load_fails_loud_on_conflicting_collision(tmp_path: Path) -> None:
     path = tmp_path / "c.yaml"
     _write_yaml(
