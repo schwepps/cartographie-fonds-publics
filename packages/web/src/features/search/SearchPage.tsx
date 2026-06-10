@@ -49,7 +49,16 @@ const EMPTY_BY_SIREN = new Map<string, SearchEntity>();
 export default function SearchPage() {
   const [params] = useSearchParams();
   const search = useSearch();
-  const [q, setQ] = useState(params.get("q")?.trim() ?? "");
+  const urlQuery = params.get("q")?.trim() ?? "";
+  const [q, setQ] = useState(urlQuery);
+  // Re-sync the controlled input when the URL ?q= changes (deep links, back/forward, a fresh header
+  // search) — the React "adjust state during render" pattern, so typing stays free but navigation
+  // wins. No effect (avoids the set-state-in-effect rule).
+  const [lastUrlQuery, setLastUrlQuery] = useState(urlQuery);
+  if (urlQuery !== lastUrlQuery) {
+    setLastUrlQuery(urlQuery);
+    setQ(urlQuery);
+  }
   const [levels, setLevels] = useState<Record<Level, boolean>>(ALL_LEVELS_ON);
   const [tutelle, setTutelle] = useState("all");
   const [sort, setSort] = useState<"amount" | "name">("amount");

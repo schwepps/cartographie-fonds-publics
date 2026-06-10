@@ -70,7 +70,8 @@ refresh: ## Discover latest millésimes for all sources
 	uv run python -m ingestion.cli refresh
 
 seed: ## Regenerate supabase/seed.sql and load it into $$DATABASE_URL (LOCAL dev/preview only, FSC-24)
-	@host="$${DATABASE_URL#*://}"; host="$${host##*@}"; host="$${host%%/*}"; host="$${host%%:*}"; \
+	@host="$${DATABASE_URL#*://}"; host="$${host##*@}"; host="$${host%%/*}"; \
+	case "$$host" in \[*) host="$${host#\[}"; host="$${host%%]*}" ;; *) host="$${host%%:*}" ;; esac; \
 	case "$$host" in \
 		127.0.0.1|localhost|::1) ;; \
 		*) if [ "$$SEED_ALLOW_NONLOCAL" = "1" ]; then \
@@ -85,7 +86,8 @@ seed: ## Regenerate supabase/seed.sql and load it into $$DATABASE_URL (LOCAL dev
 	psql "$$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/seed.sql
 
 demo-seed: ## Regenerate supabase/demo_seed.sql + load the ILLUSTRATIVE dev slice (LOCAL only, FSC-50..53)
-	@host="$${DATABASE_URL#*://}"; host="$${host##*@}"; host="$${host%%/*}"; host="$${host%%:*}"; \
+	@host="$${DATABASE_URL#*://}"; host="$${host##*@}"; host="$${host%%/*}"; \
+	case "$$host" in \[*) host="$${host#\[}"; host="$${host%%]*}" ;; *) host="$${host%%:*}" ;; esac; \
 	case "$$host" in \
 		127.0.0.1|localhost|::1) ;; \
 		*) if [ "$$SEED_ALLOW_NONLOCAL" = "1" ]; then \

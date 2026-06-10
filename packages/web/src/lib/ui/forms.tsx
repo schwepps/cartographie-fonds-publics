@@ -53,7 +53,7 @@ export interface SearchBarProps {
   onChange: (value: string) => void;
   onSubmit?: () => void;
   placeholder?: string;
-  /** Accessible label for the input + submit button. */
+  /** Accessible (sr-only) label for the search input. The submit button has its own fixed label. */
   label: string;
 }
 
