@@ -134,16 +134,24 @@ const LINK_COLOR: Record<string, string> = {
   funds: "#0072b2",
 };
 
+const DEFAULT_ARIA_LABEL =
+  "Diagramme de flux de financement (Sankey). Un équivalent tabulaire est fourni ci-dessous.";
+
 export interface SankeyProps {
   links: SankeyLink[];
   height?: number;
+  /**
+   * Accessible label for the diagram. Defaults to a label that promises an accompanying tabular
+   * equivalent — override it (e.g. for a decorative teaser without a table) so the promise holds.
+   */
+  ariaLabel?: string;
 }
 
 /**
- * Sankey flow diagram (SVG). Responsive to its container width; hover dims the other flows. A
- * tabular equivalent must always accompany it for accessibility (the `role="img"` label says so).
+ * Sankey flow diagram (SVG). Responsive to its container width; hover dims the other flows. When the
+ * default label is used a tabular equivalent must accompany it for accessibility.
  */
-export function Sankey({ links, height = 460 }: SankeyProps) {
+export function Sankey({ links, height = 460, ariaLabel = DEFAULT_ARIA_LABEL }: SankeyProps) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(900);
   const [hover, setHover] = useState<string | null>(null);
@@ -172,12 +180,7 @@ export function Sankey({ links, height = 460 }: SankeyProps) {
 
   return (
     <div ref={wrapRef} style={{ width: "100%" }}>
-      <svg
-        width={width}
-        height={height}
-        role="img"
-        aria-label="Diagramme de flux de financement (Sankey). Un équivalent tabulaire est fourni ci-dessous."
-      >
+      <svg width={width} height={height} role="img" aria-label={ariaLabel}>
         {[...new Set(nodes.map((n) => n.col))]
           .sort((a, b) => a - b)
           .map((col, i) => {

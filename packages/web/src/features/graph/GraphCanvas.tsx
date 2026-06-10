@@ -2,15 +2,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { euroCompact } from "../../lib/format";
 import { levelMeta } from "../../lib/levels";
 import { radiusForCp } from "../../lib/magnitude";
-import { tutelleChain } from "../../lib/tutelle";
-import type { GraphModel, GraphNode } from "./graph-model";
+import { passFilter, type GraphFilters, type GraphModel, type GraphNode } from "./graph-model";
 
-export interface GraphFilters {
-  levels: Record<string, boolean>;
-  ministry: string;
-  minAmount: number;
-  linkTypes: Record<string, boolean>;
-}
+export type { GraphFilters };
 
 export interface GraphApi {
   zoomIn: () => void;
@@ -100,17 +94,6 @@ export function GraphCanvas({
   const stateRef = useRef<SimState | null>(null);
   const [tooltip, setTooltip] = useState<{ x: number; y: number; node: GraphNode } | null>(null);
 
-  const passFilter = useMemo(() => {
-    return (n: GraphNode): boolean => {
-      if (n.level && !filters.levels[n.level]) return false;
-      if (filters.ministry !== "all" && n.level === "state") {
-        if (tutelleChain(n.siren, model.byId)[0]?.siren !== filters.ministry) return false;
-      }
-      if (filters.minAmount > 0 && n.cp < filters.minAmount && !n.isMinistry) return false;
-      return true;
-    };
-  }, [filters, model]);
-
   const visible = useMemo(() => {
     const adj = new Map<string, string[]>(model.nodes.map((n) => [n.siren, []]));
     for (const e of model.edges) {
@@ -119,7 +102,8 @@ export function GraphCanvas({
       adj.get(e.target_siren)?.push(e.source_siren);
     }
     const vis = new Set<string>();
-    for (const n of model.nodes) if (n.isAnchor && passFilter(n)) vis.add(n.siren);
+    for (const n of model.nodes)
+      if (n.isAnchor && passFilter(n, filters, model.byId)) vis.add(n.siren);
     let changed = true;
     let guard = 0;
     while (changed && guard < 12) {
@@ -129,7 +113,7 @@ export function GraphCanvas({
         if (!expanded.has(s)) continue;
         for (const t of adj.get(s) ?? []) {
           const tn = model.byId.get(t);
-          if (tn && !vis.has(t) && passFilter(tn)) {
+          if (tn && !vis.has(t) && passFilter(tn, filters, model.byId)) {
             vis.add(t);
             changed = true;
           }
@@ -137,7 +121,7 @@ export function GraphCanvas({
       }
     }
     return vis;
-  }, [model, filters, expanded, passFilter]);
+  }, [model, filters, expanded]);
 
   const focusNeighbours = useMemo(() => {
     const set = new Set<string>();

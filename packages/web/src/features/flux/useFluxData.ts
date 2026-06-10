@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
+import { MINISTRY_CATEGORY } from "../../lib/levels";
 import type { FlowEdge, FlowEntity } from "../../lib/flows";
 
 interface EntityRow {
@@ -51,7 +52,7 @@ export function useFluxData(): FluxState {
         entities.map((e) => [e.siren, { siren: e.siren, name: e.name, level: e.level }]),
       );
       const ministries = entities
-        .filter((e) => e.category === "ministère")
+        .filter((e) => e.category === MINISTRY_CATEGORY)
         .map((e) => ({ siren: e.siren, name: e.name }));
 
       setState({ status: "ready", model: { entityBySiren, edges, ministries } });

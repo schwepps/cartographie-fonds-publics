@@ -161,7 +161,11 @@ export default function HomePage() {
                 }}
               >
                 {overview.status === "ready" && overview.teaser.links.length > 0 ? (
-                  <Sankey links={overview.teaser.links} height={300} />
+                  <Sankey
+                    links={overview.teaser.links}
+                    height={300}
+                    ariaLabel={`Aperçu des principaux flux de financement de ${overview.teaser.name} (montants d’exemple). Détail complet et équivalent tabulaire sur la page Flux de financement.`}
+                  />
                 ) : null}
               </div>
               <Link className="fr-link" style={{ marginTop: 12 }} to="/flux">

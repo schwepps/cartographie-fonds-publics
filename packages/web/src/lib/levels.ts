@@ -27,6 +27,9 @@ export interface LevelMeta {
   desc: string;
 }
 
+/** Curated `entities.category` value that marks a ministry (a graph root / financeur). */
+export const MINISTRY_CATEGORY = "ministère";
+
 export const LEVELS: Record<Level, LevelMeta> = {
   state: {
     id: "state",

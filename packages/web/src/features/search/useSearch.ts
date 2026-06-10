@@ -1,7 +1,13 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
 import { acronymOf } from "../../lib/acronyms";
-import { buildMagnitudeMap, type AmountEdge } from "../../lib/magnitude";
+import { MINISTRY_CATEGORY } from "../../lib/levels";
+import {
+  budgetCpBySiren,
+  buildMagnitudeMap,
+  type AmountEdge,
+  type BudgetCpRow,
+} from "../../lib/magnitude";
 
 export interface SearchEntity {
   siren: string;
@@ -14,13 +20,6 @@ export interface SearchEntity {
   magnitude: number;
 }
 
-interface BudgetRow {
-  entity_siren: string | null;
-  exercice: number;
-  amount_cp_eur: number | null;
-  executed: boolean;
-}
-
 export type SearchState =
   | { status: "loading" }
   | { status: "error" }
@@ -30,22 +29,6 @@ export type SearchState =
       bySiren: Map<string, SearchEntity>;
       ministries: SearchEntity[];
     };
-
-/** Sum of voted CP for each entity's latest exercice — the budget side of an entity's magnitude. */
-function budgetCpBySiren(budget: BudgetRow[]): Map<string, number> {
-  const latest = new Map<string, number>(); // siren → latest voted exercice
-  for (const row of budget) {
-    if (row.executed || row.entity_siren == null) continue;
-    latest.set(row.entity_siren, Math.max(latest.get(row.entity_siren) ?? 0, row.exercice));
-  }
-  const cp = new Map<string, number>();
-  for (const row of budget) {
-    if (row.executed || row.entity_siren == null) continue;
-    if (row.exercice !== latest.get(row.entity_siren)) continue;
-    cp.set(row.entity_siren, (cp.get(row.entity_siren) ?? 0) + (row.amount_cp_eur ?? 0));
-  }
-  return cp;
-}
 
 /**
  * Loads the searchable institution set: all entities + the edges/budget needed to derive each
@@ -79,7 +62,7 @@ export function useSearch(): SearchState {
       const rawEntities =
         (entityRes.data as Omit<SearchEntity, "acronym" | "magnitude">[] | null) ?? [];
       const edges = (edgeRes.data as AmountEdge[] | null) ?? [];
-      const budget = (budgetRes.data as BudgetRow[] | null) ?? [];
+      const budget = (budgetRes.data as BudgetCpRow[] | null) ?? [];
 
       const magnitude = buildMagnitudeMap(edges, budgetCpBySiren(budget));
       const entities: SearchEntity[] = rawEntities.map((e) => ({
@@ -88,7 +71,7 @@ export function useSearch(): SearchState {
         magnitude: magnitude.get(e.siren) ?? 0,
       }));
       const bySiren = new Map(entities.map((e) => [e.siren, e]));
-      const ministries = entities.filter((e) => e.category === "ministère");
+      const ministries = entities.filter((e) => e.category === MINISTRY_CATEGORY);
 
       setState({ status: "ready", entities, bySiren, ministries });
     }

@@ -59,3 +59,29 @@ export function radiusForCp(cp: number): number {
   if (cp <= 0) return 7;
   return Math.max(NODE_MIN_RADIUS, Math.min(NODE_MAX_RADIUS, 6 + Math.log10(cp) * 2.6));
 }
+
+export interface BudgetCpRow {
+  entity_siren: string | null;
+  exercice: number;
+  amount_cp_eur: number | null;
+  executed: boolean;
+}
+
+/**
+ * Sum of voted CP for each entity's latest exercice — the budget side of its magnitude. Shared by
+ * the graph model + the search ranking so the "latest voted exercice" rule lives in one place.
+ */
+export function budgetCpBySiren(budget: BudgetCpRow[]): Map<string, number> {
+  const latest = new Map<string, number>();
+  for (const row of budget) {
+    if (row.executed || row.entity_siren == null) continue;
+    latest.set(row.entity_siren, Math.max(latest.get(row.entity_siren) ?? 0, row.exercice));
+  }
+  const cp = new Map<string, number>();
+  for (const row of budget) {
+    if (row.executed || row.entity_siren == null) continue;
+    if (row.exercice !== latest.get(row.entity_siren)) continue;
+    cp.set(row.entity_siren, (cp.get(row.entity_siren) ?? 0) + (row.amount_cp_eur ?? 0));
+  }
+  return cp;
+}

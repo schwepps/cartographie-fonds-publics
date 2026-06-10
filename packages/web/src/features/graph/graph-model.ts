@@ -1,5 +1,6 @@
 import { acronymOf } from "../../lib/acronyms";
-import { buildMagnitudeMap, type AmountEdge } from "../../lib/magnitude";
+import { MINISTRY_CATEGORY } from "../../lib/levels";
+import { budgetCpBySiren, buildMagnitudeMap, type AmountEdge } from "../../lib/magnitude";
 import { tutelleChain } from "../../lib/tutelle";
 
 /** A graph node — an institution (or an unresolved edge endpoint). Physics fields are mutated by the
@@ -53,20 +54,29 @@ export interface BudgetRow {
   executed: boolean;
 }
 
-/** Sum of voted CP for each entity's latest exercice — the budget side of its magnitude. */
-export function budgetCpBySiren(budget: BudgetRow[]): Map<string, number> {
-  const latest = new Map<string, number>();
-  for (const row of budget) {
-    if (row.executed || row.entity_siren == null) continue;
-    latest.set(row.entity_siren, Math.max(latest.get(row.entity_siren) ?? 0, row.exercice));
+export interface GraphFilters {
+  levels: Record<string, boolean>;
+  ministry: string;
+  minAmount: number;
+  linkTypes: Record<string, boolean>;
+}
+
+/**
+ * Visibility predicate shared by the canvas and the table view (so they never desync): a level
+ * toggle, a tutelle-chain match for the ministry filter, and a CP floor that ministries are exempt
+ * from.
+ */
+export function passFilter(
+  node: GraphNode,
+  filters: GraphFilters,
+  byId: Map<string, GraphNode>,
+): boolean {
+  if (node.level && !filters.levels[node.level]) return false;
+  if (filters.ministry !== "all" && node.level === "state") {
+    if (tutelleChain(node.siren, byId)[0]?.siren !== filters.ministry) return false;
   }
-  const cp = new Map<string, number>();
-  for (const row of budget) {
-    if (row.executed || row.entity_siren == null) continue;
-    if (row.exercice !== latest.get(row.entity_siren)) continue;
-    cp.set(row.entity_siren, (cp.get(row.entity_siren) ?? 0) + (row.amount_cp_eur ?? 0));
-  }
-  return cp;
+  if (filters.minAmount > 0 && node.cp < filters.minAmount && !node.isMinistry) return false;
+  return true;
 }
 
 /**
@@ -94,7 +104,7 @@ export function buildGraphModel(
       resolved: true,
       cluster: "",
       isAnchor: false,
-      isMinistry: e.category === "ministère",
+      isMinistry: e.category === MINISTRY_CATEGORY,
       degree: 0,
     });
   }

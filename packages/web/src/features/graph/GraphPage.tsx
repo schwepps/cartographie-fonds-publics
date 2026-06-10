@@ -27,8 +27,14 @@ import {
   Warning,
   type DataTableColumn,
 } from "../../lib/ui";
-import { GraphCanvas, type GraphApi, type GraphFilters } from "./GraphCanvas";
-import type { GraphEdge, GraphModel, GraphNode } from "./graph-model";
+import { GraphCanvas, type GraphApi } from "./GraphCanvas";
+import {
+  passFilter,
+  type GraphEdge,
+  type GraphFilters,
+  type GraphModel,
+  type GraphNode,
+} from "./graph-model";
 import { useGraphData } from "./useGraphData";
 
 const MIN_AMOUNT_STEPS = [0, 10e6, 100e6, 1e9, 10e9];
@@ -49,15 +55,6 @@ const defaultFilters = (): GraphFilters => ({
 const prefersReducedMotion = () =>
   typeof window !== "undefined" &&
   !!window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-
-function passFilter(n: GraphNode, filters: GraphFilters, byId: Map<string, GraphNode>): boolean {
-  if (n.level && !filters.levels[n.level]) return false;
-  if (filters.ministry !== "all" && n.level === "state") {
-    if (tutelleChain(n.siren, byId)[0]?.siren !== filters.ministry) return false;
-  }
-  if (filters.minAmount > 0 && n.cp < filters.minAmount && !n.isMinistry) return false;
-  return true;
-}
 
 function GraphLegend() {
   return (
@@ -615,7 +612,7 @@ export default function GraphPage() {
                   La connexion aux données a échoué. Réessayez ; sinon, consultez l’équivalent
                   tabulaire.
                 </StateBlock>
-              ) : counts.shown === 0 && model ? (
+              ) : counts.total > 0 && counts.shown === 0 && model ? (
                 <>
                   <GraphCanvas
                     model={model}
