@@ -3,9 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "postinstall": "copy-dsfr-to-public",
-    "dev": "copy-dsfr-to-public && vite",
-    "build": "copy-dsfr-to-public && tsc -b && vite build",
+    "dev": "vite",
+    "build": "tsc -b && vite build",
     "preview": "vite preview --host 127.0.0.1 --port 5173",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
@@ -15,17 +14,13 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@codegouvfr/react-dsfr": "^1.32.2",
-    "@gouvfr/dsfr": "^1.12.0",
     "@supabase/supabase-js": "^2.45.0",
     "d3": "^7.9.0",
-    "graphology": "^0.26.0",
     "i18next": "^26.3.1",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "react-i18next": "^17.0.8",
-    "react-router-dom": "^7.17.0",
-    "sigma": "^3.0.0"
+    "react-router-dom": "^7.17.0"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

@@ -8,12 +8,12 @@ afterEach(async () => {
 describe("i18n", () => {
   it("defaults to French and resolves a known key", () => {
     expect(i18n.resolvedLanguage).toBe("fr");
-    expect(i18n.t("sources.title")).toBe("Données & licences");
+    expect(i18n.t("shell.tagline")).toBe("Comprendre l'usage des fonds publics");
   });
 
   it("keeps <html lang> in sync when the language changes", async () => {
     await i18n.changeLanguage("en");
     expect(document.documentElement.lang).toBe("en");
-    expect(i18n.t("sources.title")).toBe("Data & licences");
+    expect(i18n.t("shell.tagline")).toBe("Understand how public money is used");
   });
 });

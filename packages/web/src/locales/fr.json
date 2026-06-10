@@ -3,7 +3,23 @@
     "tagline": "Comprendre l'usage des fonds publics",
     "footer": "Données ouvertes (Licence Ouverte / Etalab 2.0). Code sous AGPL-3.0.",
     "skipToContent": "Aller au contenu",
-    "loading": "Chargement…"
+    "loading": "Chargement…",
+    "homeTitle": "Accueil — Cartographie des Fonds Publics",
+    "search": "Rechercher",
+    "data": "Données",
+    "openMenu": "Ouvrir le menu",
+    "closeMenu": "Fermer le menu",
+    "mainMenu": "Menu principal",
+    "footerDescription": "Cartographie des Fonds Publics réutilise des données publiques ouvertes pour rendre lisibles les liens, les financements et les mandats des institutions françaises.",
+    "footerLinksLabel": "Liens de pied de page",
+    "methodology": "Méthodologie",
+    "openLicense": "Licence Ouverte 2.0",
+    "accessibilityPartial": "Accessibilité : partiellement conforme",
+    "sourceCode": "Code source (AGPL-3.0)",
+    "legalNotice": "Mentions légales",
+    "personalData": "Données personnelles",
+    "cookies": "Gestion des cookies",
+    "copyright": "© République Française {{year}} — Sauf mention contraire, contenus sous Licence Ouverte 2.0"
   },
   "provenance": {
     "millesime": "Millésime",
@@ -11,85 +27,5 @@
     "ariaMillesime": ", millésime {{millesime}}",
     "unknown": "Source inconnue ({{id}})",
     "seeSources": "Voir le détail de la source"
-  },
-  "sources": {
-    "title": "Données & licences",
-    "intro": "Toutes les données proviennent de sources publiques ouvertes. Chaque figure de l'application renvoie à l'une des sources ci-dessous.",
-    "updatedAt": "Registre des sources à jour au {{date}}.",
-    "attribution": "Réutilisation sous Licence Ouverte / Etalab 2.0 — attribution au producteur indiqué.",
-    "col": {
-      "publisher": "Producteur",
-      "licence": "Licence",
-      "cadence": "Mise à jour",
-      "description": "Description"
-    },
-    "tableCaption": "Sources de données et licences"
-  },
-  "entity": {
-    "loading": "Chargement de l'entité…",
-    "error": "Impossible de charger cette entité. Réessayez plus tard.",
-    "notFound": "Aucune entité trouvée pour le SIREN {{siren}}.",
-    "identity": "Identité",
-    "siren": "SIREN",
-    "level": "Niveau",
-    "category": "Catégorie",
-    "tutelle": "Tutelle",
-    "source": "Source",
-    "figuresTitle": "Relations et flux",
-    "empty": "Aucune relation enregistrée pour cette entité.",
-    "tableCaption": "Relations de l'entité, avec leur provenance",
-    "col": {
-      "type": "Type",
-      "counterpart": "Entité liée",
-      "amount": "Montant (€)",
-      "exercice": "Millésime",
-      "provenance": "Provenance"
-    },
-    "budget": {
-      "title": "Budget",
-      "empty": "Aucun crédit budgétaire attribué à cette entité.",
-      "tableCaption": "Crédits budgétaires (PLF/LFI), par mission et programme",
-      "col": {
-        "exercice": "Millésime",
-        "mission": "Mission",
-        "programme": "Programme",
-        "ae": "AE (€)",
-        "cp": "CP (€)",
-        "status": "Statut"
-      },
-      "status": {
-        "voted": "Voté",
-        "executed": "Exécuté"
-      }
-    }
-  },
-  "graph": {
-    "title": "Graphe institutionnel",
-    "loading": "Chargement du graphe…",
-    "error": "Impossible de charger le graphe. Réessayez plus tard.",
-    "expandError": "Impossible de charger les voisins de cette institution. Réessayez.",
-    "empty": "Aucune entité à afficher.",
-    "expandHint": "Cliquez sur une institution pour afficher ses voisins ; cliquez sur son nom dans le tableau pour ouvrir sa fiche.",
-    "limitNotice": "Affichage limité aux {{limit}} premières entités.",
-    "selectedLabel": "Institution sélectionnée",
-    "openSheet": "Voir la fiche",
-    "fallbackTitle": "Liste des institutions",
-    "fallbackCaption": "Institutions du graphe, avec un lien vers leur fiche",
-    "col": {
-      "name": "Institution",
-      "level": "Niveau",
-      "category": "Catégorie"
-    },
-    "relTitle": "Relations",
-    "relCaption": "Relations du graphe : institution source, type, institution cible",
-    "relEmpty": "Aucune relation à afficher.",
-    "relCol": {
-      "source": "Source",
-      "type": "Relation",
-      "target": "Cible"
-    }
-  },
-  "fallback": {
-    "label": "Équivalent tabulaire"
   }
 }

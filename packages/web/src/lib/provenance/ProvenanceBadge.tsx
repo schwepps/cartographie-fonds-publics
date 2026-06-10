@@ -21,9 +21,7 @@ export function ProvenanceBadge({ provenanceId, millesime }: ProvenanceBadgeProp
 
   if (!source) {
     return (
-      <span className="fr-text--sm fr-text-default--error">
-        {t("provenance.unknown", { id: provenanceId })}
-      </span>
+      <span className="fr-sm text-error">{t("provenance.unknown", { id: provenanceId })}</span>
     );
   }
 
@@ -35,14 +33,16 @@ export function ProvenanceBadge({ provenanceId, millesime }: ProvenanceBadgeProp
   });
 
   return (
-    <Link
-      to={`/sources#source-${source.id}`}
-      className="fr-link fr-link--sm"
-      aria-label={ariaLabel}
-      title={t("provenance.seeSources")}
-    >
-      {source.publisher} · {source.licence}
-      {millesime == null ? null : ` · ${t("provenance.millesime")} ${millesime}`}
-    </Link>
+    <span className="prov">
+      <span className="prov__dot" aria-hidden="true" />
+      <Link
+        to={`/sources#source-${source.id}`}
+        aria-label={ariaLabel}
+        title={t("provenance.seeSources")}
+      >
+        {source.publisher} · {source.licence}
+        {millesime == null ? null : ` · ${t("provenance.millesime")} ${millesime}`}
+      </Link>
+    </span>
   );
 }

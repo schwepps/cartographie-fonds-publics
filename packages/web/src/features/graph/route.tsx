@@ -5,8 +5,8 @@ const route: FeatureRoute = {
   path: "graph",
   // Sigma is heavy (WebGL) — lazy-load so it stays code-split behind the shell's <Suspense>.
   Component: lazy(() => import("./GraphPage")),
-  nav: { label: "Graphe institutionnel" },
-  order: 50,
+  nav: { label: "Graphe institutionnel", icon: "Graph" },
+  order: 10,
 };
 
 export default route;

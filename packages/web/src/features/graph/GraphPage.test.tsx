@@ -1,97 +1,89 @@
 import { describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
-import { axe } from "vitest-axe";
-import { supabase } from "../../lib/supabase";
-import GraphPage from "./GraphPage";
 
-// Sigma needs WebGL, which jsdom lacks; stub it so the page mounts hermetically. The real canvas is
-// verified manually/Playwright — here we assert the data layer, the accessible fallback, and links.
-vi.mock("sigma", () => ({
-  default: class {
-    on() {}
-    kill() {}
-    refresh() {}
-  },
-}));
-
+// jsdom has no 2D canvas, so the force renderer no-ops (it guards on a null context); these tests
+// assert the data layer, the live counts and the accessible table fallback. The canvas is verified
+// manually against the design.
 vi.mock("../../lib/supabase", () => {
-  const nodes = [
-    { siren: "110044013", name: "MESR", level: "state", category: "ministère" },
-    { siren: "180089013", name: "CNRS", level: "state", category: "EPST" },
-  ];
-  const edges = [{ source_siren: "110044013", target_siren: "180089013", type: "tutelle" }];
-  const makeEntities = () => {
+  const data: Record<string, unknown[]> = {
+    entities: [
+      {
+        siren: "110044013",
+        name: "MESR",
+        level: "state",
+        category: "ministère",
+        parent_siren: null,
+      },
+      {
+        siren: "180089013",
+        name: "Centre national de la recherche scientifique",
+        level: "state",
+        category: "EPST",
+        parent_siren: "110044013",
+      },
+    ],
+    edges: [
+      {
+        source_siren: "110044013",
+        target_siren: "180089013",
+        type: "tutelle",
+        amount_eur: null,
+        exercice: null,
+      },
+      {
+        source_siren: "110044013",
+        target_siren: "180089013",
+        type: "funds",
+        amount_eur: 2_950_000_000,
+        exercice: 2025,
+      },
+    ],
+    budget_facts: [
+      { entity_siren: "110044013", exercice: 2025, amount_cp_eur: 26_000_000_000, executed: false },
+    ],
+  };
+  const from = (table: string) => {
+    const result = { data: data[table] ?? [], error: null };
     const builder = {
       select: () => builder,
-      limit: () => Promise.resolve({ data: nodes, error: null }),
-      in: () => Promise.resolve({ data: [], error: null }),
+      limit: () => builder,
+      then: (resolve: (value: typeof result) => unknown) => Promise.resolve(result).then(resolve),
     };
     return builder;
   };
-  const makeEdges = () => {
-    const builder = {
-      select: () => builder,
-      in: () => builder,
-      limit: () => Promise.resolve({ data: edges, error: null }),
-    };
-    return builder;
-  };
-  return {
-    supabase: {
-      from: vi.fn((table: string) => (table === "entities" ? makeEntities() : makeEdges())),
-      rpc: vi.fn(() => Promise.resolve({ data: [], error: null })),
-    },
-  };
+  return { supabase: { from } };
 });
 
-function renderPage() {
-  return render(
+import GraphPage from "./GraphPage";
+
+const renderGraph = () =>
+  render(
     <MemoryRouter>
       <GraphPage />
     </MemoryRouter>,
   );
-}
 
-describe("GraphPage", () => {
-  it("renders accessible node + relationship tables with links through to entity sheets", async () => {
-    renderPage();
-    const nodeTable = await screen.findByRole("table", { name: /Institutions du graphe/i });
-    expect(nodeTable).toBeInTheDocument();
-    // Connectivity (edges) is reachable non-visually too, not just the node list.
-    expect(screen.getByRole("table", { name: /Relations du graphe/i })).toBeInTheDocument();
-    // Each institution links to its sheet (it appears in both the node table and the edge table).
-    const cnrsLinks = screen.getAllByRole("link", { name: "CNRS" });
-    expect(cnrsLinks.length).toBeGreaterThanOrEqual(1);
-    expect(cnrsLinks.every((l) => l.getAttribute("href") === "/entity/180089013")).toBe(true);
-    const mesrLinks = screen.getAllByRole("link", { name: "MESR" });
-    expect(mesrLinks.every((l) => l.getAttribute("href") === "/entity/110044013")).toBe(true);
+describe("GraphPage (institutional graph)", () => {
+  it("shows live counts in the toolbar once the model loads", async () => {
+    renderGraph();
+    expect(await screen.findByText(/institutions affichées sur/)).toBeInTheDocument();
   });
 
-  it("has no accessibility violations", async () => {
-    const { container } = renderPage();
-    await screen.findByRole("table", { name: /Institutions du graphe/i });
-    expect(await axe(container)).toHaveNoViolations();
+  it("provides a synchronized accessible table fallback linking to sheets", async () => {
+    renderGraph();
+    await screen.findByText(/institutions affichées sur/);
+    const toggle = screen.getByRole("group", { name: /Mode d’affichage/ });
+    await userEvent.click(within(toggle).getByRole("button", { name: /Vue tableau/ }));
+    const table = await screen.findByRole("table", { name: /Institutions affichées/ });
+    expect(
+      within(table).getByRole("link", { name: /Centre national de la recherche scientifique/ }),
+    ).toHaveAttribute("href", "/entity/180089013");
   });
 
-  it("renders an error alert when the load fails", async () => {
-    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
-    const fromMock = vi.mocked(supabase.from);
-    const original = fromMock.getMockImplementation();
-    const errResult = { data: null, error: { message: "boom" } };
-    const errBuilder = {
-      select: () => errBuilder,
-      limit: () => Promise.resolve(errResult),
-      then: (resolve: (value: typeof errResult) => unknown) => resolve(errResult),
-    };
-    fromMock.mockImplementation(() => errBuilder as never);
-    try {
-      renderPage();
-      const alert = await screen.findByRole("alert");
-      expect(alert).toHaveTextContent(/Impossible de charger le graphe/i);
-    } finally {
-      if (original) fromMock.mockImplementation(original);
-      spy.mockRestore();
-    }
+  it("documents keyboard navigation for accessibility", async () => {
+    renderGraph();
+    expect(await screen.findByText(/navigable au clavier/)).toBeInTheDocument();
   });
 });

@@ -22,6 +22,7 @@ from .crosswalk_io import (
     load_seed_csv,
     merge_seed,
 )
+from .demo_seed import DEMO_SQL_PATH, emit_demo_sql
 from .load import LOAD_SQL_PATH, emit_load_sql, load_summary
 from .registry import Source, sources
 from .seed import SEED_SQL_PATH, emit_seed_sql
@@ -267,6 +268,21 @@ def seed_emit(
     """
     written = emit_seed_sql(out)
     typer.echo(f"[seed-emit] wrote {written}")
+
+
+@app.command(name="demo-seed-emit")
+def demo_seed_emit(
+    out: Annotated[Path, typer.Option(help="Demo seed SQL file to write.")] = DEMO_SQL_PATH,
+) -> None:
+    """Regenerate the ILLUSTRATIVE demo seed (supabase/demo_seed.sql) — FSC-50…53.
+
+    A design-scale dev/preview slice (operators across all four levels + illustrative funds /
+    delegates / participation flows + multi-year budgets + contracts) so the redesigned screens
+    render rich data locally before the funding-flow ingestion lands. Generated — edit
+    `ingestion.demo_seed`, never the SQL; a golden test fails loud on drift. DEV/PREVIEW ONLY.
+    """
+    written = emit_demo_sql(out)
+    typer.echo(f"[demo-seed-emit] wrote {written}")
 
 
 @app.command()

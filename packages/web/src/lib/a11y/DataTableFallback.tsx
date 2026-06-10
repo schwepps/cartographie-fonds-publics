@@ -21,7 +21,7 @@ export interface DataTableFallbackProps {
  * fallback** that every graphical view (Sigma graph, D3 Sankey) must render with
  * equivalent data, so the information is reachable without sight — see
  * `src/features/README.md`. Plain semantic `<table>` with a `<caption>` and scoped
- * `<th>`s, wrapped in DSFR's `fr-table`.
+ * `<th>`s, styled by the design layer's `fr-table` and wrapped in `.table-wrap`.
  */
 export function DataTableFallback({
   caption,
@@ -30,8 +30,8 @@ export function DataTableFallback({
   getRowKey = (_row, index) => index,
 }: DataTableFallbackProps) {
   return (
-    <div className="fr-table">
-      <table>
+    <div className="table-wrap">
+      <table className="fr-table">
         <caption>{caption}</caption>
         <thead>
           <tr>

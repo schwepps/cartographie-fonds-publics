@@ -1,4 +1,5 @@
 import type { ComponentType, LazyExoticComponent } from "react";
+import type { IconName } from "../lib/ui/icons";
 
 /**
  * The contract every feature folder implements to register itself with the app
@@ -15,8 +16,11 @@ export interface FeatureRoute {
   index?: boolean;
   /** Page component rendered into the Layout outlet. Prefer `React.lazy` for code-splitting. */
   Component: ComponentType | LazyExoticComponent<ComponentType>;
-  /** When present, the feature appears in the header navigation. Omit for a route with no nav link. */
-  nav?: { label: string };
+  /**
+   * When present, the feature appears in the header navigation. Omit for a route with no nav link.
+   * `icon` names a glyph from the base UI icon set (`src/lib/ui/icons`).
+   */
+  nav?: { label: string; icon?: IconName };
   /** Nav ordering; lower sorts first. Default 100. */
   order?: number;
 }
