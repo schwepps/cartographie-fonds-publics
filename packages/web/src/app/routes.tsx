@@ -2,6 +2,7 @@ import type { RouteObject } from "react-router-dom";
 import type { FeatureRoute } from "./feature-route";
 import type { IconName } from "../lib/ui/icons";
 import homeRoute from "../features/home/route";
+import perimetreRoute from "../features/perimetre/route";
 import searchRoute from "../features/search/route";
 import sourcesRoute from "../features/sources/route";
 import entityRoute from "../features/entity/route";
@@ -16,6 +17,7 @@ import fluxRoute from "../features/flux/route";
  */
 const registered: FeatureRoute[] = [
   homeRoute,
+  perimetreRoute,
   searchRoute,
   sourcesRoute,
   entityRoute,

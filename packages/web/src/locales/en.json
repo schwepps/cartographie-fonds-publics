@@ -32,6 +32,8 @@
     "doubleCounting": "Heads up: the same euro can be counted more than once (a State subsidy, then the operator's spend). Totals are orders of magnitude, never consolidated sums.",
     "mixed": "Heads up: this total mixes different accounting universes (State LOLF, local authorities M57/M14). They are not consolidatable — an order of magnitude, not a sum.",
     "local": "Local accounting (M57/M14, cash basis): no AE/CP or voted/executed split as for the State, and not consolidatable with State credits.",
+    "perimeter": "The four spheres belong to distinct accounting universes (State LOLF, local authorities M57/M14, social security LFSS, delegated operators in contract amounts) and to different years or voted/executed bases. The figures are per-sphere orders of magnitude, never a consolidated sum.",
+    "aggregatedModule": "The social sphere (LFSS) is shown as a module aggregated by branch: deliberately not finely linked to the entity graph, and not consolidatable with State or local-authority credits.",
     "seeMore": "See the methodology"
   }
 }

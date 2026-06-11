@@ -234,7 +234,9 @@ sources:
     platform: ods_explore
     discovery:
       strategy: "DREES (data.drees...) dataset 'comptes de la protection sociale' ; open.urssaf en complément"
-    endpoint_hint: "https://data.drees.solidarites-sante.gouv.fr/api/explore/v2.1/   # à confirmer"
+    # slug à confirmer sur le portail DREES (le connecteur ODS exige /datasets/<id>/records) ;
+    # vérifier aussi le nom du champ millésime (exercice/année) attendu par discover().
+    endpoint_hint: "https://data.drees.solidarites-sante.gouv.fr/api/explore/v2.1/catalog/datasets/cps-comptes-de-la-protection-sociale/records"
     format: [json, csv, pdf]
     records_path: results            # enveloppe JSON ODS v2.1 (FSC-47)
     schema: ods_fields

@@ -12,7 +12,7 @@ pin its *shape* and honesty conventions rather than provenance against the cross
 
 from __future__ import annotations
 
-from core.models import BudgetFact, Contract, Edge, EdgeType, Entity, Level
+from core.models import BudgetFact, Contract, Edge, EdgeType, Entity, Level, Nomenclature
 from ingestion.demo_seed import (
     DEMO_SQL_PATH,
     build_demo,
@@ -73,6 +73,15 @@ def test_has_a_multi_year_budget_for_the_trend_spark() -> None:
         by_entity.setdefault(fact.entity_siren, set()).add(fact.exercice)
     assert any(len(years) >= 2 for years in by_entity.values())
     assert {f.executed for f in bundle.budget_facts} == {True, False}
+
+
+def test_has_an_aggregated_social_budget_slice() -> None:
+    """The whole-perimeter overview (FSC-44) needs a real social headline: branche facts on a
+    caisse, stamped ``social`` (aggregated module, attached to the caisse, not the graph)."""
+    bundle = build_demo()
+    social = [b for b in bundle.budget_facts if b.nomenclature is Nomenclature.social]
+    assert social, "demo seed must carry at least one nomenclature=social budget fact (FSC-34/44)"
+    assert all(b.entity_siren is not None and b.executed is True for b in social)
 
 
 def test_committed_demo_seed_sql_is_in_sync_with_builder() -> None:

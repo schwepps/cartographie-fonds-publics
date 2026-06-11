@@ -77,6 +77,7 @@ def get_transform(source_id: str) -> Transform:
 # Import side-effecting modules so their @register_transform calls run. Append one line per source.
 from . import budget_execution_mensuelle as budget_execution_mensuelle  # noqa: E402,F401
 from . import budget_plf_lfi as budget_plf_lfi  # noqa: E402,F401
+from . import comptes_sociaux as comptes_sociaux  # noqa: E402,F401
 from . import decp_commande_publique as decp_commande_publique  # noqa: E402,F401
 from . import epl_sem_spl as epl_sem_spl  # noqa: E402,F401
 from . import finances_locales_ofgl as finances_locales_ofgl  # noqa: E402,F401

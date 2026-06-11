@@ -28,7 +28,9 @@ vi.mock("../../lib/supabase", () => {
         exercice: 2026,
       },
     ],
-    budget_facts: [{ exercice: 2025, amount_cp_eur: 15_279_000_000, executed: false }],
+    budget_facts: [
+      { exercice: 2025, amount_cp_eur: 15_279_000_000, executed: false, nomenclature: "lolf" },
+    ],
     contracts: [],
   };
   const from = (table: string) => {
