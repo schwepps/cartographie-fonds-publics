@@ -3,8 +3,9 @@
 The seed builder constructs frozen-model instances, so "validates against the frozen model" is
 enforced by construction; these tests pin the rest of the contract:
 
-* **referential integrity** — every edge endpoint / operator parent resolves to a seeded entity,
-  and contracts attach to a seeded acheteur so they hang off the graph;
+* **referential integrity** — tutelle edge endpoints / operator parents resolve to a seeded entity,
+  and contracts + delegates edges attach to a seeded acheteur so they hang off the graph (their
+  titulaires are external suppliers, carried by SIREN only);
 * **real SIRENs** — operator/ministry SIRENs come from the committed crosswalk YAMLs, never
   hardcoded in the builder (golden rule #1/#5);
 * **no drift** — the committed ``supabase/seed.sql`` is byte-for-byte what the builder renders, so
@@ -15,7 +16,7 @@ from __future__ import annotations
 
 import pytest
 from core.crosswalk import Crosswalk
-from core.models import BudgetFact, Contract, Edge, Entity, Level
+from core.models import BudgetFact, Contract, Edge, EdgeType, Entity, Level
 from core.resolve import normalize_name
 from ingestion.crosswalk_io import load_crosswalk, load_ministries
 from ingestion.seed import (
@@ -63,10 +64,13 @@ def test_referential_integrity() -> None:
         if operator.parent_siren is not None:
             assert operator.parent_siren in siren_set
 
-    # Every tutelle edge connects two seeded entities.
+    # Edge sources are always seeded entities (a ministry for tutelle, the acheteur for delegates).
+    # Tutelle edges connect two seeded entities; delegates edges point to an external supplier
+    # (titulaire) carried by SIREN only — it need not be a seeded entity (the UI renders it bare).
     for edge in bundle.edges:
         assert edge.source_siren in siren_set
-        assert edge.target_siren in siren_set
+        if edge.type is EdgeType.tutelle:
+            assert edge.target_siren in siren_set
 
     # Budget facts attach to the mission's owning ministry (MESR, the budget holder) — itself a
     # seeded entity — never to a receiving operator (golden rule #8, anti-double-counting).
@@ -81,10 +85,15 @@ def test_referential_integrity() -> None:
 def test_seed_rows_carry_a_registry_resolvable_provenance() -> None:
     """Entities and edges are stamped with a real registry source id (not a 'seed' sentinel), so the
     web provenance UI can resolve them to a source name. The État-central skeleton is the Jaune
-    « Opérateurs de l'État »."""
+    « Opérateurs de l'État »; the delegates edges/contracts are DECP."""
     bundle = build_seed()
     assert all(e.provenance == "operateurs_etat" for e in bundle.entities)
-    assert all(edge.provenance == "operateurs_etat" for edge in bundle.edges)
+    # tutelle from the operators source, delegates from DECP — both real registry ids.
+    assert all(
+        edge.provenance in {"operateurs_etat", "decp_commande_publique"} for edge in bundle.edges
+    )
+    assert any(edge.provenance == "decp_commande_publique" for edge in bundle.edges)  # delegates
+    assert all(c.provenance == "decp_commande_publique" for c in bundle.contracts)
 
 
 def test_sirens_come_from_the_committed_crosswalk() -> None:

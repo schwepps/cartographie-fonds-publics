@@ -68,6 +68,24 @@ describe("buildFlowLinks", () => {
   it("returns nothing for an unknown root", () => {
     expect(buildFlowLinks("ZZZ", FLOW_EDGES, ENTITIES)).toEqual([]);
   });
+
+  it("anchors on an operator root: incoming funds + its outgoing delegates", () => {
+    // "O" has no outgoing funds, so it is treated as an operator: M → O (funds) + O → T (delegates).
+    const links = buildFlowLinks("O", FLOW_EDGES, ENTITIES);
+    expect(links).toHaveLength(2);
+    expect(links[0]).toMatchObject({ source: "M", target: "O", sourceCol: 0, type: "funds" });
+    expect(links[1]).toMatchObject({ source: "O", target: "T", targetCol: 2, type: "delegates" });
+  });
+
+  it("shows an operator's delegates even with no funds layer (real-data case)", () => {
+    // Only a delegates edge exists (no funds yet) — focusing on the operator still surfaces it.
+    const delegatesOnly: FlowEdge[] = [
+      { source_siren: "O", target_siren: "T", type: "delegates", amount_eur: 30, exercice: 2026 },
+    ];
+    const links = buildFlowLinks("O", delegatesOnly, ENTITIES);
+    expect(links).toHaveLength(1);
+    expect(links[0]).toMatchObject({ source: "O", target: "T", sourceCol: 1, targetCol: 2 });
+  });
 });
 
 describe("computeSankey", () => {

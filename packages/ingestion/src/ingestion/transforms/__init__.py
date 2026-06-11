@@ -19,7 +19,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
 
-from core.models import BudgetFact, Edge, Entity
+from core.models import BudgetFact, Contract, Edge, Entity
 
 # A transform maps parsed (headers, rows) to a graph slice. Dependencies (crosswalk, ministry
 # reference) are loaded inside the registered entry point so the registry stays uniform; the pure
@@ -32,14 +32,16 @@ class TransformResult:
     """A curated slice: entities, edges, budget facts, and a JSON-serializable report.
 
     A source populates only the slices it owns — operators emit ``entities``/``edges``; the State
-    budget emits ``budget_facts``; the others stay empty. ``report`` carries per-source counts
-    (and, where applicable, the resolution rate + unresolved backlog — golden rule #5: never drop,
-    never guess, report the match rate). Every input row is accounted for in a slice or the report.
+    budget emits ``budget_facts``; DECP emits ``contracts`` + ``delegates`` edges + delegated
+    ``entities``; the rest stay empty. ``report`` carries per-source counts (and, where applicable,
+    the resolution rate + unresolved backlog — golden rule #5: never drop, never guess, report the
+    match rate). Every input row is accounted for in a slice or the report.
     """
 
     entities: list[Entity] = field(default_factory=list)
     edges: list[Edge] = field(default_factory=list)
     budget_facts: list[BudgetFact] = field(default_factory=list)
+    contracts: list[Contract] = field(default_factory=list)
     report: dict[str, Any] = field(default_factory=dict)
 
 
@@ -75,6 +77,7 @@ def get_transform(source_id: str) -> Transform:
 # Import side-effecting modules so their @register_transform calls run. Append one line per source.
 from . import budget_execution_mensuelle as budget_execution_mensuelle  # noqa: E402,F401
 from . import budget_plf_lfi as budget_plf_lfi  # noqa: E402,F401
+from . import decp_commande_publique as decp_commande_publique  # noqa: E402,F401
 from . import operateurs_etat as operateurs_etat  # noqa: E402,F401
 
 __all__ = [

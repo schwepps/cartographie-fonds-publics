@@ -35,20 +35,31 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from core.models import BudgetFact, Edge, Entity
+from core.models import BudgetFact, Contract, Edge, Entity
 
 from .errors import LoadError
 from .snapshot import SNAPSHOT_ROOT, read_snapshot_rows
-from .sql_render import BUDGET_COLUMNS, EDGE_COLUMNS, ENTITY_COLUMNS, render_insert, sql_literal
+from .sql_render import (
+    BUDGET_COLUMNS,
+    CONTRACT_COLUMNS,
+    EDGE_COLUMNS,
+    ENTITY_COLUMNS,
+    render_insert,
+    sql_literal,
+)
 from .transforms import TransformResult, get_transform
 from .transforms.operateurs_etat import MINISTRY_CATEGORY
 
-# The curated État-central source set (Phase 1): the three registered transforms that write the
-# curated graph. Each source_id doubles as the `provenance` stamped on the rows it produces.
+# The curated source set (Phases 1→2): the registered transforms that write the curated graph. Each
+# source_id doubles as the `provenance` stamped on the rows it produces. ORDER MATTERS — the merge
+# in `build_bundle` keeps the *first* entity seen per SIREN (setdefault), so authoritative layers
+# (operators with their real `level`) come BEFORE `decp_commande_publique`, whose titulaire entities
+# are only `level=delegated` fallbacks and must never override an existing state/local/social one.
 ETAT_CENTRAL_SOURCE_IDS: tuple[str, ...] = (
     "operateurs_etat",
     "budget_plf_lfi",
     "budget_execution_mensuelle",
+    "decp_commande_publique",
 )
 
 # Emit path for the rendered load SQL (gitignored `out/`, like the other CLI reports). Env-override
@@ -58,10 +69,19 @@ LOAD_SQL_PATH = Path(os.environ.get("CFP_LOAD_SQL_PATH", _DEFAULT_LOAD_SQL_PATH)
 
 # Entities are accretive (keyed by the canonical SIREN): a reload updates the row rather than
 # deleting it, so an entity another source still references is never dropped.
+#
+# The trailing WHERE makes the upsert non-destructive of authoritative entities: a `delegated`
+# incoming row (a DECP titulaire) must never overwrite an existing state/local/social entity. Within
+# a single full load the merge ordering already prevents this (operators are kept over DECP via
+# setdefault); the guard additionally protects a *scoped* DECP reload (DECP refreshed on its own
+# `continuous` cadence, without the operators layer in the same bundle) — there, the incoming
+# delegated row would otherwise clobber the operator's level/name/tutelle. Authoritative-onto-
+# authoritative and any-onto-delegated updates still proceed normally.
 _ENTITY_ON_CONFLICT = (
     "on conflict (siren) do update set "
     "name = excluded.name, level = excluded.level, category = excluded.category, "
-    "parent_siren = excluded.parent_siren, provenance = excluded.provenance"
+    "parent_siren = excluded.parent_siren, provenance = excluded.provenance "
+    "where entities.level = 'delegated' or excluded.level <> 'delegated'"
 )
 
 # (headers, rows) reader for a source_id — injectable so the merge is unit-testable without a
@@ -76,6 +96,7 @@ class LoadBundle:
     entities: list[Entity]  # deduped by SIREN; siren is never None (unresolved are dropped)
     edges: list[Edge]  # deduped by (source, target, type, exercice, provenance)
     budget_facts: list[BudgetFact]  # as emitted (entity_siren may be None — a LOLF-level fact)
+    contracts: list[Contract]  # as emitted (acheteur/titulaire may be None — an unresolved party)
     provenances: tuple[str, ...]  # provenance scopes this load rebuilds (the source_ids)
     skipped_unresolved: int  # entities dropped for siren=None (reported, never silent)
     reports: dict[str, dict[str, Any]]  # per source_id transform report (for the summary)
@@ -107,6 +128,7 @@ def build_bundle(
     # each provenance is rebuilt independently), so they must not collapse into one.
     edges_by_key: dict[tuple[str, str, str, int | None, str | None], Edge] = {}
     budget_facts: list[BudgetFact] = []
+    contracts: list[Contract] = []
     reports: dict[str, dict[str, Any]] = {}
     skipped_unresolved = 0
 
@@ -114,7 +136,10 @@ def build_bundle(
         headers, rows = read(source_id)
         result: TransformResult = get_transform(source_id)(headers, rows)
         reports[source_id] = result.report
-        if not (result.entities or result.edges or result.budget_facts) and not allow_empty:
+        if (
+            not (result.entities or result.edges or result.budget_facts or result.contracts)
+            and not allow_empty
+        ):
             raise LoadError(
                 f"source {source_id!r} produced 0 curated rows from its snapshot — refusing to "
                 "load (a provenance-scoped reload would delete its existing rows with no "
@@ -137,6 +162,7 @@ def build_bundle(
                 edge,
             )
         budget_facts.extend(result.budget_facts)
+        contracts.extend(result.contracts)
 
     return LoadBundle(
         entities=sorted(entities_by_siren.values(), key=lambda e: e.siren or ""),
@@ -152,6 +178,16 @@ def build_bundle(
                 f.mission or "",
                 f.programme or "",
                 f.executed,
+            ),
+        ),
+        contracts=sorted(
+            contracts,
+            key=lambda c: (
+                c.provenance or "",
+                c.acheteur_siren or "",
+                c.titulaire_siren or "",
+                c.exercice or 0,
+                c.montant_eur or 0.0,
             ),
         ),
         provenances=tuple(source_ids),
@@ -171,7 +207,7 @@ _SQL_HEADER = """\
 """
 
 
-def _delete_by_provenance(table: str, rows: Sequence[Edge | BudgetFact]) -> str:
+def _delete_by_provenance(table: str, rows: Sequence[Edge | BudgetFact | Contract]) -> str:
     """Render a DELETE scoped to exactly the provenances present in ``rows`` (or a no-op comment).
 
     Scope is derived from the rows produced *this run*, never the full input source set. The
@@ -216,6 +252,10 @@ def render_load_sql(bundle: LoadBundle) -> str:
         "-- Budget facts: provenance-scoped rebuild (same contract as edges).",
         _delete_by_provenance("budget_facts", bundle.budget_facts),
         render_insert("budget_facts", BUDGET_COLUMNS, bundle.budget_facts),
+        "-- Contracts: provenance-scoped rebuild (same contract as edges). The delegates edges",
+        "-- above are the aggregated graph view; these are the per-contract rows (with nature).",
+        _delete_by_provenance("contracts", bundle.contracts),
+        render_insert("contracts", CONTRACT_COLUMNS, bundle.contracts),
         "\ncommit;\n",
     ]
     return "\n".join(sections)
@@ -248,9 +288,13 @@ def load_summary(bundle: LoadBundle) -> str:
         entities_line,
         edges_line,
         f"  budget_facts: {len(bundle.budget_facts)} ({voted} voted, {executed} executed)",
+        f"  contracts: {len(bundle.contracts)}",
     ]
     if rate is not None:
         lines.append(f"  operator SIREN resolution rate: {float(rate):.0%}")
+    decp_rate = bundle.reports.get("decp_commande_publique", {}).get("resolution_rate")
+    if decp_rate is not None:
+        lines.append(f"  DECP party SIREN resolution rate: {float(decp_rate):.0%}")
     return "\n".join(lines)
 
 

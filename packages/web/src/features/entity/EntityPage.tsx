@@ -233,7 +233,7 @@ export default function EntityPage() {
           <Button variant="secondary" onClick={() => navigate("/graph")}>
             <GraphIcon /> Voir dans le graphe
           </Button>
-          <Button variant="primary" onClick={() => navigate("/flux")}>
+          <Button variant="primary" onClick={() => navigate(`/flux?focus=${siren}`)}>
             <Flow /> Flux
           </Button>
         </div>
@@ -318,7 +318,7 @@ export default function EntityPage() {
                 <p className="fr-sm">
                   Aucun crédit budgétaire directement attribué à cette entité dans le périmètre
                   suivi. Son financement apparaît côté{" "}
-                  <Link className="fr-link" to="/flux">
+                  <Link className="fr-link" to={`/flux?focus=${siren}`}>
                     flux
                   </Link>{" "}
                   (subvention de sa tutelle).
@@ -334,7 +334,7 @@ export default function EntityPage() {
                   <span className="eyebrow">Suivre l’argent</span>
                   <h2 className="fr-h3">Où va son argent</h2>
                 </div>
-                <Link className="fr-link" to="/flux">
+                <Link className="fr-link" to={`/flux?focus=${siren}`}>
                   Diagramme complet <Arrow style={{ width: 15, height: 15 }} />
                 </Link>
               </div>

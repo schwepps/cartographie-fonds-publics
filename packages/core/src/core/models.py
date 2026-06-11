@@ -107,6 +107,7 @@ class Contract(FrozenModel):
     montant_eur: float | None = None
     nature: Nature | None = None
     exercice: int | None = None
+    provenance: str | None = None  # source id from the registry (mirrors Entity/Edge.provenance)
 
 
 class Attribution(FrozenModel):

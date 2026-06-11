@@ -50,6 +50,23 @@ def normalize_siren(value: str | None) -> str | None:
     return digits if len(digits) == 9 else None
 
 
+def siren_from_identifier(value: str | None) -> str | None:
+    """Return a 9-digit SIREN from a SIREN *or* a 14-digit SIRET identifier, else None.
+
+    DECP identifies acheteurs/titulaires by SIRET (14 digits — the establishment) at least as often
+    as by SIREN (9 digits — the legal unit). A SIRET's first 9 digits *are* its SIREN, so we reduce
+    it to the canonical join key. Anything that is neither a clean 9- nor 14-digit number (foreign,
+    malformed, missing) returns None — never guessed (golden rule #5: the unresolved go to the
+    crosswalk/report, never a fabricated key).
+    """
+    if not value:
+        return None
+    digits = _DIGITS.sub("", str(value))
+    if len(digits) == 14:
+        digits = digits[:9]
+    return digits if len(digits) == 9 else None
+
+
 def normalize_name(value: str | None) -> str:
     """Return a comparison key for an entity name: accent-folded, lowercased, and stripped of
     articles + bare legal-form tokens. None/empty -> "".

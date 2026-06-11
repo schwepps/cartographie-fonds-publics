@@ -96,11 +96,9 @@ def wire_routes(load_fixture, respx_mock):  # type: ignore[no-untyped-def]
     respx_mock.get("https://static.data.gouv.fr/resources/decp/decp-main-csv").mock(
         return_value=httpx.Response(200, content=load_fixture("decp.csv"))
     )
-    # DECP's registry schema ref points at the portal root (an HTML page, not a TableSchema):
-    # resolve_schema must raise SchemaResolutionError, which the spike treats as skip-with-warning.
-    respx_mock.get("https://schema.data.gouv.fr/").mock(
-        return_value=httpx.Response(200, text="<html>schema portal</html>")
-    )
+    # DECP's registry schema ref is now a committed local Table Schema (no HTTP fetch). The trimmed
+    # exploration sample does not conform to it, so the spike skips DECP validation with a warning
+    # rather than enforcing it — schema enforcement is the FSC-31 transform's job.
     return respx_mock
 
 
@@ -133,7 +131,8 @@ def test_run_live_end_to_end(tmp_path, wire_routes) -> None:  # type: ignore[no-
     assert summary["verdict"] == "GO"
     assert summary["exit_ok"] is True
 
-    # DECP validation gracefully skipped (misconfigured schema ref), not a hard failure.
+    # DECP validation gracefully skipped (exploration sample doesn't conform to the production
+    # schema), not a hard failure — schema enforcement is the FSC-31 transform's job.
     assert "skipped" in summary["decp"]["validation"].lower()
 
     # Raw extracts were snapshotted with a pointer, under the injected root.
