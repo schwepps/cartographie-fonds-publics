@@ -28,7 +28,13 @@ from pathlib import Path
 
 from core.models import BudgetFact, Contract, Edge, EdgeType, Entity, Level, Nature
 
-from .sql_render import BUDGET_COLUMNS, EDGE_COLUMNS, ENTITY_COLUMNS, render_insert
+from .sql_render import (
+    BUDGET_COLUMNS,
+    CONTRACT_COLUMNS,
+    EDGE_COLUMNS,
+    ENTITY_COLUMNS,
+    render_insert,
+)
 
 # Registry source ids stamped per layer (same ids the real transforms use, so the UI resolves them
 # to real source names; the whole slice is dev/preview-only).
@@ -44,8 +50,6 @@ _MINISTRY_CATEGORY = "ministère"
 
 _DEFAULT_DEMO_SQL_PATH = Path(__file__).resolve().parents[4] / "supabase" / "demo_seed.sql"
 DEMO_SQL_PATH = Path(os.environ.get("CFP_DEMO_SEED_SQL_PATH", _DEFAULT_DEMO_SQL_PATH))
-
-_CONTRACT_COLUMNS = ("acheteur_siren", "titulaire_siren", "montant_eur", "nature", "exercice")
 
 # --------------------------------------------------------------------------- #
 # Illustrative data — ported from design/js/data.js (French level keys mapped to the DB's
@@ -363,6 +367,7 @@ def build_demo() -> DemoBundle:
             montant_eur=montant,
             nature=Nature(nature),
             exercice=exercice,
+            provenance=_P_DECP,
         )
         for acheteur, titulaire, montant, nature, exercice in _CONTRACTS
     ]
@@ -405,7 +410,7 @@ def render_sql(bundle: DemoBundle) -> str:
         "-- Budget facts: MESR/MIRES real PLF totals + illustrative missions/years.",
         render_insert("budget_facts", BUDGET_COLUMNS, list(bundle.budget_facts)),
         "-- Contracts (illustrative DECP marchés / concessions).",
-        render_insert("contracts", _CONTRACT_COLUMNS, list(bundle.contracts)),
+        render_insert("contracts", CONTRACT_COLUMNS, list(bundle.contracts)),
         "\ncommit;\n",
     ]
     return "\n".join(sections)

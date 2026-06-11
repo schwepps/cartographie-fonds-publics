@@ -39,11 +39,12 @@ _EXTRACTED_AT = "2026-06-09T00:00:00+00:00"
 
 
 def _seed_snapshots(root: Path, fixtures_dir: Path) -> Path:
-    """Write a snapshot per État-central source from the committed fixtures into ``root``."""
+    """Write a snapshot per curated source from the committed fixtures into ``root``."""
     sources = {
         "operateurs_etat": _OPERATORS_FIXTURE,
         "budget_plf_lfi": fixtures_dir / "plf_depenses_sample.csv",
         "budget_execution_mensuelle": fixtures_dir / "ods_situation_mensuelle.csv",
+        "decp_commande_publique": fixtures_dir / "decp_consolidated_sample.csv",
     }
     for source_id, path in sources.items():
         write_snapshot(
@@ -74,27 +75,37 @@ def test_read_snapshot_rows_fails_loud_when_missing(tmp_path: Path) -> None:
 # --------------------------------------------------------------------------- #
 # build_bundle — merge, dedup, provenance, unresolved accounting
 # --------------------------------------------------------------------------- #
-def test_build_bundle_merges_three_sources(tmp_path: Path, fixtures_dir: Path) -> None:
+def test_build_bundle_merges_curated_sources(tmp_path: Path, fixtures_dir: Path) -> None:
     root = _seed_snapshots(tmp_path, fixtures_dir)
     bundle = build_bundle(snapshot_root=root)
 
-    # Entities: all loaded rows carry a SIREN (unresolved are dropped), unique by SIREN, État level.
+    # Entities: all loaded rows carry a SIREN (unresolved are dropped), unique by SIREN.
     assert bundle.entities
     assert all(e.siren is not None for e in bundle.entities)
     sirens = [e.siren for e in bundle.entities]
     assert len(sirens) == len(set(sirens))  # deduped by SIREN
-    assert all(e.level is Level.state for e in bundle.entities)
+    # Both layers present: État operators/ministries (state) and DECP titulaires (delegated).
+    assert any(e.level is Level.state for e in bundle.entities)
+    assert any(e.level is Level.delegated for e in bundle.entities)
+    delegated = [e for e in bundle.entities if e.level is Level.delegated]
+    assert all(e.provenance == "decp_commande_publique" for e in delegated)
     ministries = [e for e in bundle.entities if e.category == MINISTRY_CATEGORY]
     assert ministries and all(m.parent_siren is None for m in ministries)
 
     # Unresolved operators are dropped from the load but accounted for (golden rule #5): the count
-    # equals the operators transform's reported unresolved tally — never silently lost.
-    assert bundle.skipped_unresolved == bundle.reports["operateurs_etat"]["unresolved"]
+    # is at least the operators transform's reported unresolved tally — never silently lost.
+    assert bundle.skipped_unresolved >= bundle.reports["operateurs_etat"]["unresolved"]
 
-    # Edges: tutelle only here, all stamped with the operators source as provenance.
+    # Edges: tutelle (operators) + delegates (DECP), each stamped with its own source provenance.
     assert bundle.edges
-    assert all(e.type.value == "tutelle" for e in bundle.edges)
-    assert all(e.provenance == "operateurs_etat" for e in bundle.edges)
+    types = {e.type.value for e in bundle.edges}
+    assert {"tutelle", "delegates"} <= types
+    assert all(e.provenance == "operateurs_etat" for e in bundle.edges if e.type.value == "tutelle")
+    assert all(
+        e.provenance == "decp_commande_publique"
+        for e in bundle.edges
+        if e.type.value == "delegates"
+    )
 
     # Budget facts: voted from PLF, executed from the monthly situation — kept distinct, each
     # stamped with its own source provenance.
@@ -104,6 +115,10 @@ def test_build_bundle_merges_three_sources(tmp_path: Path, fixtures_dir: Path) -
     assert all(f.provenance == "budget_plf_lfi" for f in voted)
     assert all(f.provenance == "budget_execution_mensuelle" for f in executed)
 
+    # Contracts: DECP per-contract rows, all stamped with the DECP provenance.
+    assert bundle.contracts
+    assert all(c.provenance == "decp_commande_publique" for c in bundle.contracts)
+
     assert bundle.provenances == ETAT_CENTRAL_SOURCE_IDS
 
 
@@ -111,6 +126,7 @@ def test_load_summary_reports_counts(tmp_path: Path, fixtures_dir: Path) -> None
     bundle = build_bundle(snapshot_root=_seed_snapshots(tmp_path, fixtures_dir))
     summary = load_summary(bundle)
     assert "entities:" in summary and "edges:" in summary and "budget_facts:" in summary
+    assert "contracts:" in summary
     assert "resolution rate" in summary  # surfaced from the operators report
 
 
@@ -151,16 +167,22 @@ def test_render_emits_provenance_scoped_contract(tmp_path: Path, fixtures_dir: P
     assert "on conflict (siren) do update set" in sql
     assert "delete from entities" not in sql
     # Each table's DELETE is scoped to ONLY the provenances that produced rows of that table —
-    # the edge DELETE never names a budget source, and vice versa (the contract the docstring
+    # tutelle edges from the operators source, delegates edges from DECP (the contract the docstring
     # promises: another source's rows are never touched).
-    assert "delete from edges where provenance in ('operateurs_etat');" in sql
+    assert (
+        "delete from edges where provenance in "
+        "('decp_commande_publique', 'operateurs_etat');" in sql
+    )
     assert (
         "delete from budget_facts where provenance in "
         "('budget_execution_mensuelle', 'budget_plf_lfi');" in sql
     )
-    # Only the three owned tables are touched — no whole-table truncate, no other tables.
+    # Contracts are loaded too, provenance-scoped to DECP.
+    assert "delete from contracts where provenance in ('decp_commande_publique');" in sql
+    assert "insert into contracts (acheteur_siren, titulaire_siren, montant_eur" in sql
+    # No whole-table truncate, and a table this load does not own is never touched.
     assert "truncate" not in sql
-    assert "contracts" not in sql and "attributions" not in sql
+    assert "attributions" not in sql
 
 
 def test_render_skips_delete_for_a_table_with_no_rows() -> None:
@@ -179,6 +201,7 @@ def test_render_skips_delete_for_a_table_with_no_rows() -> None:
         ],
         edges=[],
         budget_facts=[],
+        contracts=[],
         provenances=("operateurs_etat",),
         skipped_unresolved=0,
         reports={},
@@ -187,6 +210,31 @@ def test_render_skips_delete_for_a_table_with_no_rows() -> None:
     assert "on conflict (siren) do update set" in sql  # entities still upserted
     assert "delete from edges" not in sql  # nothing produced this run -> nothing deleted
     assert "delete from budget_facts" not in sql
+
+
+def test_entity_upsert_guards_authoritative_level_against_delegated_clobber() -> None:
+    # A *scoped* DECP reload (delegated titulaire entities, no operators layer in the bundle) must
+    # not be able to downgrade an existing state/local/social entity via the ON CONFLICT upsert.
+    # The conflict clause carries a WHERE that skips the update when the existing row is
+    # authoritative and the incoming one is delegated.
+    bundle = LoadBundle(
+        entities=[
+            Entity(
+                siren="180089013",
+                name="Titulaire X",
+                level=Level.delegated,
+                provenance="decp_commande_publique",
+            )
+        ],
+        edges=[],
+        budget_facts=[],
+        contracts=[],
+        provenances=("decp_commande_publique",),
+        skipped_unresolved=0,
+        reports={},
+    )
+    sql = render_load_sql(bundle)
+    assert "where entities.level = 'delegated' or excluded.level <> 'delegated'" in sql
 
 
 def test_render_fails_loud_on_row_missing_provenance() -> None:
@@ -203,6 +251,7 @@ def test_render_fails_loud_on_row_missing_provenance() -> None:
             )
         ],
         budget_facts=[],
+        contracts=[],
         provenances=("operateurs_etat",),
         skipped_unresolved=0,
         reports={},

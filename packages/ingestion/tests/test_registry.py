@@ -22,11 +22,18 @@ def test_get_source_unknown_raises():
 
 
 def test_schema_accessors_read_declared_schema():
-    # DECP is the source that declares a Table Schema (schema.ref + schema.validate). Assert
-    # structurally so the test survives the planned ref correction (see the registry TODO).
+    # DECP declares the committed authoritative Table Schema (schema.ref + schema.validate). The ref
+    # is a repo-root-relative path to a real, loadable frictionless descriptor (FSC-31).
+    from pathlib import Path
+
+    from ingestion.validation import resolve_schema
+
     decp = get_source("decp_commande_publique")
-    assert decp.schema_ref and decp.schema_ref.startswith("https://")
+    assert decp.schema_ref and decp.schema_ref.endswith(".json")
     assert decp.schema_validate is True
+    repo_root = Path(__file__).resolve().parents[3]
+    schema = resolve_schema(str(repo_root / decp.schema_ref))
+    assert schema is not None and schema.has_field("montant")  # loads + has a depended-on column
 
 
 def test_schema_accessors_tolerate_non_dict_schema():

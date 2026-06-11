@@ -35,7 +35,7 @@ from typing import Any
 
 import httpx
 from core.resolve import match_rate, normalize_siren
-from ingestion.errors import SchemaResolutionError
+from ingestion.errors import SchemaResolutionError, SchemaValidationError
 from ingestion.registry import Source, get_source
 from ingestion.snapshot import write_snapshot
 from ingestion.validation import validate_extract
@@ -367,9 +367,11 @@ def extract_source(
     sample_note = "  [HEAD SAMPLE — file exceeds cap]" if truncated else ""
     print(f"[{source.id}] downloaded {len(downloaded):,} bytes{enc_note}{sample_note}")
 
-    # Validate against the declared Table Schema. A real column drift fails loud
-    # (SchemaValidationError propagates). A misconfigured ref (DECP currently points at the
-    # portal root — FSC-16 follow-up) is a CONFIG fault, not drift: skip with a warning.
+    # Validate against the declared Table Schema. Two non-fatal cases are skipped with a warning:
+    # a misconfigured ref (CONFIG fault, raises SchemaResolutionError), and a drift on this Phase-0
+    # *exploration* sample (raises SchemaValidationError) — the spike proves SIREN matching, it does
+    # not enforce the production schema (that is the FSC-31 transform's job, against the real
+    # consolidated extract). Production drift still fails loud there, just not in this scout tool.
     validation_note = "no schema declared (skipped)"
     cell_warnings = 0
     try:
@@ -381,6 +383,11 @@ def extract_source(
             validation_note = f"validated OK ({cell_warnings} cell warning(s))"
     except SchemaResolutionError as exc:
         validation_note = f"schema ref not a usable TableSchema — validation skipped ({exc})"
+        print(f"[{source.id}] ⚠ {validation_note}")
+    except SchemaValidationError as exc:
+        validation_note = (
+            f"exploration sample does not conform to production schema — skipped ({exc})"
+        )
         print(f"[{source.id}] ⚠ {validation_note}")
 
     snapshot_kwargs: dict[str, Any] = {} if snapshot_root is None else {"root": snapshot_root}

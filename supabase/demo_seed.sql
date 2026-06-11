@@ -175,13 +175,13 @@ insert into budget_facts (entity_siren, exercice, mission, programme, amount_ae_
   ('110000072', 2025, 'Travail et emploi', '103 — Accompagnement des mutations économiques', 8800000000, 8400000000, false, 'budget_plf_lfi');
 
 -- Contracts (illustrative DECP marchés / concessions).
-insert into contracts (acheteur_siren, titulaire_siren, montant_eur, nature, exercice) values
-  ('180089013', '329200521', 1800000, 'marche', 2026),
-  ('180089013', '326556578', 84925.39, 'marche', 2026),
-  ('180043016', '552081317', 48000000, 'marche', 2026),
-  ('784359069', '552100554', 22000000, 'concession', 2026),
-  ('775685019', '552032534', 64000000, 'concession', 2026),
-  ('180046252', '440048882', 4200000, 'marche', 2026);
+insert into contracts (acheteur_siren, titulaire_siren, montant_eur, nature, exercice, provenance) values
+  ('180089013', '329200521', 1800000, 'marche', 2026, 'decp_commande_publique'),
+  ('180089013', '326556578', 84925.39, 'marche', 2026, 'decp_commande_publique'),
+  ('180043016', '552081317', 48000000, 'marche', 2026, 'decp_commande_publique'),
+  ('784359069', '552100554', 22000000, 'concession', 2026, 'decp_commande_publique'),
+  ('775685019', '552032534', 64000000, 'concession', 2026, 'decp_commande_publique'),
+  ('180046252', '440048882', 4200000, 'marche', 2026, 'decp_commande_publique');
 
 
 commit;

@@ -31,8 +31,10 @@ insert into entities (siren, name, level, category, parent_siren, provenance) va
   ('180046252', 'Bibliothèque nationale de France', 'state', 'EPA', '110046018', 'operateurs_etat'),
   ('180089013', 'Centre national de la recherche scientifique', 'state', 'EPST', '110044013', 'operateurs_etat');
 
--- Tutelle edges: ministry -> operator.
+-- Edges: tutelle (ministry -> operator) + delegates (acheteur -> titulaire, from DECP).
 insert into edges (source_siren, target_siren, type, amount_eur, exercice, provenance) values
+  ('180089013', '326556578', 'delegates', 84925.39, 2026, 'decp_commande_publique'),
+  ('180089013', '329200521', 'delegates', 1800000, 2026, 'decp_commande_publique'),
   ('110000072', '130005481', 'tutelle', null, null, 'operateurs_etat'),
   ('110044013', '180089013', 'tutelle', null, null, 'operateurs_etat'),
   ('110046018', '180046252', 'tutelle', null, null, 'operateurs_etat');
@@ -43,9 +45,9 @@ insert into budget_facts (entity_siren, exercice, mission, programme, amount_ae_
   ('110044013', 2025, 'MIRES', '172', 8259807441, 8701105312, false, 'budget_plf_lfi');
 
 -- Contracts: real DECP marchés (CNRS acheteur).
-insert into contracts (acheteur_siren, titulaire_siren, montant_eur, nature, exercice) values
-  ('180089013', '329200521', 1800000, 'marche', 2026),
-  ('180089013', '326556578', 84925.39, 'marche', 2026);
+insert into contracts (acheteur_siren, titulaire_siren, montant_eur, nature, exercice, provenance) values
+  ('180089013', '329200521', 1800000, 'marche', 2026, 'decp_commande_publique'),
+  ('180089013', '326556578', 84925.39, 'marche', 2026, 'decp_commande_publique');
 
 
 commit;

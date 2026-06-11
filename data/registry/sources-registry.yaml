@@ -264,14 +264,20 @@ sources:
     description: "Données essentielles de la commande publique : marchés + concessions. Centralisées sur data.gouv depuis 2024."
     platform: datagouv_api
     discovery:
-      strategy: "search_datasets('données essentielles commande publique consolidées') ; + API DECP"
-    format: [csv, json]
+      # Cible le jeu CONSOLIDÉ « format tabulaire » (refondu quotidiennement, tous millésimes,
+      # colonnes propres) — pas les jeux annuels. NB cadence: continuous -> le titre ne porte PAS
+      # de millésime ; l'heuristique `_latest_by_year` du connecteur datagouv doit donc sélectionner
+      # ce jeu consolidé (et non un jeu daté). Affinage de la sélection « continuous » = FSC-38.
+      strategy: "search_datasets('données essentielles de la commande publique consolidées format tabulaire')"
+    format: [csv, parquet]
     schema:
-      # schémas DECP (TableSchema) -> VALIDATION + détection de dérive (FSC-16)
-      # TODO(FSC-16 follow-up): point `ref` at the raw DECP TableSchema JSON, not the portal root.
-      ref: "https://schema.data.gouv.fr/"
+      # Table Schema officiel (139bercy / format-commande-publique, arrêté 22/12/2022), committé
+      # localement pour une validation hors-ligne + détection de dérive fail-loud (FSC-31, golden
+      # rule #3). Resynchroniser le fichier quand le schéma data.gouv évolue (la dérive le signale).
+      # Résolu relativement à la racine du dépôt (CWD de `make ingest`/`make load`).
+      ref: "data/schemas/decp-consolidated-tabular.table-schema.json"
       validate: true
-    join_keys: [SIREN_acheteur, SIREN_titulaire]
+    join_keys: [acheteur_id, titulaire_id]   # SIRET 14 -> SIREN 9 (siren_from_identifier)
     cadence: continuous           # publication au fil de l'eau
     license: "Licence Ouverte 2.0"
     volatility:

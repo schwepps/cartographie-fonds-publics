@@ -32,6 +32,14 @@ BUDGET_COLUMNS = (
     "executed",
     "provenance",
 )
+CONTRACT_COLUMNS = (
+    "acheteur_siren",
+    "titulaire_siren",
+    "montant_eur",
+    "nature",
+    "exercice",
+    "provenance",
+)
 
 
 def sql_literal(value: object) -> str:

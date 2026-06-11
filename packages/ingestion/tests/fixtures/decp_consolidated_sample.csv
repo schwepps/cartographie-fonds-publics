@@ -1,0 +1,7 @@
+uid;acheteur_id;acheteur_nom;id;titulaire_id;titulaire_typeIdentifiant;titulaire_nom;montant;nature;dateNotification;modification_id;donneesActuelles
+A;18008901300012;CNRS;2026-001;55208131700025;SIRET;Fournisseur Labo SA;1250000;Marché;2026-02-01;0;true
+B;13000548100018;France Travail;2026-077;40236049400015;SIRET;Conseil RH SARL;840000;Marché;2026-03-15;0;true
+B;13000548100018;France Travail;2026-077;32655657800019;SIRET;Études & Co;840000;Marché;2026-03-15;0;true
+C;18008901300012;CNRS;2026-002;77999999900028;SIRET;BTP Services;100000;Concession;2026-01-10;0;false
+C;18008901300012;CNRS;2026-002;77999999900028;SIRET;BTP Services;150000;Concession;2026-01-10;1;true
+D;ABC;Acheteur étranger non résolu;2026-D;55208131700025;SIRET;Fournisseur Labo SA;50000;Marché;2026-04-01;0;true

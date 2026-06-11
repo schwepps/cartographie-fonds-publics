@@ -19,7 +19,9 @@ Everything here is **real and attributed** (golden rule #10 — no invented data
   against — that is attributing it onward to the operators the programme funds. NOTE: the
   production ``budget_plf_lfi`` transform currently emits these facts with ``entity_siren=None``;
   populating the ministry sheet from the full load is an FSC-36 follow-up (see the PR notes).
-* Contracts are real DECP rows where the CNRS is the acheteur.
+* Contracts are real DECP rows where the CNRS is the acheteur; they also drive the seed's
+  ``delegates`` edges (CNRS -> titulaire) via ``core.contracts`` (FSC-39), so the funding-flow
+  views render real delegation links, queryable through ``graph_neighbors``.
 
 Provenance + licence for every figure live in the SQL header (see ``_SQL_HEADER``).
 """
@@ -30,12 +32,19 @@ import os
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from core.contracts import DECP_PROVENANCE, aggregate_delegates_edges
 from core.crosswalk import Crosswalk
 from core.models import BudgetFact, Contract, Edge, EdgeType, Entity, Level, Nature
 from core.resolve import normalize_name
 
 from .crosswalk_io import load_crosswalk
-from .sql_render import BUDGET_COLUMNS, EDGE_COLUMNS, ENTITY_COLUMNS, render_insert
+from .sql_render import (
+    BUDGET_COLUMNS,
+    CONTRACT_COLUMNS,
+    EDGE_COLUMNS,
+    ENTITY_COLUMNS,
+    render_insert,
+)
 from .transforms.operateurs_etat import MINISTRY_CATEGORY, MinistryIndex
 
 # Registry source id stamped on every seeded entity and tutelle edge. The État-central skeleton
@@ -112,7 +121,8 @@ def _seed_contracts() -> list[Contract]:
     Source: « Données essentielles de la commande publique consolidées (format tabulaire) »,
     DAJ/Etalab, data.gouv.fr resource 22847056-61df-452d-837d-8b8ceadbfc52 (extrait 2026-06-09).
     Licence Ouverte 2.0. The acheteur is a seeded entity (CNRS); titulaires are external suppliers
-    carried as SIRENs only (DECP -> delegated entities/edges is FSC-35's job).
+    carried as SIRENs only (the UI renders an un-named titulaire by its SIREN). These contracts also
+    drive the seed's ``delegates`` edges (FSC-39) via the shared ``core.contracts`` helper.
     """
     cnrs = "180089013"
     return [
@@ -122,6 +132,7 @@ def _seed_contracts() -> list[Contract]:
             montant_eur=1_800_000,
             nature=Nature.marche,
             exercice=2026,
+            provenance=DECP_PROVENANCE,
         ),
         Contract(
             acheteur_siren=cnrs,
@@ -129,6 +140,7 @@ def _seed_contracts() -> list[Contract]:
             montant_eur=84_925.39,
             nature=Nature.marche,
             exercice=2026,
+            provenance=DECP_PROVENANCE,
         ),
     ]
 
@@ -212,14 +224,23 @@ def build_seed(
             "does not resolve to a SIREN"
         )
 
+    # Real DECP contracts → aggregated `delegates` edges (CNRS → titulaire), the same derivation the
+    # production DECP transform uses (single source of truth, golden rule). Titulaires are kept as
+    # bare-SIREN targets (no entity row, no fabricated name) — the UI renders them as such, and the
+    # contracts/edges are queryable via `graph_neighbors` (FSC-39). The two edge layers carry
+    # distinct provenances so a provenance-scoped reload replaces exactly its own rows.
+    contracts = _seed_contracts()
+    delegates_edges = aggregate_delegates_edges(contracts)
+    all_edges = edges + delegates_edges
+
     # Deterministic order: ministries (graph roots) first, then operators — both by SIREN.
     ministry_entities = sorted(ministries_by_siren.values(), key=lambda e: e.siren or "")
     operator_entities = sorted(operators, key=lambda e: e.siren or "")
     return SeedBundle(
         entities=ministry_entities + operator_entities,
-        edges=sorted(edges, key=lambda e: (e.source_siren, e.target_siren)),
+        edges=sorted(all_edges, key=lambda e: (e.type.value, e.source_siren, e.target_siren)),
         budget_facts=_seed_budget_facts(budget_owner.siren),
-        contracts=_seed_contracts(),
+        contracts=contracts,
     )
 
 
@@ -246,10 +267,6 @@ _SQL_HEADER = """\
 --     22847056-61df-452d-837d-8b8ceadbfc52 (extrait 2026-06-09).
 """
 
-# Entity/edge/budget column tuples are shared with the loader (``ingestion.sql_render``); contracts
-# are seed-only (DECP -> graph is FSC-35's job), so their column list stays here.
-_CONTRACT_COLUMNS = ("acheteur_siren", "titulaire_siren", "montant_eur", "nature", "exercice")
-
 
 def render_sql(bundle: SeedBundle) -> str:
     """Serialize a :class:`SeedBundle` to a deterministic, idempotent seed SQL script."""
@@ -261,12 +278,12 @@ def render_sql(bundle: SeedBundle) -> str:
         "restart identity cascade;",
         "\n-- Entities: ministries (graph roots) then operators.",
         render_insert("entities", ENTITY_COLUMNS, list(bundle.entities)),
-        "-- Tutelle edges: ministry -> operator.",
+        "-- Edges: tutelle (ministry -> operator) + delegates (acheteur -> titulaire, from DECP).",
         render_insert("edges", EDGE_COLUMNS, list(bundle.edges)),
         "-- Budget facts: PLF 2025 MIRES, voté (mission/programme grain).",
         render_insert("budget_facts", BUDGET_COLUMNS, list(bundle.budget_facts)),
         "-- Contracts: real DECP marchés (CNRS acheteur).",
-        render_insert("contracts", _CONTRACT_COLUMNS, list(bundle.contracts)),
+        render_insert("contracts", CONTRACT_COLUMNS, list(bundle.contracts)),
         "\ncommit;\n",
     ]
     return "\n".join(sections)

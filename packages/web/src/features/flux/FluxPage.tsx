@@ -51,9 +51,20 @@ export default function FluxPage() {
     () => (model && root ? buildFlowLinks(root, model.edges, model.entityBySiren) : []),
     [model, root],
   );
-  const total = links.filter((l) => l.sourceCol === 0).reduce((s, l) => s + l.value, 0);
+  // Total tracé = what flows OUT of the selected root: funds for a financeur, delegates for an
+  // operator. Sum the links originating from the root itself — not the minimum column, which would
+  // wrongly count an operator's *incoming* funding (its financeur's funds sit at col 0).
+  const total = links.filter((l) => l.source === root).reduce((s, l) => s + l.value, 0);
   const rootName = model?.entityBySiren.get(root)?.name ?? "";
   const tableRows = links.map((l, i) => ({ ...l, key: `${l.source}-${l.target}-${i}` }));
+
+  // The selector lists financeurs (ministries); if focused on another entity (e.g. an operator via
+  // ?focus=), surface it as a selectable option too so the control reflects the current root.
+  const rootIsMinistry = (model?.ministries ?? []).some((m) => m.siren === root);
+  const options =
+    !rootIsMinistry && root && rootName
+      ? [{ siren: root, name: rootName }, ...(model?.ministries ?? [])]
+      : (model?.ministries ?? []);
 
   return (
     <div className="page fr-container">
@@ -88,7 +99,7 @@ export default function FluxPage() {
               value={root}
               onChange={(e) => setRootSel(e.target.value)}
             >
-              {(model?.ministries ?? []).map((m) => (
+              {options.map((m) => (
                 <option key={m.siren} value={m.siren}>
                   {m.name}
                 </option>
