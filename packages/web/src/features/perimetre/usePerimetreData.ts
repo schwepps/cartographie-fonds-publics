@@ -113,15 +113,17 @@ export function usePerimetreData(): PerimetreState {
         .filter((b) => b.nomenclature === "lolf" && !b.executed && b.exercice === STATE_EXERCICE)
         .reduce((s, b) => s + (b.amount_cp_eur ?? 0), 0);
       // Local: M57/M14 balances (cash basis, realised); social: the aggregated LFSS module by branche;
-      // delegated: public-contract amounts (recipients, not a budget universe). Each is summed for its
-      // latest exercice only, so the headline and its millésime badge stay on one year.
+      // delegated: public-contract amounts (recipients, not a budget universe). These universes carry
+      // realised facts, so filter on `executed` (symmetric with the State `!executed` voted filter) —
+      // a future voted M57/M14/LFSS row never leaks in. Each is summed for its latest exercice only,
+      // so the headline and its millésime badge stay on one year.
       const local = latestYearTotal(
-        budget.filter((b) => b.nomenclature === "m57" || b.nomenclature === "m14"),
+        budget.filter((b) => b.executed && (b.nomenclature === "m57" || b.nomenclature === "m14")),
         (b) => b.exercice,
         (b) => b.amount_cp_eur,
       );
       const social = latestYearTotal(
-        budget.filter((b) => b.nomenclature === "social"),
+        budget.filter((b) => b.executed && b.nomenclature === "social"),
         (b) => b.exercice,
         (b) => b.amount_cp_eur,
       );

@@ -104,9 +104,10 @@ def build(headers: list[str], rows: list[dict[str, str]]) -> TransformResult:
 
     # One fact per (exercice, branche): the grain guard already keeps a single consolidated figure
     # per branche, so we do NOT sum — a second row for the same branche/year is a data anomaly (a
-    # restated/synonym total) counted in `duplicate_grain`, never added (golden rule #8). The raw
-    # label (cleaned) is kept as `programme`, mirroring OFGL's agrégat handling.
-    by_key: dict[tuple[int, str], float] = {}
+    # restated/synonym total) counted in `duplicate_grain`, never added (golden rule #8). We key on
+    # the NORMALISED branche label so casing/accent/whitespace variants collapse to one fact, and
+    # keep the first raw label for `programme` (mirroring OFGL's agrégat handling).
+    by_key: dict[tuple[int, str], tuple[str, float]] = {}  # (exercice, norm) -> (raw label, amount)
     considered = 0  # rows in the curated branche allowlist at the consolidated grain (denominator)
     skipped_branche = 0  # off the curated branche allowlist
     skipped_subgrain = 0  # an allowlisted branche but a régime sub-grain (would double-count)
@@ -116,9 +117,11 @@ def build(headers: list[str], rows: list[dict[str, str]]) -> TransformResult:
 
     for row in rows:
         label = clean_cell(row, branche_col)
-        if label is None or _norm(label) not in _BRANCHES:
+        norm_label = _norm(label) if label is not None else None
+        if norm_label is None or norm_label not in _BRANCHES:
             skipped_branche += 1  # outside the curated branche set
             continue
+        assert label is not None  # narrowed: norm_label is set only when label is not None
         if niveau_col is not None:
             niveau = clean_cell(row, niveau_col)
             if niveau is not None and _norm(niveau) not in _TOP_GRAIN:
@@ -134,25 +137,25 @@ def build(headers: list[str], rows: list[dict[str, str]]) -> TransformResult:
         if amount is None:  # no usable amount -> reported, never silently dropped (golden rule #5)
             dropped_no_amount += 1
             continue
-        key = (exercice, label)
+        key = (exercice, norm_label)
         if key in by_key:  # already have this branche/year at top grain -> anomaly, not summed
             duplicate_grain += 1
             continue
-        by_key[key] = amount
+        by_key[key] = (label, amount)  # first raw label wins for display
 
     facts = [
         BudgetFact(
             entity_siren=None,  # social branches are not SIREN entities (aggregated module)
             exercice=exercice,
             mission=None,  # LOLF mission/programme do not apply to the social universe
-            programme=branche,  # the branche label is the within-nomenclature class
+            programme=label,  # the (first-seen) branche label is the within-nomenclature class
             amount_ae_eur=None,  # social accounts are cash flows: no AE/CP split
             amount_cp_eur=amount,
             executed=True,  # the comptes are realised, not voted
             nomenclature=Nomenclature.social,
             provenance=SOURCE_ID,
         )
-        for (exercice, branche), amount in sorted(
+        for (exercice, _norm_branche), (label, amount) in sorted(
             by_key.items(), key=lambda kv: (kv[0][0], kv[0][1])
         )
     ]

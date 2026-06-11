@@ -27,6 +27,9 @@ vi.mock("../../lib/supabase", () => {
       // Older-year local row: must be EXCLUDED from the local headline (latest exercice only),
       // otherwise the figure would read 104 Md€ instead of 5 Md€.
       { exercice: 2021, amount_cp_eur: 99_000_000_000, executed: true, nomenclature: "m57" },
+      // Voted (non-executed) local row in a LATER year: must be EXCLUDED (executed filter), else it
+      // would both leak its amount in and push the latest exercice to 2024.
+      { exercice: 2024, amount_cp_eur: 7_000_000_000, executed: false, nomenclature: "m57" },
       { exercice: 2023, amount_cp_eur: 245_000_000_000, executed: true, nomenclature: "social" },
     ],
     contracts: [{ montant_eur: 1_800_000, exercice: 2026 }],
@@ -63,8 +66,10 @@ describe("PerimetrePage (Aperçu du périmètre)", () => {
     expect(screen.getByText(/^5\s*Md€$/)).toBeInTheDocument(); // local (M57, latest year 2023 only)
     expect(screen.getByText(/245\s*Md€/)).toBeInTheDocument(); // social (LFSS, aggregated)
     expect(screen.getByText(/1,8\s*M€/)).toBeInTheDocument(); // delegated (DECP)
-    // The older 2021 local row must not leak into the headline (would read 104 Md€).
+    // The older 2021 local row must not leak into the headline (would read 104 Md€), and the voted
+    // 2024 row must not either (executed filter — would read 7 Md€ and shift the badge to 2024).
     expect(screen.queryByText(/104\s*Md€/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/^7\s*Md€$/)).not.toBeInTheDocument();
   });
 
   it("links each level to its detail view", async () => {

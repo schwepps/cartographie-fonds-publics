@@ -58,15 +58,18 @@ def test_allowlist_and_grain_exclude_overlapping_total_and_subgrain() -> None:
     assert branches == {"Maladie", "Vieillesse", "Famille", "AT-MP", "Autonomie"}
 
 
-def test_duplicate_consolidated_row_is_reported_not_summed() -> None:
-    # A second top-grain row for (2022, Maladie) — labelled "Ensemble" — must be flagged, not added:
-    # the figure stays the first consolidated value, never 240 Md€ + 999 Md€ (golden rule #8).
+def test_duplicate_consolidated_rows_reported_not_summed_keyed_on_normalised_label() -> None:
+    # Two further top-grain rows for (2022, Maladie) — one labelled "Ensemble", one as "MALADIE"
+    # (casing variant) — must each be flagged, not added: the figure stays the first consolidated
+    # value (never 240 + 999 + 111 Md€) and the cased variant collapses onto the same branche so it
+    # does not spawn a second fact (golden rule #8). Dedup keys on the normalised label.
     result = _build()
-    assert result.report["duplicate_grain"] == 1
-    maladie_2022 = next(
+    assert result.report["duplicate_grain"] == 2
+    maladie_2022 = [
         f for f in result.budget_facts if f.exercice == 2022 and f.programme == "Maladie"
-    )
-    assert maladie_2022.amount_cp_eur == 240_000_000_000
+    ]
+    assert len(maladie_2022) == 1  # the "MALADIE" variant did not create a separate fact
+    assert maladie_2022[0].amount_cp_eur == 240_000_000_000
 
 
 def test_amount_parsed_and_zero_preserved() -> None:
@@ -81,16 +84,16 @@ def test_amount_parsed_and_zero_preserved() -> None:
 def test_report_accounts_for_every_row_never_silently_dropped() -> None:
     report = _build().report
     assert report["source_id"] == SOURCE_ID
-    assert report["rows_in"] == 11
+    assert report["rows_in"] == 12
     assert report["facts_out"] == 7
     assert report["skipped_branche"] == 1  # "Ensemble des branches" (off the curated allowlist)
     assert report["skipped_subgrain"] == 1  # Maladie "Régime agricole" (régime sub-grain)
     assert report["dropped_no_exercice"] == 1  # the Vieillesse row with a blank year
     assert report["dropped_no_amount"] == 0
-    assert report["duplicate_grain"] == 1  # the second Maladie 2022 consolidated row
+    assert report["duplicate_grain"] == 2  # the "Ensemble" + the "MALADIE" 2022 consolidated rows
     assert report["branches"] == ["AT-MP", "Autonomie", "Famille", "Maladie", "Vieillesse"]
     assert report["exercices"] == [2021, 2022]
-    assert report["resolution_rate"] == 7 / 9  # 7 fact-contributing of 9 in-scope rows
+    assert report["resolution_rate"] == 7 / 10  # 7 fact-contributing of 10 in-scope rows
     # Exhaustive: every input row lands in exactly one bucket or a fact (golden rule #5).
     assert (
         report["skipped_branche"]
