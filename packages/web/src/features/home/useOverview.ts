@@ -18,6 +18,7 @@ interface BudgetRow {
   exercice: number;
   amount_cp_eur: number | null;
   executed: boolean;
+  nomenclature: string | null;
 }
 
 export interface OverviewFigures {
@@ -47,7 +48,7 @@ export function useOverview(): OverviewState {
       const [entityRes, edgeRes, budgetRes, contractRes] = await Promise.all([
         supabase.from("entities").select("siren,name,level,parent_siren"),
         supabase.from("edges").select("source_siren,target_siren,type,amount_eur,exercice"),
-        supabase.from("budget_facts").select("exercice,amount_cp_eur,executed"),
+        supabase.from("budget_facts").select("exercice,amount_cp_eur,executed,nomenclature"),
         supabase.from("contracts").select("*", { count: "exact", head: true }),
       ]);
       if (cancelled) return;
@@ -68,8 +69,10 @@ export function useOverview(): OverviewState {
       const budget = (budgetRes.data as BudgetRow[] | null) ?? [];
 
       const figures: OverviewFigures = {
+        // Voted State credits only: pin the LOLF universe so a future voted non-LOLF fact (local
+        // M57 / social LFSS) can never leak into the State CP headline (anti-double-counting).
         budgetCp: budget
-          .filter((b) => !b.executed && b.exercice === BUDGET_EXERCICE)
+          .filter((b) => b.nomenclature === "lolf" && !b.executed && b.exercice === BUDGET_EXERCICE)
           .reduce((sum, b) => sum + (b.amount_cp_eur ?? 0), 0),
         institutions: entities.length,
         operateurs: entities.filter((e) => e.parent_siren != null || e.level === "delegated")

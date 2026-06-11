@@ -21,6 +21,7 @@ describe("feature route registry", () => {
   it("derives ordered nav items from the descriptors (design nav order)", () => {
     expect(navItems.map((item) => item.label)).toEqual([
       "Accueil",
+      "Aperçu du périmètre",
       "Graphe institutionnel",
       "Recherche",
       "Flux de financement",
@@ -28,6 +29,7 @@ describe("feature route registry", () => {
     ]);
     expect(navItems.map((item) => item.to)).toEqual([
       "/",
+      "/perimetre",
       "/graph",
       "/search",
       "/flux",

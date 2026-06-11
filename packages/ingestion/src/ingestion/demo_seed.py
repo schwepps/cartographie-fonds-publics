@@ -281,6 +281,17 @@ _LOCAL_BUDGET: tuple[tuple[str, int, str, int], ...] = (
     ("217500016", 2023, "Dépenses d’investissement", 1_500_000_000),
 )
 
+# Social budget facts (social universe — LFSS): branche prestations attached to the consolidating
+# caisse, so the whole-perimeter overview (FSC-44) renders a real social headline and the
+# anti-double-counting note has a genuine social↔State/local mix to guard. The social layer is an
+# aggregated module, so these hang off the caisse SIRENs (not woven into the funding graph).
+# Illustrative amounts (« exemple »); (caisse siren, exercice, branche, montant_cp).
+_SOCIAL_BUDGET: tuple[tuple[str, int, str, int], ...] = (
+    ("180035024", 2023, "Maladie", 245_000_000_000),  # CNAM
+    ("775678633", 2023, "Vieillesse", 275_000_000_000),  # CNAV
+    ("180020075", 2023, "Famille", 56_000_000_000),  # CNAF
+)
+
 # Contracts (DECP) — the schema has no `objet` column, so it is dropped.
 _CONTRACTS: tuple[tuple[str, str, float, str, int], ...] = (
     ("180089013", "329200521", 1_800_000, "marche", 2026),
@@ -411,6 +422,20 @@ def build_demo() -> DemoBundle:
             provenance=_P_OFGL,
         )
         for siren, exercice, agregat, cp in _LOCAL_BUDGET
+    ]
+    # Social branche facts (social/LFSS universe — yet another non-consolidable perimeter): attached
+    # to the consolidating caisse so the perimeter overview shows a real social figure (FSC-34/44).
+    budget_facts += [
+        BudgetFact(
+            entity_siren=siren,
+            exercice=exercice,
+            programme=branche,
+            amount_cp_eur=cp,
+            executed=True,
+            nomenclature=Nomenclature.social,
+            provenance=_P_SECU,
+        )
+        for siren, exercice, branche, cp in _SOCIAL_BUDGET
     ]
     contracts = [
         Contract(

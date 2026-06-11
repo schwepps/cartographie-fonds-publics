@@ -32,6 +32,8 @@
     "doubleCounting": "Attention : un même euro peut être compté plusieurs fois (subvention de l'État, puis dépense de l'opérateur). Les totaux sont des ordres de grandeur, jamais des sommes consolidées.",
     "mixed": "Attention : ce total mêle des univers comptables différents (État en LOLF, collectivités en M57/M14). Ils ne sont pas consolidables — c'est un ordre de grandeur, pas une somme.",
     "local": "Comptabilité locale (M57/M14, base caisse) : ni AE/CP ni voté/exécuté comme à l'État, et non consolidable avec les crédits de l'État.",
+    "perimeter": "Les quatre sphères relèvent d'univers comptables distincts (État en LOLF, collectivités en M57/M14, sécurité sociale en LFSS, opérateurs délégués en montants de marchés) et de millésimes ou bases voté/exécuté différents. Les chiffres sont des ordres de grandeur par sphère, jamais une somme consolidée.",
+    "aggregatedModule": "La sphère sociale (LFSS) est présentée comme un module agrégé par branche : volontairement non reliée finement au graphe des entités, et non consolidable avec les crédits de l'État ou des collectivités.",
     "seeMore": "Voir la méthodologie"
   }
 }

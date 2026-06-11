@@ -55,6 +55,7 @@ describe("Layout shell", () => {
       .map((link) => link.getAttribute("aria-label"));
     expect(labels).toEqual([
       "Accueil",
+      "Aperçu du périmètre",
       "Graphe institutionnel",
       "Recherche",
       "Flux de financement",

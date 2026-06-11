@@ -182,7 +182,10 @@ insert into budget_facts (entity_siren, exercice, mission, programme, amount_ae_
   ('200053781', 2023, null, 'Dépenses de fonctionnement', null, 2300000000, true, 'm57', 'finances_locales_ofgl'),
   ('200053781', 2023, null, 'Dépenses d’investissement', null, 900000000, true, 'm57', 'finances_locales_ofgl'),
   ('217500016', 2023, null, 'Dépenses de fonctionnement', null, 8000000000, true, 'm57', 'finances_locales_ofgl'),
-  ('217500016', 2023, null, 'Dépenses d’investissement', null, 1500000000, true, 'm57', 'finances_locales_ofgl');
+  ('217500016', 2023, null, 'Dépenses d’investissement', null, 1500000000, true, 'm57', 'finances_locales_ofgl'),
+  ('180035024', 2023, null, 'Maladie', null, 245000000000, true, 'social', 'comptes_sociaux'),
+  ('775678633', 2023, null, 'Vieillesse', null, 275000000000, true, 'social', 'comptes_sociaux'),
+  ('180020075', 2023, null, 'Famille', null, 56000000000, true, 'social', 'comptes_sociaux');
 
 -- Contracts (illustrative DECP marchés / concessions).
 insert into contracts (acheteur_siren, titulaire_siren, montant_eur, nature, exercice, provenance) values
