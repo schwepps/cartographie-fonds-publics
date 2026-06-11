@@ -6,6 +6,12 @@ Commits follow [Conventional Commits](https://www.conventionalcommits.org/).
 
 ## [Unreleased]
 ### Added
+- SEM/SPL local public companies connector (FSC-33): an `epl_sem_spl` transform filters a
+  SIRENE-derived extract to the SEM/SPL **catégories juridiques** → `level=delegated` entities, and
+  emits a `participation` edge (public shareholder → company) **only** when a shareholder is published
+  — never inventing a link (golden rule #5); the partial cases (filtered, unresolved, no shareholder)
+  are reported. Runs offline against a fixture. The demo seed gains two SEM/SPL companies with
+  participation edges from their owning collectivités.
 - OFGL local-authority finances connector (FSC-32): a `finances_locales_ofgl` transform turns the
   OFGL *agrégats comptables* (the M57/M14 accounting universe) into **local** entities + `budget_facts`
   keyed on the collectivité SIREN, stamped `nomenclature=m57` — a new `budget_facts.nomenclature`

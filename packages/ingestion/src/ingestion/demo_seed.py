@@ -45,6 +45,7 @@ _P_BUDGET = "budget_plf_lfi"
 _P_DECP = "decp_commande_publique"
 _P_OFGL = "finances_locales_ofgl"
 _P_SECU = "comptes_sociaux"
+_P_EPL = "epl_sem_spl"
 
 _MINISTRY_CATEGORY = "ministère"
 
@@ -151,6 +152,12 @@ _DELEGATED: tuple[tuple[str, str, str], ...] = (
     ("552100554", "Société Restalia (restauration collective)", "Délégation de service public"),
     ("440048882", "Atlas Édition scientifique", "Marché public"),
     ("552032534", "EnerGaïa Énergies", "Concession"),
+)
+# Local public companies (SEM/SPL) + their public shareholder — the local delegated link (FSC-33).
+# (company_siren, company_name, category, holder_siren). Holders are local entities in `_LOCAL`.
+_SEM_SPL: tuple[tuple[str, str, str, str], ...] = (
+    ("552032708", "SEM Lyon Confluence", "SEM", "200053781"),
+    ("529000019", "SPL Paris Seine Ouest Aménagement", "SPL", "217500016"),
 )
 
 # funds / participation / delegates flows: (source, target, type, amount_eur, exercice, provenance).
@@ -344,6 +351,25 @@ def build_demo() -> DemoBundle:
         entities.append(
             Entity(
                 siren=siren, name=name, level=Level.delegated, category=category, provenance=_P_DECP
+            )
+        )
+    # SEM/SPL companies (delegated) + a participation edge from their public shareholder (FSC-33).
+    for company, name, category, holder in _SEM_SPL:
+        entities.append(
+            Entity(
+                siren=company,
+                name=name,
+                level=Level.delegated,
+                category=category,
+                provenance=_P_EPL,
+            )
+        )
+        edges.append(
+            Edge(
+                source_siren=holder,  # the public shareholder
+                target_siren=company,  # holds a stake in the SEM/SPL
+                type=EdgeType.participation,
+                provenance=_P_EPL,
             )
         )
 

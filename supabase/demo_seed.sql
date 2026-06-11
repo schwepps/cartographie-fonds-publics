@@ -19,7 +19,9 @@ truncate entities, edges, budget_facts, contracts, attributions, mentions restar
 insert into entities (siren, name, level, category, parent_siren, provenance) values
   ('402360441', 'Société Helios Numérique', 'delegated', 'Marché public', null, 'decp_commande_publique'),
   ('440048882', 'Atlas Édition scientifique', 'delegated', 'Marché public', null, 'decp_commande_publique'),
+  ('529000019', 'SPL Paris Seine Ouest Aménagement', 'delegated', 'SPL', null, 'epl_sem_spl'),
   ('552032534', 'EnerGaïa Énergies', 'delegated', 'Concession', null, 'decp_commande_publique'),
+  ('552032708', 'SEM Lyon Confluence', 'delegated', 'SEM', null, 'epl_sem_spl'),
   ('552081317', 'Groupe Demeter (BTP patrimoine)', 'delegated', 'Concession', null, 'decp_commande_publique'),
   ('552100554', 'Société Restalia (restauration collective)', 'delegated', 'Délégation de service public', null, 'decp_commande_publique'),
   ('200053781', 'Métropole de Lyon', 'local', 'Métropole', null, 'finances_locales_ofgl'),
@@ -153,6 +155,8 @@ insert into edges (source_siren, target_siren, type, amount_eur, exercice, prove
   ('180089013', '326556578', 'delegates', 85000, 2026, 'decp_commande_publique'),
   ('180089013', '329200521', 'delegates', 1800000, 2026, 'decp_commande_publique'),
   ('200053781', '130031023', 'funds', 12000000, 2024, 'finances_locales_ofgl'),
+  ('200053781', '552032708', 'participation', null, null, 'epl_sem_spl'),
+  ('217500016', '529000019', 'participation', null, null, 'epl_sem_spl'),
   ('217500016', '775670387', 'funds', 9000000, 2024, 'finances_locales_ofgl'),
   ('217500016', '784359069', 'funds', 7000000, 2024, 'finances_locales_ofgl'),
   ('237500139', '193100339', 'funds', 64000000, 2024, 'finances_locales_ofgl'),
