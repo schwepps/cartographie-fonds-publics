@@ -11,6 +11,7 @@ export * from "./Badge";
 export * from "./Chip";
 export * from "./Card";
 export * from "./Callout";
+export * from "./MethodologyNote";
 export * from "./Breadcrumb";
 export * from "./ExampleFlag";
 export * from "./StateBlock";

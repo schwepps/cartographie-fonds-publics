@@ -23,11 +23,15 @@ import httpx
 from frictionless import Report, Resource, Schema
 
 from .errors import SchemaResolutionError, SchemaValidationError, UnsupportedFormatError
+from .json_records import json_to_csv_bytes
 
 # frictionless tags marking a *structural* (column-level) problem — these are fatal drift.
 _HEADER_TAGS = frozenset({"#header", "#label"})
 _SCHEMA_FETCH_TIMEOUT = 30.0
 _MAX_SCHEMA_BYTES = 5_000_000  # a Table Schema descriptor is small; cap so a bad ref can't OOM CI
+# Formats the harness can validate. JSON is tabularised to CSV first (see json_records): a Table
+# Schema is enforced on delimited text, not on keyed JSON, so one path covers both (FSC-47).
+_SUPPORTED_FORMATS = frozenset({"csv", "json"})
 
 
 @dataclass(frozen=True)
@@ -79,25 +83,36 @@ def validate_extract(
     source_id: str,
     schema_ref: str | None,
     fmt: str = "csv",
+    record_path: str | None = None,
 ) -> ValidationReport:
     """Validate ``raw`` against the schema at ``schema_ref``. Raise loudly on column drift.
 
+    ``fmt`` is ``csv`` or ``json``. For ``json`` the extract is unwrapped (``record_path`` names the
+    envelope key, e.g. ODS ``results``; ``None`` for a top-level array) and tabularised to CSV
+    before validation, so the drift-vs-warning policy is identical across formats.
+
     Returns a ``ValidationReport`` when the extract conforms (possibly with non-fatal cell
     warnings), or when no schema is declared (``skipped=True``). Raises ``SchemaValidationError``
-    on structural drift, ``SchemaResolutionError`` if the schema ref is unusable, and
-    ``UnsupportedFormatError`` for a format the harness cannot validate yet.
+    on structural drift (incl. a malformed JSON envelope), ``SchemaResolutionError`` if the schema
+    ref is unusable, and ``UnsupportedFormatError`` for a format the harness cannot validate yet.
     """
     schema = resolve_schema(schema_ref)
     if schema is None:
         return ValidationReport(source_id, schema_ref, skipped=True)
 
-    if fmt != "csv":
+    if fmt not in _SUPPORTED_FORMATS:
         # A capability limit, not drift — keep it a distinct error so alerting never confuses
         # "we can't validate this format yet" with "the source changed".
-        raise UnsupportedFormatError(f"Cannot validate format {fmt!r} yet (only 'csv').")
+        supported = ", ".join(sorted(_SUPPORTED_FORMATS))
+        raise UnsupportedFormatError(
+            f"Cannot validate format {fmt!r} yet (supported: {supported})."
+        )
 
     try:
-        report = Resource(raw, format=fmt, schema=schema).validate()
+        # JSON is collapsed to the CSV view first (a malformed envelope raises here = fails loud);
+        # CSV passes through untouched, so its behaviour is byte-for-byte unchanged.
+        table = raw if fmt == "csv" else json_to_csv_bytes(raw, record_path=record_path)
+        report = Resource(table, format="csv", schema=schema).validate()
     except Exception as exc:  # noqa: BLE001 — a parse failure of the extract itself IS drift
         raise SchemaValidationError(
             source_id=source_id,

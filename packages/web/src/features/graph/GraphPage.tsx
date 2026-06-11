@@ -2,6 +2,7 @@ import { useCallback, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { euroCompact } from "../../lib/format";
 import { LEVELS } from "../../lib/levels";
+import { mixesPerimeters } from "../../lib/perimeter";
 import { tutelleChain } from "../../lib/tutelle";
 import {
   Bars,
@@ -18,6 +19,7 @@ import {
   Layers,
   LevelBadge,
   LevelShape,
+  MethodologyNote,
   Minus,
   Plus,
   Reset,
@@ -411,12 +413,17 @@ function GraphTableView({ model, filters }: { model: GraphModel; filters: GraphF
     { key: "exercice", header: "Millésime", num: true, render: (r) => r.exercice ?? "—" },
   ];
 
+  // CP totals here span whatever levels the filters leave visible; when that crosses accounting
+  // universes (State LOLF + local M57…), the column is not a consolidated sum (FSC-42).
+  const mixed = mixesPerimeters(nodes.map((n) => n.level));
+
   return (
     <div className="stack" style={{ padding: "var(--sp-5)" }}>
       <p className="fr-sm text-mention">
         Équivalent tabulaire, synchronisé avec les filtres. Tri par colonne ; chaque institution
         renvoie à sa fiche.
       </p>
+      {mixed ? <MethodologyNote mixed /> : null}
       <DataTable
         caption={`Institutions affichées (${nodes.length})`}
         columns={nodeCols}

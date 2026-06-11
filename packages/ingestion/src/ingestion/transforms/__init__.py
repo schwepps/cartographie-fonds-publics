@@ -78,6 +78,8 @@ def get_transform(source_id: str) -> Transform:
 from . import budget_execution_mensuelle as budget_execution_mensuelle  # noqa: E402,F401
 from . import budget_plf_lfi as budget_plf_lfi  # noqa: E402,F401
 from . import decp_commande_publique as decp_commande_publique  # noqa: E402,F401
+from . import epl_sem_spl as epl_sem_spl  # noqa: E402,F401
+from . import finances_locales_ofgl as finances_locales_ofgl  # noqa: E402,F401
 from . import operateurs_etat as operateurs_etat  # noqa: E402,F401
 
 __all__ = [

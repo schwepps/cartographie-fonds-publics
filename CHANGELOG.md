@@ -6,6 +6,35 @@ Commits follow [Conventional Commits](https://www.conventionalcommits.org/).
 
 ## [Unreleased]
 ### Added
+- Anti-double-counting methodology + UI disclaimers (FSC-42): a documented convention (ADR-0007) that
+  the State (LOLF), local (M57/M14) and social accounting universes are **never silently summed**. A
+  single source of truth `core.methodology` — mirrored in the web `lib/perimeter.ts` — maps a
+  nomenclature/level to its universe and detects a mixed total. A reusable `MethodologyNote` (DSFR
+  info Callout) surfaces the caveat on the Flux Sankey (stronger wording when the traced flow crosses
+  universes), the entity Fiche budget totals (local M57 sheets now show realised expenditure instead
+  of an empty *voté* figure, attributed to OFGL), and the Graphe table — all linking to an anchored
+  `#double-comptage` méthodologie section on the Données page.
+- SEM/SPL local public companies connector (FSC-33): an `epl_sem_spl` transform filters a
+  SIRENE-derived extract to the SEM/SPL **catégories juridiques** → `level=delegated` entities, and
+  emits a `participation` edge (public shareholder → company) **only** when a shareholder is published
+  — never inventing a link (golden rule #5); the partial cases (filtered, unresolved, no shareholder)
+  are reported. Runs offline against a fixture. The demo seed gains two SEM/SPL companies with
+  participation edges from their owning collectivités.
+- OFGL local-authority finances connector (FSC-32): a `finances_locales_ofgl` transform turns the
+  OFGL *agrégats comptables* (the M57/M14 accounting universe) into **local** entities + `budget_facts`
+  keyed on the collectivité SIREN, stamped `nomenclature=m57` — a new `budget_facts.nomenclature`
+  column (migration `0006`, default `lolf`) that keeps the State (LOLF) and local accounting universes
+  distinct rather than silently summed. Only a curated, mutually-exclusive expenditure agrégat pair is
+  ingested (anti-double-counting, golden rule #8); unresolved SIRENs are reported, never guessed. It
+  reuses the existing `ods_explore` connector and runs offline against a fixture. The illustrative
+  demo seed gains local M57 budgets so a collectivité Fiche renders a budget.
+- JSON support in the validate + snapshot harness (FSC-47): `validate_extract` / `write_snapshot`
+  now accept `fmt="json"` for tabular JSON (array of records). A registry-driven `records_path`
+  (e.g. ODS `results`) unwraps the envelope; the records are tabularised to CSV so the **same**
+  proven path enforces the Table Schema (column drift fatal, messy cells warned) and stores an
+  `all_varchar` Parquet snapshot with `format='json'` provenance hashing the raw bytes. A malformed
+  envelope fails loud; genuinely unsupported formats still raise `UnsupportedFormatError`. Offline
+  fixtures cover a valid, a drifted, and an enveloped JSON extract.
 - Delivered design screens ported (FSC-50…53): the Accueil overview (hero, headline figures with
   provenance, teaser Sankey, action tiles), the Recherche results + facets, the institutional Graphe
   reworked to a custom **2D-canvas force-directed** layout (clusters, CP-scaled nodes, typed/weighted

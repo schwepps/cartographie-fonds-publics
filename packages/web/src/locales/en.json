@@ -27,5 +27,11 @@
     "ariaMillesime": ", year {{millesime}}",
     "unknown": "Unknown source ({{id}})",
     "seeSources": "See source details"
+  },
+  "methodology": {
+    "doubleCounting": "Heads up: the same euro can be counted more than once (a State subsidy, then the operator's spend). Totals are orders of magnitude, never consolidated sums.",
+    "mixed": "Heads up: this total mixes different accounting universes (State LOLF, local authorities M57/M14). They are not consolidatable — an order of magnitude, not a sum.",
+    "local": "Local accounting (M57/M14, cash basis): no AE/CP or voted/executed split as for the State, and not consolidatable with State credits.",
+    "seeMore": "See the methodology"
   }
 }

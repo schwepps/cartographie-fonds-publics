@@ -1,0 +1,10 @@
+{
+  "$schema": "https://frictionlessdata.io/schemas/table-schema.json",
+  "name": "json-records-fixture",
+  "title": "Minimal tabular-JSON fixture schema (FSC-47 harness tests)",
+  "fields": [
+    { "name": "siren", "type": "string", "title": "SIREN" },
+    { "name": "nom", "type": "string", "title": "Dénomination" },
+    { "name": "montant", "type": "integer", "title": "Montant (euros)" }
+  ]
+}

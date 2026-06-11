@@ -47,3 +47,12 @@ def test_schema_validate_false_without_usable_ref():
     src = Source(id="x", raw={"schema": "none"})
     assert src.schema_ref is None
     assert src.schema_validate is False
+
+
+def test_records_path_accessor():
+    # ODS sources declare the JSON envelope key (FSC-47); CSV/absent/blank -> None.
+    assert get_source("budget_execution_mensuelle").records_path == "results"
+    assert get_source("operateurs_etat").records_path is None  # a CSV source
+    assert Source(id="x", raw={}).records_path is None
+    assert Source(id="x", raw={"records_path": "   "}).records_path is None
+    assert Source(id="x", raw={"records_path": "data"}).records_path == "data"

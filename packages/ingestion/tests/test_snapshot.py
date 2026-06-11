@@ -111,5 +111,60 @@ def test_unsafe_source_id_rejected(tmp_path: Path, bad: str) -> None:
 
 
 def test_unsupported_format_raises(tmp_path: Path) -> None:
+    # csv + json are supported (FSC-47); anything else is still a capability limit.
     with pytest.raises(UnsupportedFormatError):
-        write_snapshot(b"{}", source_id="decp", extracted_at=_AT, fmt="json", root=tmp_path)
+        write_snapshot(b"\x00", source_id="decp", extracted_at=_AT, fmt="parquet", root=tmp_path)
+
+
+def test_snapshot_json_writes_parquet_with_format_provenance(tmp_path: Path) -> None:
+    import duckdb
+
+    # siren as a leading-zero string + montant as a JSON int: both must round-trip as faithful text.
+    raw = b'[{"siren": "010089013", "montant": 1000}, {"siren": "217500016", "montant": 2000}]'
+    path = write_snapshot(raw, source_id="ofgl", extracted_at=_AT, fmt="json", root=tmp_path)
+
+    prov = read_provenance(path)
+    assert prov.format == "json"
+    assert prov.content_sha256 == hashlib.sha256(raw).hexdigest()  # hash of the RAW json bytes
+    assert prov.byte_size == len(raw)
+    assert prov.row_count == 2
+
+    rows = (
+        duckdb.connect()
+        .execute(f"SELECT siren, montant FROM read_parquet('{path}') ORDER BY siren")
+        .fetchall()
+    )
+    assert rows == [("010089013", "1000"), ("217500016", "2000")]  # all_varchar text preserved
+
+
+def test_snapshot_json_unwraps_envelope(tmp_path: Path) -> None:
+    import duckdb
+
+    raw = b'{"total_count": 2, "results": [{"siren": "200054781"}, {"siren": "217500016"}]}'
+    path = write_snapshot(
+        raw, source_id="ofgl", extracted_at=_AT, fmt="json", record_path="results", root=tmp_path
+    )
+    assert read_provenance(path).row_count == 2
+    count = duckdb.connect().execute(f"SELECT count(*) FROM read_parquet('{path}')").fetchone()
+    assert count is not None and count[0] == 2
+
+
+def test_snapshot_empty_json_array_yields_zero_rows(tmp_path: Path) -> None:
+    # An empty array snapshots cleanly at 0 rows (the validate step is where emptiness fails loud).
+    path = write_snapshot(b"[]", source_id="ofgl", extracted_at=_AT, fmt="json", root=tmp_path)
+    prov = read_provenance(path)
+    assert prov.format == "json"
+    assert prov.row_count == 0
+
+
+def test_malformed_json_snapshot_fails_loud(tmp_path: Path) -> None:
+    # A bad envelope (results is an object, not an array) fails loud rather than snapshotting empty.
+    with pytest.raises(SnapshotError):
+        write_snapshot(
+            b'{"results": {}}',
+            source_id="ofgl",
+            extracted_at=_AT,
+            fmt="json",
+            record_path="results",
+            root=tmp_path,
+        )

@@ -59,6 +59,14 @@ class Source:
         opted_in = bool(schema.get("validate")) if isinstance(schema, dict) else False
         return opted_in and self.schema_ref is not None
 
+    @property
+    def records_path(self) -> str | None:
+        # JSON envelope key holding the record array (ODS ``results``, data.gouv API wrappers), read
+        # by the JSON validate/snapshot path (FSC-47). ``None`` for a top-level array or a CSV
+        # source — the envelope shape stays in the registry, never frozen in a connector (rule #2).
+        value = self.raw.get("records_path")
+        return value if isinstance(value, str) and value.strip() else None
+
 
 def load_registry(path: Path | str = REGISTRY_PATH) -> dict[str, Any]:
     with open(path, encoding="utf-8") as fh:

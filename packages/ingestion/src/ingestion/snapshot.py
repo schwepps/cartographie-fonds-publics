@@ -25,6 +25,7 @@ import duckdb
 from pydantic import BaseModel, ConfigDict
 
 from .errors import SnapshotError, UnsupportedFormatError
+from .json_records import json_to_csv_bytes
 
 # Default root mirrors registry.REGISTRY_PATH resolution; env override for installed envs.
 _DEFAULT_SNAPSHOT_ROOT = Path(__file__).resolve().parents[4] / "data" / "snapshots"
@@ -33,6 +34,10 @@ SNAPSHOT_ROOT = Path(os.environ.get("CFP_SNAPSHOT_ROOT", _DEFAULT_SNAPSHOT_ROOT)
 _PROVENANCE_KEY = "cfp_provenance"
 _LATEST_POINTER = "latest.json"
 _UNSAFE_STAMP = re.compile(r"[^0-9A-Za-z]+")
+# Formats the harness can snapshot. JSON is tabularised to CSV first (see json_records), so the
+# atomic Parquet write + all_varchar faithfulness are one code path; provenance records the true
+# source format and hashes the *raw* bytes (FSC-47).
+_SUPPORTED_FORMATS = frozenset({"csv", "json"})
 
 
 class Provenance(BaseModel):
@@ -66,16 +71,24 @@ def write_snapshot(
     schema_ref: str | None = None,
     cell_warnings: int = 0,
     fmt: str = "csv",
+    record_path: str | None = None,
     root: Path = SNAPSHOT_ROOT,
 ) -> Path:
     """Persist ``raw`` as a provenance-tagged Parquet snapshot. Return the snapshot path.
+
+    ``fmt`` is ``csv`` or ``json``. For ``json`` the extract is unwrapped (``record_path`` names the
+    envelope key, e.g. ODS ``results``) and tabularised to CSV before the Parquet write; provenance
+    still records ``format='json'`` and hashes the *raw* JSON bytes (the reproducibility anchor).
 
     Atomic and non-destructive: the new file and the ``latest.json`` pointer are swapped in with
     ``os.replace`` only after a successful write, so any failure leaves the previous valid
     snapshot (and pointer) untouched. Raises ``SnapshotError`` on failure.
     """
-    if fmt != "csv":
-        raise UnsupportedFormatError(f"Cannot snapshot format {fmt!r} yet (only 'csv').")
+    if fmt not in _SUPPORTED_FORMATS:
+        supported = ", ".join(sorted(_SUPPORTED_FORMATS))
+        raise UnsupportedFormatError(
+            f"Cannot snapshot format {fmt!r} yet (supported: {supported})."
+        )
     # source_id becomes a directory name — reject anything that isn't a single safe segment, so a
     # malformed registry id can never escape SNAPSHOT_ROOT or reach the COPY path interpolation.
     if (
@@ -89,14 +102,20 @@ def write_snapshot(
     target_dir = Path(root) / source_id
     target_dir.mkdir(parents=True, exist_ok=True)
 
+    # Hash/measure the RAW extract (reproducibility anchor); JSON is then collapsed to the CSV view
+    # that read_csv stores all_varchar. A malformed JSON envelope fails loud here.
     content_sha256 = hashlib.sha256(raw).hexdigest()
     byte_size = len(raw)
+    try:
+        table_bytes = raw if fmt == "csv" else json_to_csv_bytes(raw, record_path=record_path)
+    except ValueError as exc:
+        raise SnapshotError(f"Failed to snapshot source {source_id!r}: {exc}") from exc
 
     raw_fd, raw_tmp = tempfile.mkstemp(dir=target_dir, suffix=".csv.tmp")
     parquet_tmp: str | None = None
     try:
         with os.fdopen(raw_fd, "wb") as fh:
-            fh.write(raw)
+            fh.write(table_bytes)
 
         con = duckdb.connect()
         try:

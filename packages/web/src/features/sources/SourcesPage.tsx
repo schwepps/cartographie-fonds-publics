@@ -1,7 +1,7 @@
 import { allSources, registryUpdatedAt, type Source } from "../../lib/provenance/sources";
 import { Breadcrumb, DataTable, External, Info, Shield, type DataTableColumn } from "../../lib/ui";
 
-const NOTES: { title: string; body: string }[] = [
+const NOTES: { title: string; body: string; id?: string }[] = [
   {
     title: "Voté vs exécuté",
     body: "Les crédits « votés » proviennent de la loi de finances (PLF/LFI) ; l’« exécuté » est constaté en fin d’exercice. Nous ne mélangeons jamais les deux et indiquons toujours le statut.",
@@ -11,8 +11,9 @@ const NOTES: { title: string; body: string }[] = [
     body: "Les autorisations d’engagement (AE) couvrent l’engagement juridique pluriannuel ; les crédits de paiement (CP) couvrent les décaissements de l’année. Un programme peut afficher des AE et des CP très différents.",
   },
   {
-    title: "Double-comptage",
-    body: "Un même euro peut apparaître à plusieurs niveaux (subvention d’État reversée par un opérateur, cofinancement par une collectivité). Les totaux agrégés sont des ordres de grandeur, jamais des sommes consolidées.",
+    id: "double-comptage",
+    title: "Double-comptage & univers comptables",
+    body: "Un même euro peut apparaître à plusieurs niveaux : une subvention de l’État reversée par un opérateur, ou un cofinancement État ↔ collectivité. Surtout, l’État (comptabilité LOLF — mission/programme, AE/CP) et les collectivités (M57/M14, base caisse) relèvent d’univers comptables distincts, non consolidables ; la sécurité sociale en est un troisième. Nous ne les additionnons jamais en silence : tout total qui mêle ces périmètres est un ordre de grandeur, signalé par une note de méthodologie, jamais une somme consolidée.",
   },
   {
     title: "Entités non résolues",
@@ -93,8 +94,9 @@ export default function SourcesPage() {
         {NOTES.map((n) => (
           <div
             key={n.title}
+            id={n.id}
             className="card card--pad"
-            style={{ borderLeft: "4px solid var(--blue-france)" }}
+            style={{ borderLeft: "4px solid var(--blue-france)", scrollMarginTop: "5rem" }}
           >
             <div className="fr-h4" style={{ marginBottom: 6 }}>
               {n.title}

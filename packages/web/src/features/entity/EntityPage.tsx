@@ -1,7 +1,9 @@
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { acronymOf } from "../../lib/acronyms";
 import { euroCompact, euroFull } from "../../lib/format";
+import { UNIVERSE_LOLF, universeForLevel } from "../../lib/perimeter";
 import { seqColor } from "../../lib/seq";
 import { tutelleChain, type ChainEntity } from "../../lib/tutelle";
 import { ProvenanceBadge } from "../../lib/provenance/ProvenanceBadge";
@@ -20,6 +22,7 @@ import {
   Graph as GraphIcon,
   LevelBadge,
   LevelShape,
+  MethodologyNote,
   Spark,
   StateBlock,
   Warning,
@@ -68,6 +71,7 @@ function TrendSpark({ budget }: { budget: BudgetFactRow[] }) {
 export default function EntityPage() {
   const { siren = "" } = useParams<{ siren: string }>();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const state = useEntitySheet(siren);
 
   const entity = state.status === "ready" ? state.entity : null;
@@ -111,9 +115,22 @@ export default function EntityPage() {
 
   const exercices = [...new Set(budgetFacts.map((b) => b.exercice))].sort((a, b) => b - a);
   const lastEx = exercices[0];
-  const voted = budgetFacts.filter((b) => b.exercice === lastEx && !b.executed);
-  const totalAeVoted = voted.reduce((s, b) => s + (b.amount_ae_eur ?? 0), 0);
-  const totalCpVoted = voted.reduce((s, b) => s + (b.amount_cp_eur ?? 0), 0);
+  // State/LOLF sheets show *voté* credits (AE/CP) when the latest exercice has them. Local (M57) and
+  // social facts are realised (executed=true) and cash-basis; a State exercice with execution data
+  // only is realised too — in both cases fall back to the realised figure rather than render an
+  // empty 0 €. Only the non-LOLF case also carries the accounting-universe note (FSC-42).
+  const isLolfBudget = universeForLevel(entity.level) === UNIVERSE_LOLF;
+  const lastFacts = budgetFacts.filter((b) => b.exercice === lastEx);
+  const votedLast = lastFacts.filter((b) => !b.executed);
+  const showVoted = isLolfBudget && votedLast.length > 0;
+  const figureFacts = showVoted ? votedLast : lastFacts;
+  const totalAe = figureFacts.reduce((s, b) => s + (b.amount_ae_eur ?? 0), 0);
+  const totalCp = figureFacts.reduce((s, b) => s + (b.amount_cp_eur ?? 0), 0);
+  const budgetProvenance = isLolfBudget
+    ? "budget_plf_lfi"
+    : entity.level === "social"
+      ? "comptes_sociaux"
+      : "finances_locales_ofgl";
 
   const out = edges
     .filter(
@@ -252,40 +269,55 @@ export default function EntityPage() {
               <>
                 <div
                   className="grid"
-                  style={{ gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 20 }}
+                  style={{
+                    gridTemplateColumns: showVoted ? "1fr 1fr" : "1fr",
+                    gap: 16,
+                    marginBottom: 20,
+                  }}
                 >
-                  <div className="figure" style={{ borderTopColor: "var(--niv-etat)" }}>
-                    <div
-                      className="fr-xs text-mention"
-                      style={{ textTransform: "uppercase", letterSpacing: ".04em" }}
-                    >
-                      Autorisations d’engagement (AE) · voté
+                  {showVoted ? (
+                    <div className="figure" style={{ borderTopColor: "var(--niv-etat)" }}>
+                      <div
+                        className="fr-xs text-mention"
+                        style={{ textTransform: "uppercase", letterSpacing: ".04em" }}
+                      >
+                        Autorisations d’engagement (AE) · voté
+                      </div>
+                      <div className="figure__value" style={{ fontSize: "1.7rem" }}>
+                        {euroCompact(totalAe)}
+                      </div>
                     </div>
-                    <div className="figure__value" style={{ fontSize: "1.7rem" }}>
-                      {euroCompact(totalAeVoted)}
-                    </div>
-                  </div>
+                  ) : null}
                   <div className="figure">
                     <div
                       className="fr-xs text-mention"
                       style={{ textTransform: "uppercase", letterSpacing: ".04em" }}
                     >
-                      Crédits de paiement (CP) · voté
+                      {showVoted
+                        ? "Crédits de paiement (CP) · voté"
+                        : "Dépenses réelles (CP) · réalisé"}
                     </div>
                     <div className="figure__value" style={{ fontSize: "1.7rem" }}>
-                      {euroCompact(totalCpVoted)}
+                      {euroCompact(totalCp)}
                     </div>
                   </div>
                 </div>
+                {!isLolfBudget ? (
+                  <MethodologyNote className="entity-methodology">
+                    {/* The M57/M14 wording fits local only; other non-LOLF universes (e.g. social)
+                        fall back to the generic double-counting disclaimer. */}
+                    {entity.level === "local" ? t("methodology.local") : undefined}
+                  </MethodologyNote>
+                ) : null}
                 <div
                   className="grid"
                   style={{ gridTemplateColumns: "1.4fr 1fr", gap: 28, alignItems: "start" }}
                 >
                   <div>
                     <div className="fr-sm" style={{ fontWeight: 600, marginBottom: 10 }}>
-                      Répartition par programme (CP voté {lastEx})
+                      Répartition par programme (CP {showVoted ? "voté" : "réalisé"} {lastEx})
                     </div>
-                    <MissionBars rows={voted} />
+                    <MissionBars rows={figureFacts} />
                   </div>
                   {exercices.length > 1 ? (
                     <div>
@@ -310,7 +342,7 @@ export default function EntityPage() {
                   </div>
                 </details>
                 <div style={{ marginTop: 10 }}>
-                  <ProvenanceBadge provenanceId="budget_plf_lfi" millesime={lastEx} />
+                  <ProvenanceBadge provenanceId={budgetProvenance} millesime={lastEx} />
                 </div>
               </>
             ) : (

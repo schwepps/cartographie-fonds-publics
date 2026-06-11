@@ -1,12 +1,14 @@
 import { useMemo, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { buildFlowLinks, type SankeyLink } from "../../lib/flows";
 import { euroCompact } from "../../lib/format";
+import { mixesPerimeters } from "../../lib/perimeter";
 import {
   Breadcrumb,
   DataTable,
   ExampleFlag,
   Flow,
+  MethodologyNote,
   Sankey,
   Select,
   StateBlock,
@@ -55,6 +57,9 @@ export default function FluxPage() {
   // operator. Sum the links originating from the root itself — not the minimum column, which would
   // wrongly count an operator's *incoming* funding (its financeur's funds sit at col 0).
   const total = links.filter((l) => l.source === root).reduce((s, l) => s + l.value, 0);
+  // When the traced flow touches more than one accounting universe (e.g. State LOLF + local M57),
+  // the total is not a consolidated sum — surface the stronger mixed-perimeter caveat (FSC-42).
+  const mixed = mixesPerimeters(links.flatMap((l) => [l.sourceLevel, l.targetLevel]));
   const rootName = model?.entityBySiren.get(root)?.name ?? "";
   const tableRows = links.map((l, i) => ({ ...l, key: `${l.source}-${l.target}-${i}` }));
 
@@ -137,15 +142,9 @@ export default function FluxPage() {
               </svg>{" "}
               Délégation / marché
             </span>
-            <span className="fr-sm text-mention" style={{ marginLeft: "auto" }}>
-              Attention : un même euro peut être compté plusieurs fois (double-comptage entre
-              niveaux). Voir{" "}
-              <Link className="fr-link" to="/sources">
-                méthodologie
-              </Link>
-              .
-            </span>
           </div>
+
+          <MethodologyNote mixed={mixed} className="flux-methodology" />
 
           <h2 className="fr-h3" style={{ marginTop: 40, marginBottom: 16 }}>
             Équivalent tabulaire

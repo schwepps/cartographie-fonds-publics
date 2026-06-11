@@ -27,5 +27,11 @@
     "ariaMillesime": ", millésime {{millesime}}",
     "unknown": "Source inconnue ({{id}})",
     "seeSources": "Voir le détail de la source"
+  },
+  "methodology": {
+    "doubleCounting": "Attention : un même euro peut être compté plusieurs fois (subvention de l'État, puis dépense de l'opérateur). Les totaux sont des ordres de grandeur, jamais des sommes consolidées.",
+    "mixed": "Attention : ce total mêle des univers comptables différents (État en LOLF, collectivités en M57/M14). Ils ne sont pas consolidables — c'est un ordre de grandeur, pas une somme.",
+    "local": "Comptabilité locale (M57/M14, base caisse) : ni AE/CP ni voté/exécuté comme à l'État, et non consolidable avec les crédits de l'État.",
+    "seeMore": "Voir la méthodologie"
   }
 }
