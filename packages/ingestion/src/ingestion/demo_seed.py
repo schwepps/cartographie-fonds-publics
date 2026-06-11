@@ -26,7 +26,7 @@ import os
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from core.models import BudgetFact, Contract, Edge, EdgeType, Entity, Level, Nature
+from core.models import BudgetFact, Contract, Edge, EdgeType, Entity, Level, Nature, Nomenclature
 
 from .sql_render import (
     BUDGET_COLUMNS,
@@ -262,6 +262,18 @@ _BUDGET: tuple[tuple[str, int, str, str, int, int, bool], ...] = (
     ),
 )
 
+# Local budget facts (M57 universe): OFGL expenditure agrégats for a few collectivités, so a local
+# entity's Fiche shows a budget and the anti-double-counting note has a genuine State↔local mix to
+# guard (FSC-32/FSC-42). Illustrative amounts (« exemple »); (siren, exercice, agrégat, montant_cp).
+_LOCAL_BUDGET: tuple[tuple[str, int, str, int], ...] = (
+    ("237500139", 2023, "Dépenses de fonctionnement", 3_400_000_000),
+    ("237500139", 2023, "Dépenses d’investissement", 2_100_000_000),
+    ("200053781", 2023, "Dépenses de fonctionnement", 2_300_000_000),
+    ("200053781", 2023, "Dépenses d’investissement", 900_000_000),
+    ("217500016", 2023, "Dépenses de fonctionnement", 8_000_000_000),
+    ("217500016", 2023, "Dépenses d’investissement", 1_500_000_000),
+)
+
 # Contracts (DECP) — the schema has no `objet` column, so it is dropped.
 _CONTRACTS: tuple[tuple[str, str, float, str, int], ...] = (
     ("180089013", "329200521", 1_800_000, "marche", 2026),
@@ -359,6 +371,20 @@ def build_demo() -> DemoBundle:
             provenance=_P_BUDGET,
         )
         for siren, exercice, mission, programme, ae, cp, executed in _BUDGET
+    ]
+    # Local M57 expenditure facts (cash-basis: AE/CP do not apply), so a collectivité's Fiche
+    # carries a budget in a *different* accounting universe from the State's LOLF credits (FSC-32).
+    budget_facts += [
+        BudgetFact(
+            entity_siren=siren,
+            exercice=exercice,
+            programme=agregat,
+            amount_cp_eur=cp,
+            executed=True,
+            nomenclature=Nomenclature.m57,
+            provenance=_P_OFGL,
+        )
+        for siren, exercice, agregat, cp in _LOCAL_BUDGET
     ]
     contracts = [
         Contract(

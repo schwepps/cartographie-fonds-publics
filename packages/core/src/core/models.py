@@ -62,6 +62,16 @@ class Nature(StrEnum):
     concession = "concession"  # concession / DSP
 
 
+class Nomenclature(StrEnum):
+    """Accounting universe a budget fact belongs to — kept explicit so totals are never summed
+    across universes silently (the anti-double-counting methodology, FSC-42)."""
+
+    lolf = "lolf"  # State budget: mission > programme, AE/CP (budget_plf_lfi, budget_execution)
+    m57 = "m57"  # local authorities (current accounting framework) — OFGL agrégats, cash basis
+    m14 = "m14"  # local authorities (legacy framework, smaller communes)
+    social = "social"  # social-security accounts (LFSS) — separate perimeter
+
+
 class FrozenModel(BaseModel):
     """Base for the frozen domain model: unknown fields fail loud.
 
@@ -98,6 +108,8 @@ class BudgetFact(FrozenModel):
     amount_ae_eur: float | None = None  # autorisations d'engagement
     amount_cp_eur: float | None = None  # credits de paiement
     executed: bool = False  # voted (False) vs executed (True)
+    # accounting universe (LOLF / M57 / M14 / social) — see Nomenclature
+    nomenclature: Nomenclature = Nomenclature.lolf
     provenance: str | None = None  # source id from the registry (mirrors Entity/Edge.provenance)
 
 

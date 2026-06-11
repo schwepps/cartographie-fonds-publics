@@ -30,6 +30,7 @@ BUDGET_COLUMNS = (
     "amount_ae_eur",
     "amount_cp_eur",
     "executed",
+    "nomenclature",
     "provenance",
 )
 CONTRACT_COLUMNS = (

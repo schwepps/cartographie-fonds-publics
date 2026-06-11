@@ -6,6 +6,14 @@ Commits follow [Conventional Commits](https://www.conventionalcommits.org/).
 
 ## [Unreleased]
 ### Added
+- OFGL local-authority finances connector (FSC-32): a `finances_locales_ofgl` transform turns the
+  OFGL *agrégats comptables* (the M57/M14 accounting universe) into **local** entities + `budget_facts`
+  keyed on the collectivité SIREN, stamped `nomenclature=m57` — a new `budget_facts.nomenclature`
+  column (migration `0006`, default `lolf`) that keeps the State (LOLF) and local accounting universes
+  distinct rather than silently summed. Only a curated, mutually-exclusive expenditure agrégat pair is
+  ingested (anti-double-counting, golden rule #8); unresolved SIRENs are reported, never guessed. It
+  reuses the existing `ods_explore` connector and runs offline against a fixture. The illustrative
+  demo seed gains local M57 budgets so a collectivité Fiche renders a budget.
 - JSON support in the validate + snapshot harness (FSC-47): `validate_extract` / `write_snapshot`
   now accept `fmt="json"` for tabular JSON (array of records). A registry-driven `records_path`
   (e.g. ODS `results`) unwraps the envelope; the records are tabularised to CSV so the **same**
