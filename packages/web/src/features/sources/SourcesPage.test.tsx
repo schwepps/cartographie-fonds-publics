@@ -24,9 +24,11 @@ describe("SourcesPage (Données & licences)", () => {
   });
 
   it("documents the methodology notes", () => {
-    renderSources();
-    expect(screen.getByText("Double-comptage")).toBeInTheDocument();
+    const { container } = renderSources();
+    expect(screen.getByText(/Double-comptage/)).toBeInTheDocument();
     expect(screen.getByText(/Accessibilité & code/)).toBeInTheDocument();
+    // The double-counting note carries the anchor MethodologyNote deep-links to (FSC-42).
+    expect(container.querySelector("#double-comptage")).not.toBeNull();
   });
 
   it("has no accessibility violations", async () => {

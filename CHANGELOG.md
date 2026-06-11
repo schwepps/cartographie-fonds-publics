@@ -6,6 +6,14 @@ Commits follow [Conventional Commits](https://www.conventionalcommits.org/).
 
 ## [Unreleased]
 ### Added
+- Anti-double-counting methodology + UI disclaimers (FSC-42): a documented convention (ADR-0007) that
+  the State (LOLF), local (M57/M14) and social accounting universes are **never silently summed**. A
+  single source of truth `core.methodology` — mirrored in the web `lib/perimeter.ts` — maps a
+  nomenclature/level to its universe and detects a mixed total. A reusable `MethodologyNote` (DSFR
+  info Callout) surfaces the caveat on the Flux Sankey (stronger wording when the traced flow crosses
+  universes), the entity Fiche budget totals (local M57 sheets now show realised expenditure instead
+  of an empty *voté* figure, attributed to OFGL), and the Graphe table — all linking to an anchored
+  `#double-comptage` méthodologie section on the Données page.
 - SEM/SPL local public companies connector (FSC-33): an `epl_sem_spl` transform filters a
   SIRENE-derived extract to the SEM/SPL **catégories juridiques** → `level=delegated` entities, and
   emits a `participation` edge (public shareholder → company) **only** when a shareholder is published
