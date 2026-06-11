@@ -148,6 +148,70 @@ def test_indivisible_co_titulaire_split_sums_back_exactly() -> None:
     assert round(sum(cnrs_out), 2) == 100.0
 
 
+def test_parse_amount_handles_us_and_french_formats() -> None:
+    from ingestion.transforms.decp_commande_publique import _parse_amount
+
+    # The rightmost of ',' / '.' is the decimal separator; the other groups thousands.
+    assert _parse_amount("1234.56") == 1234.56
+    assert _parse_amount("1,234.56") == 1234.56  # US
+    assert _parse_amount("1.234,56") == 1234.56  # French (previously mis-parsed to 1.23456)
+    assert _parse_amount("1 234,56") == 1234.56  # French with a thousands space
+    assert _parse_amount("840000") == 840000.0
+    assert _parse_amount("") is None
+    assert _parse_amount("N/A") is None
+
+
+def test_market_key_falls_back_to_acheteur_plus_id_not_titulaire() -> None:
+    # With no `uid` but an internal market `id`, co-titulaires of one market must stay one market
+    # (keyed acheteur+id), not split by titulaire_id. Two co-titulaire rows → one market → split.
+    headers = ["acheteur_id", "id", "titulaire_id", "titulaire_nom", "montant", "nature"]
+    rows = [
+        {
+            "acheteur_id": "18008901300012",
+            "id": "M-1",
+            "titulaire_id": "55208131700025",
+            "titulaire_nom": "A",
+            "montant": "1000",
+            "nature": "Marché",
+        },
+        {
+            "acheteur_id": "18008901300012",
+            "id": "M-1",
+            "titulaire_id": "40236049400015",
+            "titulaire_nom": "B",
+            "montant": "1000",
+            "nature": "Marché",
+        },
+    ]
+    result = build(headers, rows, crosswalk=Crosswalk.from_entries([]))
+    assert result.report["markets"] == 1  # grouped by acheteur+id, not split into two
+    cnrs_out = [e.amount_eur or 0.0 for e in result.edges if e.source_siren == _CNRS]
+    assert sorted(cnrs_out) == [500.0, 500.0]  # 1000 split equally between the two co-titulaires
+
+
+def test_co_titulaire_split_is_order_independent() -> None:
+    # The remainder cent is assigned by sorted titulaire id, so per-supplier amounts are identical
+    # regardless of upstream row order (100 / 3, the indivisible case).
+    headers = ["uid", "acheteur_id", "titulaire_id", "montant", "nature"]
+    sirets = ["55208131700025", "40236049400015", "32655657800019"]
+
+    def amounts_for(order: list[str]) -> dict[str, float]:
+        rows = [
+            {
+                "uid": "Z",
+                "acheteur_id": "18008901300012",
+                "titulaire_id": s,
+                "montant": "100",
+                "nature": "Marché",
+            }
+            for s in order
+        ]
+        result = build(headers, rows, crosswalk=Crosswalk.from_entries([]))
+        return {e.target_siren: (e.amount_eur or 0.0) for e in result.edges}
+
+    assert amounts_for(sirets) == amounts_for(list(reversed(sirets)))
+
+
 def test_missing_required_column_fails_loud() -> None:
     # If a column the curation depends on (here montant) drifts away, the transform must fail loud
     # rather than silently produce amount-less contracts (golden rule #3).

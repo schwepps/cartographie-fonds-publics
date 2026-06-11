@@ -45,26 +45,35 @@ def aggregate_delegates_edges(
 
     Only contracts carrying a SIREN on **both** ends contribute — an :class:`Edge` requires one on
     each side, and a pair is the edge key. Contracts with an unresolved end are the caller's to
-    report (golden rule #5); they are skipped here, never silently absorbed. Output is sorted for
-    deterministic SQL rendering.
+    report (golden rule #5); they are skipped here, never silently absorbed.
+
+    A known amount (unknown ≠ zero): the edge sums the **known** montants of its contracts, and is
+    ``None`` only when *every* contract for the pair has an unknown amount — never a misleading
+    ``0.0``. The relationship still produces an edge (the delegation is real even if its value is
+    unpublished). Output is sorted for deterministic SQL rendering.
     """
-    amounts: dict[tuple[str, str, int | None], float] = defaultdict(float)
+    # Track the running sum of known amounts per pair, and every pair seen (so an all-unknown pair
+    # still yields an edge with amount_eur=None rather than being dropped or shown as 0).
+    totals: dict[tuple[str, str, int | None], float] = {}
+    seen: set[tuple[str, str, int | None]] = set()
     for contract in contracts:
         if contract.acheteur_siren is None or contract.titulaire_siren is None:
             continue
         key = (contract.acheteur_siren, contract.titulaire_siren, contract.exercice)
-        amounts[key] += contract.montant_eur or 0.0
+        seen.add(key)
+        if contract.montant_eur is not None:
+            totals[key] = totals.get(key, 0.0) + contract.montant_eur
 
     edges = [
         Edge(
             source_siren=acheteur,
             target_siren=titulaire,
             type=EdgeType.delegates,
-            amount_eur=amount,
+            amount_eur=totals.get((acheteur, titulaire, exercice)),  # None if no known amount
             exercice=exercice,
             provenance=provenance,
         )
-        for (acheteur, titulaire, exercice), amount in amounts.items()
+        for (acheteur, titulaire, exercice) in seen
     ]
     edges.sort(key=lambda e: (e.source_siren, e.target_siren, e.exercice or 0))
     return edges

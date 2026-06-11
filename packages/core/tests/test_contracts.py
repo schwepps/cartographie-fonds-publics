@@ -48,6 +48,24 @@ def test_aggregate_delegates_edges_sums_per_pair_and_exercice():
     assert summed.amount_eur == 1_250_000
 
 
+def test_aggregate_delegates_edges_unknown_amount_is_none_not_zero():
+    # A pair whose every contract has an unknown montant yields an edge with amount_eur=None
+    # (unknown ≠ zero), never a misleading 0.0 — but the delegation edge still exists.
+    contracts = [
+        Contract(acheteur_siren="180089013", titulaire_siren="552081317", montant_eur=None),
+        Contract(acheteur_siren="180089013", titulaire_siren="552081317", montant_eur=None),
+    ]
+    edges = aggregate_delegates_edges(contracts)
+    assert len(edges) == 1
+    assert edges[0].amount_eur is None
+    # A pair with a mix of known + unknown sums only the known amounts.
+    mixed = [
+        Contract(acheteur_siren="180089013", titulaire_siren="326556578", montant_eur=100.0),
+        Contract(acheteur_siren="180089013", titulaire_siren="326556578", montant_eur=None),
+    ]
+    assert aggregate_delegates_edges(mixed)[0].amount_eur == 100.0
+
+
 def test_aggregate_delegates_edges_skips_unresolved_ends():
     # An unresolved acheteur OR titulaire cannot form an edge (Edge needs both) — skipped.
     contracts = [

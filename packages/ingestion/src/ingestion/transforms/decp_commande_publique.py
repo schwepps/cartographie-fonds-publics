@@ -53,6 +53,10 @@ _MONTANT_PATTERNS = (r"^montant$", r"montant")
 _NATURE_PATTERNS = (r"nature",)
 _DATE_PATTERNS = (r"date.*notif", r"exercice", r"ann[eé]e")
 _UID_PATTERNS = (r"^uid$", r"\buid\b")
+# The internal market id, shared across a market's co-titulaire and amendment rows (anchored so it
+# never matches acheteur_id / titulaire_id / idAccordCadre). With acheteur_id it keys a market when
+# `uid` is absent.
+_MARKET_ID_PATTERNS = (r"^id$",)
 _MODIFICATION_PATTERNS = (r"modification",)
 _CURRENT_PATTERNS = (r"donnees?.*actuel", r"donnee.*actuel")
 
@@ -70,6 +74,7 @@ class _Columns:
     titulaire_name: str | None
     date: str | None
     uid: str | None
+    market_id: str | None
     modification: str | None
     current: str | None
 
@@ -105,21 +110,25 @@ def _detect_columns(headers: list[str]) -> _Columns:
         titulaire_name=first_column(headers, _TITULAIRE_NAME_PATTERNS),
         date=first_column(headers, _DATE_PATTERNS),
         uid=first_column(headers, _UID_PATTERNS),
+        market_id=first_column(headers, _MARKET_ID_PATTERNS),
         modification=first_column(headers, _MODIFICATION_PATTERNS),
         current=first_column(headers, _CURRENT_PATTERNS),
     )
 
 
 def _parse_amount(value: str) -> float | None:
-    """Parse a DECP montant (plain or French-formatted) to float; blank/garbage → None."""
+    """Parse a DECP montant (plain, US- or French-formatted) to float; blank/garbage → None.
+
+    The decimal separator is the RIGHTMOST of ``,`` / ``.`` — so ``1.234,56`` (French) and
+    ``1,234.56`` (US) both yield 1234.56, and the other separator is dropped as a thousands group.
+    """
     cleaned = re.sub(r"[^\d,.\-]", "", str(value or ""))
     if not cleaned:
         return None
-    # French data may use ',' as the decimal separator; normalise to '.'.
-    if "," in cleaned and "." not in cleaned:
-        cleaned = cleaned.replace(",", ".")
+    if cleaned.rfind(",") > cleaned.rfind("."):
+        cleaned = cleaned.replace(".", "").replace(",", ".")  # French: ',' decimal, '.' thousands
     else:
-        cleaned = cleaned.replace(",", "")
+        cleaned = cleaned.replace(",", "")  # US/plain: '.' decimal, ',' thousands
     try:
         return float(cleaned)
     except ValueError:
@@ -144,14 +153,23 @@ def _parse_year(value: str | None) -> int | None:
 
 
 def _market_key(row: dict[str, str], cols: _Columns) -> str:
-    """A stable market id: the ``uid`` if present, else an acheteur_id + titulaire_id surrogate."""
+    """A stable market id shared across a market's co-titulaire and amendment rows.
+
+    Prefer ``uid``; else ``acheteur_id + id`` (the internal market id, also shared across those
+    rows). Only as a last resort — no uid and no id column — fall back to ``acheteur_id +
+    titulaire_id``, which cannot group co-titulaires (each becomes its own "market"); real DECP
+    always carries both uid and id, so this degraded path is for an unexpected format only.
+    """
     if cols.uid:
         uid = (row.get(cols.uid) or "").strip()
         if uid:
             return uid
-    return (
-        f"{(row.get(cols.acheteur_id) or '').strip()}::{(row.get(cols.titulaire_id) or '').strip()}"
-    )
+    acheteur = (row.get(cols.acheteur_id) or "").strip()
+    if cols.market_id:
+        market_id = (row.get(cols.market_id) or "").strip()
+        if market_id:
+            return f"{acheteur}::{market_id}"
+    return f"{acheteur}::{(row.get(cols.titulaire_id) or '').strip()}"
 
 
 def _current_rows(rows: list[dict[str, str]], cols: _Columns) -> list[dict[str, str]]:
@@ -219,9 +237,21 @@ def build(
 
     for _uid, market_rows in markets.items():
         current = _current_rows(market_rows, cols)
-        # Distinct co-titulaires of the current attribution (dedup repeated titulaire rows).
-        by_titulaire = {(r.get(cols.titulaire_id) or "").strip(): r for r in current}
-        n_titulaires = len(by_titulaire) or 1
+        # Distinct co-titulaires of the current attribution: dedupe repeated titulaire ids, but keep
+        # BLANK-id rows distinct (two unnamed co-titulaires are two parties, not one). Sort by id so
+        # the remainder cent of the equal split always lands on the same titulaire regardless of the
+        # upstream row order (deterministic per-supplier amounts across rebuilds).
+        seen_titulaire_ids: set[str] = set()
+        titulaire_rows: list[dict[str, str]] = []
+        for row in current:
+            tid = (row.get(cols.titulaire_id) or "").strip()
+            if tid and tid in seen_titulaire_ids:
+                continue
+            if tid:
+                seen_titulaire_ids.add(tid)
+            titulaire_rows.append(row)
+        titulaire_rows.sort(key=lambda r: (r.get(cols.titulaire_id) or "").strip())
+        n_titulaires = len(titulaire_rows) or 1
         first = current[0]
         montant = _parse_amount(first.get(cols.montant, ""))
         # Equal split among co-titulaires, remainder-distributed so the shares sum back exactly.
@@ -231,7 +261,7 @@ def build(
         acheteur_name = first.get(cols.acheteur_name, "") if cols.acheteur_name else ""
         acheteur_siren = resolve_party(first.get(cols.acheteur_id, ""), acheteur_name)
 
-        for share, row in zip(shares, by_titulaire.values(), strict=True):
+        for share, row in zip(shares, titulaire_rows, strict=True):
             titulaire_name = row.get(cols.titulaire_name, "") if cols.titulaire_name else ""
             titulaire_siren = resolve_party(row.get(cols.titulaire_id, ""), titulaire_name)
             if titulaire_siren is not None and titulaire_name.strip():
