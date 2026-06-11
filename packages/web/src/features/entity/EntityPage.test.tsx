@@ -29,6 +29,14 @@ vi.mock("../../lib/supabase", () => {
       parent_siren: "110044013",
       provenance: "operateurs_etat",
     },
+    "200053781": {
+      siren: "200053781",
+      name: "Métropole de Lyon",
+      level: "local",
+      category: "Métropole",
+      parent_siren: null,
+      provenance: "finances_locales_ofgl",
+    },
   };
   const edges = [
     {
@@ -40,24 +48,46 @@ vi.mock("../../lib/supabase", () => {
       provenance: "budget_plf_lfi",
     },
   ];
-  const budget = [
-    {
-      exercice: 2025,
-      mission: "MIRES",
-      programme: "150 — Formations",
-      amount_ae_eur: 15_217_000_000,
-      amount_cp_eur: 15_279_000_000,
-      executed: false,
-    },
-    {
-      exercice: 2024,
-      mission: "MIRES",
-      programme: "150 — Formations",
-      amount_ae_eur: 14_690_000_000,
-      amount_cp_eur: 14_710_000_000,
-      executed: true,
-    },
-  ];
+  // Budget facts keyed by entity_siren (the sheet queries budget_facts.eq(entity_siren, siren)).
+  const budgetBySiren: Record<string, Record<string, unknown>[]> = {
+    "110044013": [
+      {
+        exercice: 2025,
+        mission: "MIRES",
+        programme: "150 — Formations",
+        amount_ae_eur: 15_217_000_000,
+        amount_cp_eur: 15_279_000_000,
+        executed: false,
+      },
+      {
+        exercice: 2024,
+        mission: "MIRES",
+        programme: "150 — Formations",
+        amount_ae_eur: 14_690_000_000,
+        amount_cp_eur: 14_710_000_000,
+        executed: true,
+      },
+    ],
+    // Local (M57) facts: realised (executed), cash-basis (no AE), agrégat in `programme`.
+    "200053781": [
+      {
+        exercice: 2023,
+        mission: null,
+        programme: "Dépenses de fonctionnement",
+        amount_ae_eur: null,
+        amount_cp_eur: 2_300_000_000,
+        executed: true,
+      },
+      {
+        exercice: 2023,
+        mission: null,
+        programme: "Dépenses d’investissement",
+        amount_ae_eur: null,
+        amount_cp_eur: 900_000_000,
+        executed: true,
+      },
+    ],
+  };
   const contracts = [
     {
       acheteur_siren: "110044013",
@@ -72,7 +102,7 @@ vi.mock("../../lib/supabase", () => {
     const filter: { col?: string; val?: unknown; inVals?: string[] } = {};
     const resolveMany = () => {
       if (table === "edges") return edges;
-      if (table === "budget_facts") return budget;
+      if (table === "budget_facts") return budgetBySiren[String(filter.val)] ?? [];
       if (table === "contracts") return contracts;
       if (table === "entities") {
         if (filter.inVals) return filter.inVals.map((s) => entityRows[s]).filter(Boolean);
@@ -129,6 +159,20 @@ describe("EntityPage (fiche)", () => {
     expect(screen.getByText(/Répartition par programme/)).toBeInTheDocument();
     // The programme appears in the bar + the details table.
     expect(screen.getAllByText(/150 — Formations/).length).toBeGreaterThan(0);
+  });
+
+  it("renders a local (M57) sheet with realised expenditure and the methodology note", async () => {
+    renderSheet("200053781");
+    await screen.findByRole("heading", { level: 1, name: /Métropole de Lyon/ });
+    // Local universe: a single realised CP figure (no voté AE column), summing the M57 agrégats.
+    expect(screen.getByText(/Dépenses réelles \(CP\)/)).toBeInTheDocument();
+    expect(screen.queryByText(/Autorisations d’engagement/)).not.toBeInTheDocument();
+    // The accounting-universe disclaimer (FSC-42) appears, linking to the méthodologie anchor.
+    expect(screen.getByText(/Comptabilité locale/)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Voir la méthodologie/ })).toHaveAttribute(
+      "href",
+      "/sources#double-comptage",
+    );
   });
 
   it("lists supervised operators as chips linking to their sheets", async () => {

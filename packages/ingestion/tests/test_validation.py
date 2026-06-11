@@ -179,6 +179,18 @@ def test_wrong_envelope_key_fails_loud(
         )
 
 
+def test_empty_json_array_fails_loud(fixtures_dir: Path) -> None:
+    # An empty array tabularises to a header-less CSV -> every schema column is missing -> column
+    # drift -> fatal (the JSON analogue of test_empty_extract_fails_loud).
+    with pytest.raises(SchemaValidationError):
+        validate_extract(
+            b"[]",
+            source_id="finances_locales_ofgl",
+            schema_ref=_json_schema_path(fixtures_dir),
+            fmt="json",
+        )
+
+
 def test_no_schema_declared_skips_validation(load_fixture: Callable[[str], bytes]) -> None:
     report = validate_extract(load_fixture("decp_valid.csv"), source_id=SOURCE, schema_ref=None)
     assert report.skipped

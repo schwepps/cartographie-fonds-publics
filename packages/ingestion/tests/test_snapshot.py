@@ -149,6 +149,14 @@ def test_snapshot_json_unwraps_envelope(tmp_path: Path) -> None:
     assert count is not None and count[0] == 2
 
 
+def test_snapshot_empty_json_array_yields_zero_rows(tmp_path: Path) -> None:
+    # An empty array snapshots cleanly at 0 rows (the validate step is where emptiness fails loud).
+    path = write_snapshot(b"[]", source_id="ofgl", extracted_at=_AT, fmt="json", root=tmp_path)
+    prov = read_provenance(path)
+    assert prov.format == "json"
+    assert prov.row_count == 0
+
+
 def test_malformed_json_snapshot_fails_loud(tmp_path: Path) -> None:
     # A bad envelope (results is an object, not an array) fails loud rather than snapshotting empty.
     with pytest.raises(SnapshotError):

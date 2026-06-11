@@ -115,12 +115,15 @@ export default function EntityPage() {
 
   const exercices = [...new Set(budgetFacts.map((b) => b.exercice))].sort((a, b) => b - a);
   const lastEx = exercices[0];
-  // State/LOLF sheets show *voté* credits (AE/CP). Local (M57) and social facts are realised
-  // (executed=true) and cash-basis, so fall back to them rather than render an empty 0 € figure,
-  // and surface the accounting-universe note (FSC-42).
+  // State/LOLF sheets show *voté* credits (AE/CP) when the latest exercice has them. Local (M57) and
+  // social facts are realised (executed=true) and cash-basis; a State exercice with execution data
+  // only is realised too — in both cases fall back to the realised figure rather than render an
+  // empty 0 €. Only the non-LOLF case also carries the accounting-universe note (FSC-42).
   const isLolfBudget = universeForLevel(entity.level) === UNIVERSE_LOLF;
   const lastFacts = budgetFacts.filter((b) => b.exercice === lastEx);
-  const figureFacts = isLolfBudget ? lastFacts.filter((b) => !b.executed) : lastFacts;
+  const votedLast = lastFacts.filter((b) => !b.executed);
+  const showVoted = isLolfBudget && votedLast.length > 0;
+  const figureFacts = showVoted ? votedLast : lastFacts;
   const totalAe = figureFacts.reduce((s, b) => s + (b.amount_ae_eur ?? 0), 0);
   const totalCp = figureFacts.reduce((s, b) => s + (b.amount_cp_eur ?? 0), 0);
   const budgetProvenance = isLolfBudget
@@ -267,12 +270,12 @@ export default function EntityPage() {
                 <div
                   className="grid"
                   style={{
-                    gridTemplateColumns: isLolfBudget ? "1fr 1fr" : "1fr",
+                    gridTemplateColumns: showVoted ? "1fr 1fr" : "1fr",
                     gap: 16,
                     marginBottom: 20,
                   }}
                 >
-                  {isLolfBudget ? (
+                  {showVoted ? (
                     <div className="figure" style={{ borderTopColor: "var(--niv-etat)" }}>
                       <div
                         className="fr-xs text-mention"
@@ -290,7 +293,7 @@ export default function EntityPage() {
                       className="fr-xs text-mention"
                       style={{ textTransform: "uppercase", letterSpacing: ".04em" }}
                     >
-                      {isLolfBudget
+                      {showVoted
                         ? "Crédits de paiement (CP) · voté"
                         : "Dépenses réelles (CP) · réalisé"}
                     </div>
@@ -310,7 +313,7 @@ export default function EntityPage() {
                 >
                   <div>
                     <div className="fr-sm" style={{ fontWeight: 600, marginBottom: 10 }}>
-                      Répartition par programme (CP {isLolfBudget ? "voté" : "réalisé"} {lastEx})
+                      Répartition par programme (CP {showVoted ? "voté" : "réalisé"} {lastEx})
                     </div>
                     <MissionBars rows={figureFacts} />
                   </div>

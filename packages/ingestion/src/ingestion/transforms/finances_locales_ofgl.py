@@ -36,7 +36,8 @@ SOURCE_ID = "finances_locales_ofgl"
 # Column detection (OFGL ODS export labels; match by pattern, never a frozen header). `^montant$`
 # first so the euro figure is taken over `Euros par habitant`/ratio columns.
 _SIREN_PATTERNS = (r"\bsiren\b", r"siren")
-_NAME_PATTERNS = (r"nom", r"lbudg", r"denom")
+# Most-specific first; the bare token is word-bounded so it never grabs `nomenclature`/`nombre`.
+_NAME_PATTERNS = (r"nom.?commune", r"nom.?coll", r"lbudg", r"denom", r"\bnom\b")
 _AGREGAT_PATTERNS = (r"agr[ée]gat", r"libell")
 _MONTANT_PATTERNS = (r"^montant$", r"\bmontant\b")
 _CATEGORY_PATTERNS = (r"cat[ée]gorie", r"\bcat[ée]g\b", r"\bcat\b", r"niveau")

@@ -44,6 +44,13 @@ def test_unwrap_records_must_be_objects() -> None:
         unwrap_records(b"[1, 2, 3]", record_path=None)
 
 
+def test_empty_array_unwraps_to_empty_list_and_header_only_csv() -> None:
+    # An empty extract is valid input here (the connector guards emptiness); it tabularises to a
+    # header-less CSV, which the validate path then treats as column drift (see test_validation).
+    assert unwrap_records(b"[]", record_path=None) == []
+    assert records_to_csv_bytes([]) == b"\r\n"
+
+
 def test_csv_header_is_union_with_first_seen_order() -> None:
     # Second record adds `c`; a field missing on a row becomes an empty cell, not a dropped column.
     csv = records_to_csv_bytes([{"a": "1", "b": "2"}, {"a": "3", "c": "4"}]).decode()
