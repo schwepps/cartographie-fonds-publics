@@ -37,6 +37,14 @@ vi.mock("../../lib/supabase", () => {
       parent_siren: null,
       provenance: "finances_locales_ofgl",
     },
+    "180035024": {
+      siren: "180035024",
+      name: "Caisse nationale de l’assurance maladie",
+      level: "social",
+      category: "Caisse nationale",
+      parent_siren: null,
+      provenance: "comptes_sociaux",
+    },
   };
   const edges = [
     {
@@ -84,6 +92,17 @@ vi.mock("../../lib/supabase", () => {
         programme: "Dépenses d’investissement",
         amount_ae_eur: null,
         amount_cp_eur: 900_000_000,
+        executed: true,
+      },
+    ],
+    // Social facts: non-LOLF, but NOT M57 — the local wording must not be reused here.
+    "180035024": [
+      {
+        exercice: 2024,
+        mission: null,
+        programme: "Branche maladie",
+        amount_ae_eur: null,
+        amount_cp_eur: 240_000_000_000,
         executed: true,
       },
     ],
@@ -173,6 +192,14 @@ describe("EntityPage (fiche)", () => {
       "href",
       "/sources#double-comptage",
     );
+  });
+
+  it("uses the generic disclaimer (not the M57-local wording) for a social entity", async () => {
+    renderSheet("180035024");
+    await screen.findByRole("heading", { level: 1, name: /assurance maladie/ });
+    // Social budgets are non-LOLF too, but the M57/M14 note is local-specific — it must not leak.
+    expect(screen.getByText(/un même euro peut être compté plusieurs fois/)).toBeInTheDocument();
+    expect(screen.queryByText(/Comptabilité locale/)).not.toBeInTheDocument();
   });
 
   it("lists supervised operators as chips linking to their sheets", async () => {

@@ -304,7 +304,9 @@ export default function EntityPage() {
                 </div>
                 {!isLolfBudget ? (
                   <MethodologyNote className="entity-methodology">
-                    {t("methodology.local")}
+                    {/* The M57/M14 wording fits local only; other non-LOLF universes (e.g. social)
+                        fall back to the generic double-counting disclaimer. */}
+                    {entity.level === "local" ? t("methodology.local") : undefined}
                   </MethodologyNote>
                 ) : null}
                 <div

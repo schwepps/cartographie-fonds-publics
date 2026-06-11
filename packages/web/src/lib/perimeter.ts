@@ -22,7 +22,11 @@ const UNIVERSE_BY_LEVEL: Record<Level, string | null> = {
 
 /** The budget universe an entity's level implies, or `null` for `delegated` / unknown levels. */
 export function universeForLevel(level: string | null | undefined): string | null {
-  return level != null && level in UNIVERSE_BY_LEVEL ? UNIVERSE_BY_LEVEL[level as Level] : null;
+  // Own-property check (mirrors levels.ts `isLevel`): `in` would also match inherited keys like
+  // `toString`/`__proto__`, so an unexpected level string could resolve to a non-universe value.
+  return level != null && Object.prototype.hasOwnProperty.call(UNIVERSE_BY_LEVEL, level)
+    ? UNIVERSE_BY_LEVEL[level as Level]
+    : null;
 }
 
 /** True when the levels span more than one budget universe — a total over them must carry the note. */
