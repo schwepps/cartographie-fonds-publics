@@ -68,6 +68,9 @@ platforms:
 #   discovery.strategy : comment localiser la ressource SANS slug figé
 #   volatility.level   : low | medium | high  (probabilité de casse dans le temps)
 #   blast_radius       : ce qui casse si la source change
+#   records_path       : (optionnel) clé d'enveloppe JSON contenant le tableau de records — ODS
+#                        renvoie `results`, certains wrappers data.gouv `data`/`records`. Lu par le
+#                        chemin de validation/snapshot JSON (FSC-47) ; absent = tableau au 1er niveau.
 # -----------------------------------------------------------------------------
 sources:
 
@@ -175,6 +178,7 @@ sources:
       strategy: "ODS dataset 'situation-mensuelle-de-l-etat' sur data.economie.gouv.fr"
     endpoint_hint: "https://data.economie.gouv.fr/api/explore/v2.1/catalog/datasets/situation-mensuelle-de-l-etat/records"
     format: [json, csv]
+    records_path: results            # enveloppe JSON ODS v2.1 (FSC-47)
     schema: ods_fields
     join_keys: [code_mission, code_programme]
     cadence: monthly
@@ -210,6 +214,7 @@ sources:
       strategy: "portail data.ofgl.fr -> catalogue ODS ; sélectionner jeux par niveau de collectivité"
     endpoint_hint: "https://data.ofgl.fr/api/explore/v2.1/catalog/datasets   # à confirmer au spike"
     format: [json, csv]
+    records_path: results            # enveloppe JSON ODS v2.1 (FSC-47)
     schema: ods_fields
     join_keys: [SIREN, code_insee]
     cadence: annual
@@ -228,6 +233,7 @@ sources:
       strategy: "DREES (data.drees...) dataset 'comptes de la protection sociale' ; open.urssaf en complément"
     endpoint_hint: "https://data.drees.solidarites-sante.gouv.fr/api/explore/v2.1/   # à confirmer"
     format: [json, csv, pdf]
+    records_path: results            # enveloppe JSON ODS v2.1 (FSC-47)
     schema: ods_fields
     join_keys: [branche]              # logique par branche, pas par SIREN
     cadence: annual

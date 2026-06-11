@@ -6,6 +6,13 @@ Commits follow [Conventional Commits](https://www.conventionalcommits.org/).
 
 ## [Unreleased]
 ### Added
+- JSON support in the validate + snapshot harness (FSC-47): `validate_extract` / `write_snapshot`
+  now accept `fmt="json"` for tabular JSON (array of records). A registry-driven `records_path`
+  (e.g. ODS `results`) unwraps the envelope; the records are tabularised to CSV so the **same**
+  proven path enforces the Table Schema (column drift fatal, messy cells warned) and stores an
+  `all_varchar` Parquet snapshot with `format='json'` provenance hashing the raw bytes. A malformed
+  envelope fails loud; genuinely unsupported formats still raise `UnsupportedFormatError`. Offline
+  fixtures cover a valid, a drifted, and an enveloped JSON extract.
 - Delivered design screens ported (FSC-50…53): the Accueil overview (hero, headline figures with
   provenance, teaser Sankey, action tiles), the Recherche results + facets, the institutional Graphe
   reworked to a custom **2D-canvas force-directed** layout (clusters, CP-scaled nodes, typed/weighted

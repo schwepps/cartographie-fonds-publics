@@ -22,6 +22,10 @@ def _schema_path(fixtures_dir: Path) -> str:
     return str(fixtures_dir / "decp_schema.json")
 
 
+def _json_schema_path(fixtures_dir: Path) -> str:
+    return str(fixtures_dir / "json_records.table-schema.json")
+
+
 def test_valid_extract_passes(load_fixture: Callable[[str], bytes], fixtures_dir: Path) -> None:
     report = validate_extract(
         load_fixture("decp_valid.csv"), source_id=SOURCE, schema_ref=_schema_path(fixtures_dir)
@@ -113,8 +117,66 @@ def test_bom_prefixed_extract_passes(
 
 
 def test_unsupported_format_raises(fixtures_dir: Path) -> None:
+    # csv + json are supported (FSC-47); anything else is still a capability limit, not drift.
     with pytest.raises(UnsupportedFormatError):
-        validate_extract(b"{}", source_id=SOURCE, schema_ref=_schema_path(fixtures_dir), fmt="json")
+        validate_extract(
+            b"\x00", source_id=SOURCE, schema_ref=_schema_path(fixtures_dir), fmt="parquet"
+        )
+
+
+def test_valid_json_extract_passes(
+    load_fixture: Callable[[str], bytes], fixtures_dir: Path
+) -> None:
+    report = validate_extract(
+        load_fixture("json_records_valid.json"),
+        source_id="finances_locales_ofgl",
+        schema_ref=_json_schema_path(fixtures_dir),
+        fmt="json",
+    )
+    assert not report.skipped
+    assert report.cell_warning_count == 0
+
+
+def test_drifted_json_fails_loud(load_fixture: Callable[[str], bytes], fixtures_dir: Path) -> None:
+    # The drift fixture drops the `montant` column entirely -> column drift -> fatal (same policy
+    # as a drifted CSV), proving JSON gets the fail-loud-on-drift guarantee.
+    with pytest.raises(SchemaValidationError) as exc_info:
+        validate_extract(
+            load_fixture("json_records_drift.json"),
+            source_id="finances_locales_ofgl",
+            schema_ref=_json_schema_path(fixtures_dir),
+            fmt="json",
+        )
+    assert "montant" in exc_info.value.missing_columns
+
+
+def test_enveloped_json_unwraps_then_validates(
+    load_fixture: Callable[[str], bytes], fixtures_dir: Path
+) -> None:
+    # The records live under `results` (ODS shape); record_path unwraps before validation.
+    report = validate_extract(
+        load_fixture("json_records_enveloped.json"),
+        source_id="finances_locales_ofgl",
+        schema_ref=_json_schema_path(fixtures_dir),
+        fmt="json",
+        record_path="results",
+    )
+    assert not report.skipped
+    assert report.cell_warning_count == 0
+
+
+def test_wrong_envelope_key_fails_loud(
+    load_fixture: Callable[[str], bytes], fixtures_dir: Path
+) -> None:
+    # A misconfigured records_path is a malformed envelope -> fail loud, never a silent empty set.
+    with pytest.raises(SchemaValidationError):
+        validate_extract(
+            load_fixture("json_records_enveloped.json"),
+            source_id="finances_locales_ofgl",
+            schema_ref=_json_schema_path(fixtures_dir),
+            fmt="json",
+            record_path="data",
+        )
 
 
 def test_no_schema_declared_skips_validation(load_fixture: Callable[[str], bytes]) -> None:
