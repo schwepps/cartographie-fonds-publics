@@ -51,9 +51,10 @@ export default function FluxPage() {
     () => (model && root ? buildFlowLinks(root, model.edges, model.entityBySiren) : []),
     [model, root],
   );
-  // Total tracé = the outermost outflow: funds for a financeur root, delegates for an operator root.
-  const minCol = links.length ? Math.min(...links.map((l) => l.sourceCol)) : 0;
-  const total = links.filter((l) => l.sourceCol === minCol).reduce((s, l) => s + l.value, 0);
+  // Total tracé = what flows OUT of the selected root: funds for a financeur, delegates for an
+  // operator. Sum the links originating from the root itself — not the minimum column, which would
+  // wrongly count an operator's *incoming* funding (its financeur's funds sit at col 0).
+  const total = links.filter((l) => l.source === root).reduce((s, l) => s + l.value, 0);
   const rootName = model?.entityBySiren.get(root)?.name ?? "";
   const tableRows = links.map((l, i) => ({ ...l, key: `${l.source}-${l.target}-${i}` }));
 

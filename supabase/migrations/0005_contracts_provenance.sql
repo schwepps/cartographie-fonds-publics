@@ -8,6 +8,14 @@
 -- new column inherits, so no policy or rls_checks change is needed.
 alter table contracts add column if not exists provenance text;  -- source id from the registry
 
+-- Backfill any pre-existing rows. The curated loader rebuilds contracts per provenance scope
+-- (`delete from contracts where provenance in (...)` then insert), so a NULL-provenance row would
+-- fall outside every delete scope and accumulate across reloads. DECP is the only writer of this
+-- table, so NULL can only mean a row predating this column — stamp it with that source. (The loader
+-- itself fails loud on a NULL provenance, so no new NULLs are introduced; the column stays nullable
+-- to mirror entities/edges/budget_facts.provenance.)
+update contracts set provenance = 'decp_commande_publique' where provenance is null;
+
 -- Index the provenance column the curated loader filters/deletes by on every (scheduled) reload, so
 -- provenance-scoped rebuilds stay index scans rather than sequential scans as the table grows.
 create index if not exists contracts_provenance_idx on contracts (provenance);
