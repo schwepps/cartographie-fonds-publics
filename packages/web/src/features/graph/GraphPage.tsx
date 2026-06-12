@@ -61,7 +61,7 @@ const prefersReducedMotion = () =>
 function GraphLegend() {
   return (
     <div className="legend">
-      <h4>Niveau (forme + couleur)</h4>
+      <h2>Niveau (forme + couleur)</h2>
       {Object.values(LEVELS).map((m) => (
         <div className="legend__row" key={m.id}>
           <span className="legend__swatch">
@@ -70,7 +70,7 @@ function GraphLegend() {
           {m.label} <span className="fr-xs text-mention">· {m.desc}</span>
         </div>
       ))}
-      <h4 style={{ marginTop: 10 }}>Liens</h4>
+      <h2 style={{ marginTop: 10 }}>Liens</h2>
       <div className="legend__row">
         <svg width="24" height="10" aria-hidden="true">
           <line x1="1" y1="5" x2="23" y2="5" stroke="#7a7a86" strokeWidth="2" />
@@ -120,9 +120,9 @@ function FiltersPanel({
     <div className={`graph-filters ${open ? "open" : ""}`}>
       <div className="stack">
         <div>
-          <h4 className="fr-h4" style={{ fontSize: "0.9rem", marginBottom: 8 }}>
+          <h2 className="fr-h4" style={{ fontSize: "0.9rem", marginBottom: 8 }}>
             Niveau
-          </h4>
+          </h2>
           {Object.values(LEVELS).map((m) => (
             <label className="check-row" key={m.id}>
               <input
@@ -170,9 +170,9 @@ function FiltersPanel({
           <span className="field__hint">Les ministères restent toujours affichés.</span>
         </div>
         <div>
-          <h4 className="fr-h4" style={{ fontSize: "0.9rem", marginBottom: 8 }}>
+          <h2 className="fr-h4" style={{ fontSize: "0.9rem", marginBottom: 8 }}>
             Type de lien
-          </h4>
+          </h2>
           {Object.entries(LINK_LABELS).map(([key, label]) => (
             <label className="check-row" key={key}>
               <input
@@ -538,6 +538,7 @@ export default function GraphPage() {
             </Button>
             {matches.length ? (
               <ul
+                aria-label="Suggestions de localisation"
                 style={{
                   position: "absolute",
                   top: "100%",

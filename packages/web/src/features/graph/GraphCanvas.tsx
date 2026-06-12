@@ -2,7 +2,15 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { euroCompact } from "../../lib/format";
 import { levelMeta } from "../../lib/levels";
 import { radiusForCp } from "../../lib/magnitude";
-import { passFilter, type GraphFilters, type GraphModel, type GraphNode } from "./graph-model";
+import {
+  buildAdjacency,
+  computeExpandable,
+  computeVisible,
+  type GraphEdge,
+  type GraphFilters,
+  type GraphModel,
+  type GraphNode,
+} from "./graph-model";
 
 export type { GraphFilters };
 
@@ -20,6 +28,11 @@ const EDGE_STYLE: Record<string, { color: string; dash: number[] | null; base: n
 };
 
 const radiusFor = (n: GraphNode) => radiusForCp(n.cp);
+
+// Per-frame wall-clock budget (ms) for the reduced-motion fast-settle (see frame()): we step the
+// layout until it is calm or this budget is spent, so it converges in a frame or two regardless of
+// graph size — never a long main-thread freeze, never a multi-second incremental drift.
+const SETTLE_MS = 12;
 
 interface SimState {
   scale: number;
@@ -41,9 +54,9 @@ interface SimState {
   clusterPos: Record<string, { x: number; y: number }>;
   cx: number;
   cy: number;
-  visible: Set<string>;
-  filters: GraphFilters;
-  expanded: Set<string>;
+  visibleNodes: GraphNode[];
+  visibleEdges: GraphEdge[];
+  expandableSet: Set<string>;
   focus: string | null;
   focusNeighbours: Set<string>;
   onFocus: (s: string | null) => void;
@@ -94,34 +107,33 @@ export function GraphCanvas({
   const stateRef = useRef<SimState | null>(null);
   const [tooltip, setTooltip] = useState<{ x: number; y: number; node: GraphNode } | null>(null);
 
-  const visible = useMemo(() => {
-    const adj = new Map<string, string[]>(model.nodes.map((n) => [n.siren, []]));
-    for (const e of model.edges) {
-      if (filters.linkTypes[e.type] === false) continue;
-      adj.get(e.source_siren)?.push(e.target_siren);
-      adj.get(e.target_siren)?.push(e.source_siren);
-    }
-    const vis = new Set<string>();
-    for (const n of model.nodes)
-      if (n.isAnchor && passFilter(n, filters, model.byId)) vis.add(n.siren);
-    let changed = true;
-    let guard = 0;
-    while (changed && guard < 12) {
-      changed = false;
-      guard += 1;
-      for (const s of [...vis]) {
-        if (!expanded.has(s)) continue;
-        for (const t of adj.get(s) ?? []) {
-          const tn = model.byId.get(t);
-          if (tn && !vis.has(t) && passFilter(tn, filters, model.byId)) {
-            vis.add(t);
-            changed = true;
-          }
-        }
-      }
-    }
-    return vis;
-  }, [model, filters, expanded]);
+  // Filtered adjacency is the backbone of the visible set + the expand affordance; build it once per
+  // (model, filters) and reuse it so neither computation re-scans every edge (FSC-60).
+  const adjacency = useMemo(() => buildAdjacency(model, filters), [model, filters]);
+  const visible = useMemo(
+    () => computeVisible(model, filters, expanded, adjacency),
+    [model, filters, expanded, adjacency],
+  );
+  // Precompute the visible node/edge subsets + the expandable set once per change, so the per-frame
+  // step()/draw() loops iterate a small array instead of filtering the whole model every frame.
+  const visibleNodes = useMemo(
+    () => model.nodes.filter((n) => visible.has(n.siren)),
+    [model, visible],
+  );
+  const visibleEdges = useMemo(
+    () =>
+      model.edges.filter(
+        (e) =>
+          filters.linkTypes[e.type] !== false &&
+          visible.has(e.source_siren) &&
+          visible.has(e.target_siren),
+      ),
+    [model, visible, filters],
+  );
+  const expandable = useMemo(
+    () => computeExpandable(visible, expanded, adjacency),
+    [visible, expanded, adjacency],
+  );
 
   const focusNeighbours = useMemo(() => {
     const set = new Set<string>();
@@ -168,9 +180,9 @@ export function GraphCanvas({
       clusterPos: {},
       cx: 0,
       cy: 0,
-      visible,
-      filters,
-      expanded,
+      visibleNodes,
+      visibleEdges,
+      expandableSet: expandable,
       focus,
       focusNeighbours,
       onFocus,
@@ -182,7 +194,7 @@ export function GraphCanvas({
       fitTimer: setTimeout(() => {}, 0),
     };
     stateRef.current = st;
-    const { nodes, edges, byId } = model;
+    const { nodes, byId } = model;
 
     function place() {
       const clusters = [...new Set(nodes.map((n) => n.cluster))];
@@ -225,8 +237,7 @@ export function GraphCanvas({
     }
 
     function step() {
-      const vis = st.visible;
-      const arr = nodes.filter((n) => vis.has(n.siren));
+      const arr = st.visibleNodes;
       const k = st.alpha;
       for (let i = 0; i < arr.length; i++) {
         const a = arr[i];
@@ -252,9 +263,7 @@ export function GraphCanvas({
           b.vy = (b.vy ?? 0) - fy * k;
         }
       }
-      for (const e of edges) {
-        if (!vis.has(e.source_siren) || !vis.has(e.target_siren)) continue;
-        if (st.filters.linkTypes[e.type] === false) continue;
+      for (const e of st.visibleEdges) {
         const a = byId.get(e.source_siren);
         const b = byId.get(e.target_siren);
         if (!a || !b) continue;
@@ -318,31 +327,14 @@ export function GraphCanvas({
       }
     }
 
-    function hasHiddenNeighbours(siren: string): boolean {
-      for (const e of edges) {
-        if (st.filters.linkTypes[e.type] === false) continue;
-        const other =
-          e.source_siren === siren
-            ? e.target_siren
-            : e.target_siren === siren
-              ? e.source_siren
-              : null;
-        if (other && !st.visible.has(other)) return true;
-      }
-      return false;
-    }
-
     function draw() {
       ctx.setTransform(st.dpr, 0, 0, st.dpr, 0, 0);
       ctx.clearRect(0, 0, st.w, st.h);
-      const vis = st.visible;
       const foc = st.focus;
       const fn = st.focusNeighbours;
       const dim = (s: string) => !!foc && s !== foc && !fn.has(s);
 
-      for (const e of edges) {
-        if (!vis.has(e.source_siren) || !vis.has(e.target_siren)) continue;
-        if (st.filters.linkTypes[e.type] === false) continue;
+      for (const e of st.visibleEdges) {
         const a = byId.get(e.source_siren);
         const b = byId.get(e.target_siren);
         if (!a || !b) continue;
@@ -387,8 +379,7 @@ export function GraphCanvas({
         ctx.restore();
       }
 
-      for (const n of nodes) {
-        if (!vis.has(n.siren)) continue;
+      for (const n of st.visibleNodes) {
         const P = worldToScreen(n.x ?? 0, n.y ?? 0);
         const r = radiusFor(n) * st.scale;
         const meta = levelMeta(n.level);
@@ -401,7 +392,7 @@ export function GraphCanvas({
         ctx.fillStyle = n.resolved ? meta.color : "#d9d9d9";
         ctx.fill();
         const isFoc = n.siren === foc;
-        const expandable = !st.expanded.has(n.siren) && hasHiddenNeighbours(n.siren);
+        const expandable = st.expandableSet.has(n.siren);
         ctx.lineWidth = (isFoc ? 3 : 1.4) * st.scale;
         ctx.strokeStyle = isFoc ? "#161616" : n.resolved ? "rgba(0,0,0,0.25)" : "#9a9a9a";
         if (!n.resolved) ctx.setLineDash([3 * st.scale, 2 * st.scale]);
@@ -450,8 +441,19 @@ export function GraphCanvas({
     }
 
     function frame() {
-      if (st.alpha > 0.02 && !reduceMotion) step();
-      else if (st.alpha > 0.02 && reduceMotion) for (let i = 0; i < 40; i++) step();
+      if (st.alpha > 0.02) {
+        if (reduceMotion) {
+          // Settle with no perceptible animation: keep stepping this frame until the layout is calm
+          // or the wall-clock budget is spent. Small graphs settle in one frame (instant); large
+          // ones converge over a frame or two, each bounded — never a multi-second drift (FSC-59),
+          // never an unbounded O(visible²) × 40 freeze (FSC-60).
+          const deadline = performance.now() + SETTLE_MS;
+          do step();
+          while (st.alpha > 0.02 && performance.now() < deadline);
+        } else {
+          step();
+        }
+      }
       draw();
       st.raf = requestAnimationFrame(frame);
     }
@@ -460,7 +462,7 @@ export function GraphCanvas({
     };
 
     function nodeAt(sx: number, sy: number): GraphNode | null {
-      const cand = nodes.filter((n) => st.visible.has(n.siren));
+      const cand = st.visibleNodes;
       for (let i = cand.length - 1; i >= 0; i--) {
         const n = cand[i];
         const P = worldToScreen(n.x ?? 0, n.y ?? 0);
@@ -541,7 +543,7 @@ export function GraphCanvas({
       st.zoomAt(p.x, p.y, ev.deltaY < 0 ? 1.12 : 0.89);
     }
     st.fitView = () => {
-      const arr = nodes.filter((n) => st.visible.has(n.siren));
+      const arr = st.visibleNodes;
       if (!arr.length) return;
       let minX = Infinity;
       let minY = Infinity;
@@ -595,14 +597,17 @@ export function GraphCanvas({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [model, reduceMotion]);
 
-  // Push reactive props into the running simulation.
+  // Push reactive props into the running simulation. The precomputed visible subsets change together
+  // whenever the model, filters or expansion change, so syncing them re-energizes the layout (kick).
   useEffect(() => {
     const st = stateRef.current;
     if (st) {
-      st.visible = visible;
+      st.visibleNodes = visibleNodes;
+      st.visibleEdges = visibleEdges;
+      st.expandableSet = expandable;
       st.kick();
     }
-  }, [visible]);
+  }, [visibleNodes, visibleEdges, expandable]);
   useEffect(() => {
     const st = stateRef.current;
     if (st) {
@@ -610,14 +615,6 @@ export function GraphCanvas({
       st.focusNeighbours = focusNeighbours;
     }
   }, [focus, focusNeighbours]);
-  useEffect(() => {
-    const st = stateRef.current;
-    if (st) {
-      st.expanded = expanded;
-      st.filters = filters;
-      st.kick();
-    }
-  }, [expanded, filters]);
   useEffect(() => {
     const st = stateRef.current;
     if (st) {

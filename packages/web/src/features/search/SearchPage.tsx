@@ -122,7 +122,7 @@ export default function SearchPage() {
         <div className="search-layout">
           <aside aria-label="Filtres">
             <div className="facet">
-              <h4>Niveau</h4>
+              <h2>Niveau</h2>
               {Object.values(LEVELS).map((meta) => (
                 <CheckRow
                   key={meta.id}
@@ -153,7 +153,7 @@ export default function SearchPage() {
               </Field>
             </div>
             <div className="facet">
-              <h4>Trier par</h4>
+              <h2>Trier par</h2>
               {(
                 [
                   ["amount", "Montant (CP) décroissant"],

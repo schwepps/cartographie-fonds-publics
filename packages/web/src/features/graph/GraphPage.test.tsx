@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
+import { axe } from "vitest-axe";
 
 // jsdom has no 2D canvas, so the force renderer no-ops (it guards on a null context); these tests
 // assert the data layer, the live counts and the accessible table fallback. The canvas is verified
@@ -85,5 +86,28 @@ describe("GraphPage (institutional graph)", () => {
   it("documents keyboard navigation for accessibility", async () => {
     renderGraph();
     expect(await screen.findByText(/navigable au clavier/)).toBeInTheDocument();
+  });
+
+  // The canvas itself can't be scanned in jsdom (no 2D context), but the page chrome — toolbar,
+  // filters, legend, keyboard-help callout — is real DOM. Type into "Localiser" so the suggestion
+  // list (its `aria-label` is part of the FSC-59 fix) actually renders and is scanned too.
+  it("has no accessibility violations in the graph view chrome", async () => {
+    const { container } = renderGraph();
+    await screen.findByText(/institutions affichées sur/);
+    await userEvent.type(
+      screen.getByLabelText(/Localiser une institution dans le graphe/),
+      "Centre",
+    );
+    await screen.findByRole("button", { name: /Centre national de la recherche scientifique/ });
+    expect(await axe(container)).toHaveNoViolations();
+  });
+
+  it("has no accessibility violations in the table fallback", async () => {
+    const { container } = renderGraph();
+    await screen.findByText(/institutions affichées sur/);
+    const toggle = screen.getByRole("group", { name: /Mode d’affichage/ });
+    await userEvent.click(within(toggle).getByRole("button", { name: /Vue tableau/ }));
+    await screen.findByRole("table", { name: /Institutions affichées/ });
+    expect(await axe(container)).toHaveNoViolations();
   });
 });

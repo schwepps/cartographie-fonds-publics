@@ -502,7 +502,9 @@
     box-shadow: var(--shadow-sm);
     max-width: 280px;
 }
-.legend h4 {
+/* Legend section titles are <h2> (heading order after the page <h1>, RGAA 9.1 / FSC-59); the small
+   visual weight is by selector here, not by element level. */
+.legend h2 {
     font-size: var(--fs-xs);
     text-transform: uppercase;
     letter-spacing: 0.04em;
@@ -836,7 +838,9 @@
 .facet:first-child {
     padding-top: 0;
 }
-.facet h4 {
+/* Facet section titles are <h2> (heading order after the page <h1>, RGAA 9.1 / FSC-59); the small
+   visual weight is by selector here, not by element level. */
+.facet h2 {
     font-size: var(--fs-sm);
     margin-bottom: var(--sp-2);
     color: var(--grey-title);

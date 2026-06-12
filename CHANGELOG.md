@@ -6,6 +6,30 @@ Commits follow [Conventional Commits](https://www.conventionalcommits.org/).
 
 ## [Unreleased]
 ### Added
+- RGAA accessibility pass on the graph + Sankey (FSC-59): automated `vitest-axe` `toHaveNoViolations`
+  assertions now cover the Graphe (page chrome **and** the table fallback), Recherche and Flux/Sankey
+  screens too (joining Accueil, Fiche, Sources, Périmètre and the shell), so the key screens gate on
+  axe in CI. The audit caught and fixed a real **heading-order** non-conformity (RGAA 9.1) — Graphe
+  and Recherche jumped `<h1>` → `<h4>` for the filter/facet/legend titles; these are now `<h2>` with
+  the small weight kept by class/selector. A manual keyboard + token-contrast audit (all body/UI text
+  ≥ AA; the colour-blind-safe Okabe–Ito level fills are redundant graphical encoding, shape + outline
+  + table, documented as accepted) and the keyboard contract for the graph + Sankey fallbacks are
+  recorded in `docs/rgaa-conformance.md`.
+- Performance pass on the graph + Sankey for the full dataset (FSC-60): a committed micro-benchmark
+  (`pnpm bench`, `features/graph/perf.bench.ts`) over a synthetic graph an order of magnitude past
+  the demo seed proves every pure hot path (`buildGraphModel`, `computeVisible`, `computeExpandable`,
+  `buildFlowLinks`, `computeSankey`) stays **sub-millisecond at ~3 000 nodes**. The worst per-frame
+  offender is fixed: the canvas no longer recomputes the expand affordance with an O(edges) scan per
+  node (O(visibleNodes × edges) every frame) — `computeVisible`/`computeExpandable` are extracted as
+  pure functions over a prebuilt filtered adjacency, the visible node/edge subsets are precomputed
+  once per change (so `step()`/`draw()` stop re-filtering the whole model each frame), and the
+  reduced-motion fast-settle is bounded by node count instead of a fixed 40× quadratic blast.
+  Budgets, before/after and the evidence-based **defer-FSC-40 (Redis)** decision — the UI calls no
+  heavy RPC, only plain PostgREST selects — are in `docs/perf-graph-sankey.md`.
+- Docs refreshed to "feature-complete locally, pre-launch" (FSC-61): `ROADMAP.md` marks Phases 0–4
+  delivered (attributions deferred) and lists what remains (attributions FSC-27, Cour des comptes
+  oversight, deployment); `CLAUDE.md` "Current phase" and the `README.md` status line are updated to
+  match the true state of the build.
 - Anti-double-counting reconciliation proof on combined data (FSC-58): the methodology (ADR-0007) is
   now **verified**, not just documented. `core.methodology.perimeter_totals` is the canonical
   per-universe breakdown (the keys partition the facts, so the values never double-count across
