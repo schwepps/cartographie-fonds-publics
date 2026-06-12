@@ -60,6 +60,13 @@ def test_mission_pointing_at_absent_ministry_fails_loud() -> None:
         MinistryIndex(_ministries(), {"Défense": "MA"})  # MA not in this reference
 
 
+def test_missions_colliding_on_normalized_key_fail_loud() -> None:
+    # Two distinct labels that normalize to the same key but map to different codes must raise,
+    # never silently overwrite (rule #5) — mirroring the ministry-name collision guard.
+    with pytest.raises(ValueError, match="mission name collision"):
+        MinistryIndex(_ministries(), {"Culture": "MC", "culture": "MESR"})
+
+
 def test_load_missions_round_trip(tmp_path: Path) -> None:
     path = tmp_path / "missions.yaml"
     path.write_text(
@@ -69,6 +76,17 @@ def test_load_missions_round_trip(tmp_path: Path) -> None:
         encoding="utf-8",
     )
     assert load_missions(path) == {"Culture": "MC"}
+
+
+def test_load_missions_fails_loud_on_scalar_row(tmp_path: Path) -> None:
+    # A hand-curation slip (a scalar where a mapping is expected) must raise a clear ValueError,
+    # not an opaque AttributeError from .get() on a non-dict.
+    path = tmp_path / "missions.yaml"
+    path.write_text(
+        yaml.safe_dump({"schema_version": 1, "missions": ["not-a-mapping"]}), encoding="utf-8"
+    )
+    with pytest.raises(ValueError, match="each mission row must be a mapping"):
+        load_missions(path)
 
 
 def test_load_missions_fails_loud_on_duplicate(tmp_path: Path) -> None:

@@ -148,8 +148,12 @@ def load_missions(path: Path | str = MISSIONS_PATH) -> dict[str, str]:
         raise ValueError(f"{path}: 'missions' must be a list, got {type(rows).__name__}")
     out: dict[str, str] = {}
     for row in rows:
-        mission = str((row or {}).get("mission") or "").strip()
-        code = str((row or {}).get("tutelle") or "").strip()
+        if not isinstance(row, dict):
+            raise ValueError(
+                f"{path}: each mission row must be a mapping, got {type(row).__name__}"
+            )
+        mission = str(row.get("mission") or "").strip()
+        code = str(row.get("tutelle") or "").strip()
         if not mission or not code:
             raise ValueError(f"{path}: every mission row needs a non-empty 'mission' + 'tutelle'")
         if mission in out:

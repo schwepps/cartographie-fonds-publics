@@ -68,14 +68,24 @@ class MinistryIndex:
                 )
             self._by_name.setdefault(entry.normalized_name, entry)
         # mission label (normalized) -> ministry code. Fail loud if a mission points at a code with
-        # no ministry entry: the map and the reference must never silently disagree (rule #5).
+        # no ministry entry, or if two distinct mission labels collide on the same normalized key
+        # with different codes: the map and the reference must never silently disagree (rule #5),
+        # mirroring the ministry-name collision guard above.
         self._by_mission: dict[str, str] = {}
         for mission, code in (missions or {}).items():
-            if code.strip().upper() not in self._by_code:
+            code_up = code.strip().upper()
+            if code_up not in self._by_code:
                 raise ValueError(
                     f"mission {mission!r} maps to ministry code {code!r} absent from ministry ref"
                 )
-            self._by_mission[normalize_name(mission)] = code.strip().upper()
+            key = normalize_name(mission)
+            existing_code = self._by_mission.get(key)
+            if existing_code is not None and existing_code != code_up:
+                raise ValueError(
+                    f"mission name collision on key {key!r}: maps to both "
+                    f"{existing_code!r} and {code_up!r}"
+                )
+            self._by_mission[key] = code_up
 
     @classmethod
     def load(
