@@ -10,18 +10,23 @@
 
 project_id = "cartographie-fonds-publics"
 
+# Ports live on a dedicated 544xx block (not the Supabase CLI defaults 543xx) so this stack runs in
+# parallel with other local Supabase projects on the machine (e.g. matchroom-supabase) without a host
+# port clash. `project_id` already isolates the containers + volumes; only host ports had to move.
+# A fresh `cp .env.example .env` (root + packages/web) already points at these — keep them in sync.
+
 [api]
 enabled = true
-# Frontend reads here: VITE_SUPABASE_URL=http://127.0.0.1:54321
-port = 54321
+# Frontend reads here: VITE_SUPABASE_URL=http://127.0.0.1:54421
+port = 54421
 schemas = ["public", "graphql_public"]
 extra_search_path = ["public", "extensions"]
 max_rows = 1000
 
 [db]
-# Direct Postgres for migrations + ingestion: postgresql://postgres:postgres@127.0.0.1:54322/postgres
-port = 54322
-shadow_port = 54320
+# Direct Postgres for migrations + ingestion: postgresql://postgres:postgres@127.0.0.1:54422/postgres
+port = 54422
+shadow_port = 54420
 # Must match the remote (prod) database's major version. Confirmed: prod runs Postgres 17.x
 # (`SHOW server_version;` → 17.6), so 17 matches. Re-check if prod is ever upgraded.
 # (CI runs the RLS shim check against a separate bare postgres:16 — see .github/workflows/ci.yml.)
@@ -43,7 +48,7 @@ sql_paths = ["./demo_seed.sql"]
 
 [studio]
 enabled = true
-port = 54323
+port = 54423
 api_url = "http://127.0.0.1"
 
 # Auth (GoTrue) is enabled only to mint the anon/service_role JWTs that PostgREST validates

@@ -40,7 +40,7 @@ cd packages/web && cp .env.example .env && pnpm dev   # frontend reads the local
 ```
 
 Frontend dev server runs on `:5173`; the "API" is the local Supabase stack (PostgREST + RPC) at
-`127.0.0.1:54321` — a full Supabase in Docker, isolated from prod. Setup + the dev↔prod
+`127.0.0.1:54421` — a full Supabase in Docker, isolated from prod. Setup + the dev↔prod
 boundary: [DEPLOYMENT.md → Local development](DEPLOYMENT.md).
 
 ## Stack

@@ -6,6 +6,21 @@ Commits follow [Conventional Commits](https://www.conventionalcommits.org/).
 
 ## [Unreleased]
 ### Added
+- Anti-double-counting reconciliation proof on combined data (FSC-58): the methodology (ADR-0007) is
+  now **verified**, not just documented. `core.methodology.perimeter_totals` is the canonical
+  per-universe breakdown (the keys partition the facts, so the values never double-count across
+  universes); tests prove the convention on the **real merged 4-layer dataset** — a pure
+  `core` test, an offline whole-perimeter bundle test (`build_bundle(ALL_SOURCE_IDS)`, no DB), and
+  DB reconciliation assertions on the actually-loaded graph in the FSC-57 pipeline test (per-universe
+  CP sums partition the grand total exactly, spanning >1 universe, breakdown logged). State↔local
+  transfers stay in `edges`/`contracts`, never folding into a budget universe total; the
+  `perimetre` view is asserted to never render a consolidated cross-universe figure.
+- Parallel-safe local Supabase ports (FSC-58): the CLI stack moved off the default `543xx` ports
+  to a dedicated `544xx` block (API 54421, DB 54422, shadow 54420, Studio 54423) in
+  `supabase/config.toml`, with all `.env.example` + docs references updated, so it runs alongside
+  other local Supabase stacks on the same machine without a host-port clash (`project_id` already
+  isolates the containers + volumes). Re-`cp .env.example .env` (root + `packages/web`) to pick up
+  the new ports.
 - Anti-double-counting methodology + UI disclaimers (FSC-42): a documented convention (ADR-0007) that
   the State (LOLF), local (M57/M14) and social accounting universes are **never silently summed**. A
   single source of truth `core.methodology` — mirrored in the web `lib/perimeter.ts` — maps a

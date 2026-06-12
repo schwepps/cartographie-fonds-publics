@@ -100,6 +100,27 @@ describe("PerimetrePage (Aperçu du périmètre)", () => {
     expect(screen.getByText(/module agrégé par branche/i)).toBeInTheDocument();
   });
 
+  it("never renders a consolidated cross-universe total (anti-double-counting)", async () => {
+    // FSC-58 / AC3: the four universes are shown as separate orders of magnitude. Their sum
+    // (15,3 + 5 + 245 ≈ 265,3 Md€) must NEVER appear as a single figure — consolidating across
+    // universes would double-count (ADR-0007). This guards against a regression that sums them.
+    renderPage();
+    await screen.findByText(/15,3\s*Md€/);
+    expect(screen.queryByText(/265,3\s*Md€/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/^265\s*Md€$/)).not.toBeInTheDocument();
+    // …and the convention is stated explicitly (lead + methodology note), not merely implied.
+    expect(screen.getAllByText(/jamais une somme consolidée/i).length).toBeGreaterThan(0);
+  });
+
+  it("does not fold a State→local funds transfer into the State headline (AC1)", async () => {
+    // The mock carries a 2,95 Md€ funds edge (ministry→operator). It is a *flow* (it feeds the
+    // teaser Sankey), not a budget fact — so the State headline stays the voted LOLF total
+    // (15,3 Md€) and never the inflated 18,2 Md€ (15,3 + 2,95). A transfer can't double-count.
+    renderPage();
+    expect(await screen.findByText(/15,3\s*Md€/)).toBeInTheDocument();
+    expect(screen.queryByText(/18,2\s*Md€/)).not.toBeInTheDocument();
+  });
+
   it("renders the teaser Sankey once flows load", async () => {
     const { container } = renderPage();
     await screen.findByText(/15,3\s*Md€/);

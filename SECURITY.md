@@ -24,11 +24,11 @@ Which value goes where:
 
 | Variable | Dev (local) | Prod | Lives in | Sensitive? |
 |---|---|---|---|---|
-| `VITE_SUPABASE_URL` | `http://127.0.0.1:54321` | prod Project URL | `packages/web/.env` / **Vercel env** | no |
+| `VITE_SUPABASE_URL` | `http://127.0.0.1:54421` | prod Project URL | `packages/web/.env` / **Vercel env** | no |
 | `VITE_SUPABASE_ANON_KEY` | local demo JWT | prod anon key | `packages/web/.env` / **Vercel env** | no — RLS-protected, ships to browser |
-| `SUPABASE_URL` | `http://127.0.0.1:54321` | prod Project URL | root `.env` | no |
+| `SUPABASE_URL` | `http://127.0.0.1:54421` | prod Project URL | root `.env` | no |
 | `SUPABASE_SERVICE_ROLE_KEY` | local demo JWT | prod service-role key | root `.env` (local) / **GitHub Actions secret** | **yes (prod)** — server/CI only, **never** the browser |
-| `DATABASE_URL` | `postgresql://postgres:postgres@127.0.0.1:54322/postgres` | prod direct Postgres URI | root `.env` (local) / **GitHub Actions secret** | **yes (prod)** |
+| `DATABASE_URL` | `postgresql://postgres:postgres@127.0.0.1:54422/postgres` | prod direct Postgres URI | root `.env` (local) / **GitHub Actions secret** | **yes (prod)** |
 
 Rules:
 

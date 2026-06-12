@@ -22,7 +22,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 
-from .models import Level, Nomenclature
+from .models import BudgetFact, Level, Nomenclature
 
 # Human labels for the distinct budget universes a fact/flow can belong to.
 LOLF = "État (LOLF)"
@@ -74,3 +74,23 @@ def mixes_perimeters(items: Iterable[Nomenclature | Level]) -> bool:
         if universe is not None:
             universes.add(universe)
     return len(universes) > 1
+
+
+def perimeter_totals(facts: Iterable[BudgetFact]) -> dict[str, float]:
+    """Per-universe order-of-magnitude breakdown: bucket budget facts by their nomenclature's
+    universe and sum ``amount_cp_eur`` within each (m14 folds into M57). One entry per universe
+    present.
+
+    The keys **partition** the facts, so the returned values never double-count across universes —
+    this is deliberately **not** a consolidated total (golden rule #8 / ADR-0007). A transfer
+    between universes is an :class:`~core.models.Edge`, not a fact, so it can never enter a bucket
+    here. Voted vs executed is a *within*-universe basis the caller filters (e.g. the State headline
+    sums voted LOLF only); this function sums every fact it is given.
+    """
+    totals: dict[str, float] = {}
+    for fact in facts:
+        universe = universe_for_nomenclature(fact.nomenclature)
+        # `or 0.0` is safe here: a real 0.0 and an unknown (None) both contribute nothing to a sum,
+        # so the universe key is still created (an all-None universe surfaces as 0.0, not dropped).
+        totals[universe] = totals.get(universe, 0.0) + (fact.amount_cp_eur or 0.0)
+    return totals
