@@ -73,7 +73,7 @@ It expects a Supabase-like database (roles + grants present). Against the **loca
 it works directly (roles exist):
 
 ```bash
-DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres make db-verify
+DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:54422/postgres make db-verify
 ```
 
 The `tests/supabase_roles.sql` compatibility shim is **CI-only**: CI runs against a fresh,

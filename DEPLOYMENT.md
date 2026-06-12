@@ -30,8 +30,8 @@ make supabase-up     # `supabase start` — Postgres + PostgREST + Auth + Studio
                      # auto-applies supabase/migrations/*.sql on a fresh DB
 cp .env.example .env                     # root: ingestion env (local defaults, no secrets)
 cd packages/web && cp .env.example .env  # web: VITE_SUPABASE_* (local defaults)
-make web             # frontend reads the local stack at http://127.0.0.1:54321
-make db-verify       # optional: assert RLS posture (DATABASE_URL must point at :54322)
+make web             # frontend reads the local stack at http://127.0.0.1:54421
+make db-verify       # optional: assert RLS posture (DATABASE_URL must point at :54422)
 make supabase-down   # stop the stack
 ```
 
