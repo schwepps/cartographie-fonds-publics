@@ -77,6 +77,10 @@ jobs:
         run: make db-migrate
       - name: Verify RLS posture
         run: make db-verify
+      - name: End-to-end pipeline integration test (FSC-57)
+        # Loads every source from fixtures into a disposable database and asserts the combined graph
+        # is coherent (no orphan edges, match-rate, RLS read path). Creates/drops its own DB.
+        run: uv run pytest packages/ingestion/tests/test_pipeline_integration.py -q
       - name: Load the curated graph + assert idempotency and RPC visibility (FSC-35)
         env:
           CFP_SNAPSHOT_ROOT: ${{ runner.temp }}/snapshots

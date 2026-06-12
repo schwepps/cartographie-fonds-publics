@@ -62,6 +62,22 @@ ETAT_CENTRAL_SOURCE_IDS: tuple[str, ...] = (
     "decp_commande_publique",
 )
 
+# The full curated source set across all layers (state + local + social + delegated). Default loads
+# stay État-central scoped (Phase 1); this is the whole-perimeter set the end-to-end pipeline test
+# (FSC-57) loads to prove the *combined* graph is coherent. ORDER MATTERS for the same reason as
+# above: authoritative layers (state operators, local collectivités) come BEFORE the delegated ones
+# (DECP titulaires, SEM/SPL companies) so the merge's `setdefault` keeps the authoritative entity
+# when a SIREN appears in more than one layer.
+ALL_SOURCE_IDS: tuple[str, ...] = (
+    "operateurs_etat",
+    "finances_locales_ofgl",
+    "comptes_sociaux",
+    "budget_plf_lfi",
+    "budget_execution_mensuelle",
+    "decp_commande_publique",
+    "epl_sem_spl",
+)
+
 # Emit path for the rendered load SQL (gitignored `out/`, like the other CLI reports). Env-override
 # mirrors crosswalk_io / seed (CFP_* prefix), so an installed env can point it elsewhere.
 _DEFAULT_LOAD_SQL_PATH = Path(__file__).resolve().parents[4] / "out" / "load.sql"
