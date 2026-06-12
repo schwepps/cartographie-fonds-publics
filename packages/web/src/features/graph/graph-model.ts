@@ -149,3 +149,77 @@ export function buildGraphModel(
 
   return { nodes: [...byId.values()], byId, edges: keptEdges };
 }
+
+/**
+ * Undirected adjacency restricted to enabled link types: `siren → neighbour sirens`. Built once per
+ * (model, filters) change and reused by {@link computeVisible} and {@link computeExpandable} so the
+ * draw loop never re-scans every edge per node (FSC-60).
+ */
+export function buildAdjacency(model: GraphModel, filters: GraphFilters): Map<string, string[]> {
+  const adj = new Map<string, string[]>(model.nodes.map((n) => [n.siren, []]));
+  for (const e of model.edges) {
+    if (filters.linkTypes[e.type] === false) continue;
+    adj.get(e.source_siren)?.push(e.target_siren);
+    adj.get(e.target_siren)?.push(e.source_siren);
+  }
+  return adj;
+}
+
+/**
+ * The visible node set: seed with the anchors that pass the filters, then iteratively pull in the
+ * filtered neighbours of every *expanded* node (bounded BFS, 12-round guard). Pure and unit-tested;
+ * the canvas memoises it. Note the graph's table fallback deliberately shows a *superset* — every
+ * node passing {@link passFilter}, not gated on expansion — so keyboard/SR users get the full
+ * filtered inventory rather than only the explored sub-graph. Pass a prebuilt `adj` to avoid
+ * rebuilding the adjacency when the caller already has one.
+ */
+export function computeVisible(
+  model: GraphModel,
+  filters: GraphFilters,
+  expanded: Set<string>,
+  adj: Map<string, string[]> = buildAdjacency(model, filters),
+): Set<string> {
+  const vis = new Set<string>();
+  for (const n of model.nodes)
+    if (n.isAnchor && passFilter(n, filters, model.byId)) vis.add(n.siren);
+  let changed = true;
+  let guard = 0;
+  while (changed && guard < 12) {
+    changed = false;
+    guard += 1;
+    for (const s of [...vis]) {
+      if (!expanded.has(s)) continue;
+      for (const t of adj.get(s) ?? []) {
+        const tn = model.byId.get(t);
+        if (tn && !vis.has(t) && passFilter(tn, filters, model.byId)) {
+          vis.add(t);
+          changed = true;
+        }
+      }
+    }
+  }
+  return vis;
+}
+
+/**
+ * Visible, not-yet-expanded nodes that still have at least one *hidden* neighbour — i.e. the ones
+ * that show the "+" expand affordance. Precomputed once per (visible, expanded) change so the draw
+ * loop does a Set lookup instead of an O(edges) scan per node (FSC-60).
+ */
+export function computeExpandable(
+  visible: Set<string>,
+  expanded: Set<string>,
+  adj: Map<string, string[]>,
+): Set<string> {
+  const out = new Set<string>();
+  for (const s of visible) {
+    if (expanded.has(s)) continue;
+    for (const t of adj.get(s) ?? []) {
+      if (!visible.has(t)) {
+        out.add(s);
+        break;
+      }
+    }
+  }
+  return out;
+}

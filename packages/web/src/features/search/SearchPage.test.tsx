@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
+import { axe } from "vitest-axe";
 import SearchPage from "./SearchPage";
 
 vi.mock("../../lib/supabase", () => {
@@ -96,5 +97,11 @@ describe("SearchPage (Recherche)", () => {
     await screen.findByText(/résultat/);
     expect(resultLinks()).toHaveLength(1);
     expect(screen.queryByText(CNRS)).toBeNull();
+  });
+
+  it("has no accessibility violations (results + facets)", async () => {
+    const { container } = renderSearch();
+    await screen.findByText(CNRS);
+    expect(await axe(container)).toHaveNoViolations();
   });
 });

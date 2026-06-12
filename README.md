@@ -11,8 +11,10 @@ An interactive, open-source map of French public institutions: their **links**
 (attributions), and the **delegated services** they contract out — built entirely on
 **open data** (Licence Ouverte / Etalab 2.0).
 
-> **Status:** early scaffold. Phase 0 (proving the data join) → Phase 1 (État-central MVP).
-> See [ROADMAP.md](ROADMAP.md).
+> **Status:** feature-complete locally, pre-launch. Phases 1–4 are delivered — the full
+> four-layer perimeter (État central · delegated services · local authorities · social sphere)
+> runs end-to-end. Remaining: ministerial attributions, a Cour des comptes oversight layer, and
+> deployment. See [ROADMAP.md](ROADMAP.md).
 
 ## Why
 

@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
+import { axe } from "vitest-axe";
 import FluxPage from "./FluxPage";
 
 vi.mock("../../lib/supabase", () => {
@@ -68,5 +69,11 @@ describe("FluxPage", () => {
     expect(
       within(select as HTMLElement).getByRole("option", { name: /Ministère de la Recherche/ }),
     ).toBeInTheDocument();
+  });
+
+  it("has no accessibility violations (Sankey + table fallback)", async () => {
+    const { container } = renderFlux();
+    await screen.findByRole("img", { name: /Diagramme de flux/ });
+    expect(await axe(container)).toHaveNoViolations();
   });
 });

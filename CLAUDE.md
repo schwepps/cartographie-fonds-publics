@@ -104,6 +104,9 @@ uv (Python), pnpm (web). Ruff, mypy, pytest. Full table in ARCHITECTURE.md.
 
 ## Current phase
 
-**Phase 0 → 1.** Prove the SIREN-join on real data (`spikes/phase0_siren_match`), then build
-the **État-central MVP** (ministries → operators → budget → attributions). Do not attempt the
-full perimeter at once — extend outward per ROADMAP.
+**Feature-complete locally, pre-launch.** Phases 1–4 are delivered: the full pipeline (ingest →
+resolve → load → read) runs end-to-end over the four-layer perimeter (État central, delegated
+services, local authorities, social sphere) with anti-double-counting proven on the real merged
+dataset, and the React/DSFR web app (graph, entity sheet, Sankey, search, sources, périmètre) reads
+it via Supabase. **Remaining before a public launch:** ministerial **attributions** (FSC-27), a
+**Cour des comptes oversight** layer, and **deployment** to production. See [ROADMAP.md](ROADMAP.md).
