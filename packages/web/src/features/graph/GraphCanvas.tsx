@@ -445,8 +445,9 @@ export function GraphCanvas({
         if (reduceMotion) {
           // Settle with no perceptible animation: keep stepping this frame until the layout is calm
           // or the wall-clock budget is spent. Small graphs settle in one frame (instant); large
-          // ones converge over a frame or two, each bounded — never a multi-second drift (FSC-59),
-          // never an unbounded O(visible²) × 40 freeze (FSC-60).
+          // ones converge over a frame or two, each bounded — avoiding both the multi-second drift
+          // that would break the reduced-motion accessibility contract and the unbounded
+          // O(visible²) × 40 freeze of the previous fixed settle (FSC-60, motivated by FSC-59).
           const deadline = performance.now() + SETTLE_MS;
           do step();
           while (st.alpha > 0.02 && performance.now() < deadline);
