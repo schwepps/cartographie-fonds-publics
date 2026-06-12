@@ -24,7 +24,7 @@ from core.models import Edge, EdgeType, Entity, Level
 from core.resolution import resolve_entities
 from core.resolve import normalize_name
 
-from ..crosswalk_io import load_crosswalk, load_ministries
+from ..crosswalk_io import load_crosswalk, load_ministries, load_missions
 from ..tabular import first_column
 from . import TransformResult, register_transform
 
@@ -41,13 +41,18 @@ _CATEGORY_PATTERNS = (r"cat[eé]gorie\s+juridique", r"cat[eé]gorie", r"nature")
 
 
 class MinistryIndex:
-    """Resolve an operator's tutelle value (a ministry code *or* name) to its reviewed entry.
+    """Resolve an operator's tutelle value (a ministry code, name, *or* LOLF mission) to its entry.
 
     Indexed by code (case-insensitive, the primary key operators reference) with a normalized-name
-    fallback, so resolution survives whether the live Jaune emits ``MESR`` or the full label.
+    fallback, so resolution survives whether the live Jaune emits ``MESR`` or the full label. The
+    live Jaune actually supervises by **mission** (``"Recherche et enseignement supérieur\\n150 –
+    …"``), so an optional mission map (``mission label -> ministry code``, from ``missions.yaml``)
+    lets the same lookup anchor those operators to their lead ministry (FSC-56).
     """
 
-    def __init__(self, entries: list[CrosswalkEntry]) -> None:
+    def __init__(
+        self, entries: list[CrosswalkEntry], missions: dict[str, str] | None = None
+    ) -> None:
         # Codes are already unique (load_ministries guards). The name-fallback index must guard its
         # own collisions too: two ministries sharing a normalized name must never silently resolve
         # to one SIREN (golden rule #5), mirroring Crosswalk.from_entries / load_ministries.
@@ -62,16 +67,45 @@ class MinistryIndex:
                     f"{entry.denomination!r} ({entry.siren})"
                 )
             self._by_name.setdefault(entry.normalized_name, entry)
+        # mission label (normalized) -> ministry code. Fail loud if a mission points at a code with
+        # no ministry entry: the map and the reference must never silently disagree (rule #5).
+        self._by_mission: dict[str, str] = {}
+        for mission, code in (missions or {}).items():
+            if code.strip().upper() not in self._by_code:
+                raise ValueError(
+                    f"mission {mission!r} maps to ministry code {code!r} absent from ministry ref"
+                )
+            self._by_mission[normalize_name(mission)] = code.strip().upper()
 
     @classmethod
-    def load(cls, path: Path | str | None = None) -> MinistryIndex:
-        return cls(load_ministries() if path is None else load_ministries(path))
+    def load(
+        cls, path: Path | str | None = None, missions_path: Path | str | None = None
+    ) -> MinistryIndex:
+        """Load the reviewed ministry reference (+ the committed mission map when ``path`` is None).
+
+        Passing a custom ``path`` (offline tests) loads no mission map unless ``missions_path`` is
+        given too, so a fixture ministry reference stays isolated from the committed missions.
+        """
+        entries = load_ministries() if path is None else load_ministries(path)
+        if missions_path is not None:
+            missions = load_missions(missions_path)
+        elif path is None:
+            missions = load_missions()
+        else:
+            missions = {}
+        return cls(entries, missions)
 
     def resolve(self, tutelle_value: str | None) -> CrosswalkEntry | None:
         value = (tutelle_value or "").strip()
         if not value:
             return None
-        return self._by_code.get(value.upper()) or self._by_name.get(normalize_name(value))
+        direct = self._by_code.get(value.upper()) or self._by_name.get(normalize_name(value))
+        if direct is not None:
+            return direct
+        # Fall back to the LOLF mission on the first line ("Mission\nNNN – Programme" in the Jaune).
+        mission = value.splitlines()[0].strip()
+        code = self._by_mission.get(normalize_name(mission))
+        return self._by_code.get(code) if code else None
 
 
 def _coalesce(row: dict[str, str], cols: list[str]) -> str:

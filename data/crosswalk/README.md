@@ -71,10 +71,25 @@ If a `category` row is the right call instead, set `status: category` (and leave
   **merge-aware**: it **preserves** existing `reviewed` and `category` rows (your curation is never
   clobbered). Do not hand-edit `auto`/`pending` rows — re-seed instead; only `reviewed`/`category`
   rows are hand-maintained.
-- This repo seeds from the **offline sample** (5 operators) so CI stays deterministic. The full
-  ~431-operator crosswalk is produced by a maintainer running `make spike-resolve-live` (≈430
-  network calls) then `make resolve-seed`; the resulting 285 `auto` + 146 `pending` rows are the
-  one-time governance backlog (see `docs/phase0_5-operator-resolution-results.md`).
+- The committed crosswalk holds the **full ~431-operator population** (FSC-56): the 285 `auto` rows
+  are a live-spike snapshot (`make spike-resolve-live` → `make resolve-seed`, regenerable only with
+  network), plus the curated `reviewed` rows and the `pending` backlog. A handful of clean-name
+  `reviewed` rows (CNRS, BnF, France Travail) alias the live acronym-prefixed names so the offline
+  seed (`supabase/seed.sql`) and the sample fixtures stay deterministic in CI.
+
+## Assisted curation (`make curate`, FSC-56)
+
+`make curate` (CLI `curate-operators`) re-queries recherche-entreprises for each `pending` operator
+and promotes it to `reviewed` **only** on a *single, unambiguous, public-sector* match — by exact
+name, the candidate's own `sigle` (acronym), or full name-containment. Anything ambiguous (several
+public matches) or unmatched stays `pending`, never guessed (golden rule #5). Every promoted row's
+`notes` carry the API basis (legal name + nature juridique + signal), `source: api-curated`. It is
+**dry-run by default** (reports what would move); pass `--apply` to write. Re-running is idempotent
+and never downgrades a human `reviewed` row.
+
+The residual `pending` rows are the documented human-review queue; promote them by hand (the review
+action above) toward the ≥90% coverage target. `make coverage` reports the current operator→SIREN
+coverage over the committed crosswalk (`out/coverage_report.json`).
 
 ## How it runs
 
@@ -109,3 +124,18 @@ curated, hand-maintained map that fills that gap.
 make operators   # transform the offline operator sample into entities + tutelle edges; writes
                  # out/operators_report.json and exits nonzero if the resolution rate < 50%.
 ```
+
+## `missions.yaml` — the LOLF-mission → tutelle-ministry reference (FSC-56)
+
+The live Jaune records an operator's supervision as a LOLF **mission** (e.g. *« Recherche et
+enseignement supérieur »*), not a ministry code. `missions.yaml` maps each mission to the code of its
+**lead ministry** in `ministeres.yaml`, so `MinistryIndex` can anchor a `ministry → operator` tutelle
+edge for the full population (the offline sample uses codes directly and is unaffected).
+
+- **Schema:** `missions:` is a list of `{mission, tutelle}` rows; `tutelle` is a code that **must**
+  exist in `ministeres.yaml` (`MinistryIndex` fails loud otherwise — never mis-resolve a tutelle).
+- **Governance:** hand-curated, never generated. It is a documented *lead-ministry* heuristic: a few
+  missions are interministerial (e.g. *« Cohésion des territoires »*, *« Direction de l'action du
+  Gouvernement »*) and are mapped to the single most defensible responsible ministry, with a note.
+- **Resolution order:** `MinistryIndex.resolve` tries the ministry **code**, then the ministry
+  **name**, then the **mission** on the first line of the Jaune's `"Mission\nNNN – Programme"` cell.

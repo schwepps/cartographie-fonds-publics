@@ -5,10 +5,14 @@ from __future__ import annotations
 
 import csv
 import json
+import time
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Annotated
 
+import httpx
 import typer
+from core.crosswalk import CrosswalkStatus
 from core.models import Entity, Level
 from core.resolution import resolve_entities
 
@@ -22,9 +26,10 @@ from .crosswalk_io import (
     load_seed_csv,
     merge_seed,
 )
+from .curate_operators import SearchFn, curate
 from .demo_seed import DEMO_SQL_PATH, emit_demo_sql
 from .load import LOAD_SQL_PATH, emit_load_sql, load_summary
-from .registry import Source, sources
+from .registry import Source, get_source, sources
 from .seed import SEED_SQL_PATH, emit_seed_sql
 from .snapshot import SNAPSHOT_ROOT
 from .tabular import parse_csv_bytes
@@ -313,6 +318,107 @@ def load(
     written, bundle = emit_load_sql(out, snapshot_root=root, allow_empty=allow_empty)
     typer.echo(load_summary(bundle))
     typer.echo(f"[load] wrote {written}")
+
+
+@app.command()
+def coverage(
+    crosswalk: Annotated[Path, typer.Option(help="Crosswalk YAML path.")] = CROSSWALK_PATH,
+    out: Annotated[Path, typer.Option(help="Report output path.")] = Path(
+        "out/coverage_report.json"
+    ),
+    min_rate: Annotated[float, typer.Option(help="Exit nonzero below this resolved share.")] = 0.66,
+) -> None:
+    """Report operator→SIREN coverage over the committed crosswalk (FSC-56 acceptance metric).
+
+    Coverage = accepted rows (``auto`` + ``reviewed``, carrying a SIREN) / operator rows excluding
+    ``category`` labels (which are unresolved by design). Target is ≥90% (curation is incremental —
+    the residual ``pending`` backlog is the documented human-review queue); the gate floor guards
+    against a regression below the machine-seeded baseline.
+    """
+    entries = load_entries(crosswalk)
+    operators = [e for e in entries if e.status is not CrosswalkStatus.category]
+    resolved = [e for e in operators if e.siren is not None]
+    by_status: dict[str, int] = {}
+    for entry in entries:
+        by_status[entry.status.value] = by_status.get(entry.status.value, 0) + 1
+    total = len(operators)
+    rate = (len(resolved) / total) if total else 0.0
+    report = {
+        "total_operators": total,
+        "resolved": len(resolved),
+        "coverage_rate": rate,
+        "by_status": by_status,
+        "pending_backlog": by_status.get("pending", 0),
+    }
+    _write_report(report, out)
+    typer.echo(
+        f"[coverage] {len(resolved)}/{total} operator rows carry a SIREN (coverage {rate:.1%}); "
+        f"pending backlog {by_status.get('pending', 0)} -> {out}"
+    )
+    for status, count in sorted(by_status.items()):
+        typer.echo(f"  {status}: {count}")
+    if rate < min_rate:
+        typer.echo(f"[coverage] coverage {rate:.1%} < {min_rate:.0%} floor", err=True)
+        raise typer.Exit(code=1)
+
+
+def _recherche_search_fn(client: httpx.Client, base_url: str, *, page_size: int = 10) -> SearchFn:
+    """A rate-limited recherche-entreprises search (registry-driven base URL, never hardcoded)."""
+
+    def search(name: str) -> list[dict[str, object]]:
+        try:
+            resp = client.get(base_url, params={"q": name, "page": 1, "per_page": page_size})
+            resp.raise_for_status()
+            results = resp.json().get("results", [])
+        except (httpx.HTTPError, ValueError):
+            return []
+        time.sleep(0.15)  # ~7 req/s, the recherche-entreprises published limit
+        return results if isinstance(results, list) else []
+
+    return search
+
+
+@app.command(name="curate-operators")
+def curate_operators(
+    crosswalk: Annotated[
+        Path, typer.Option(help="Crosswalk YAML to curate (merge-aware).")
+    ] = CROSSWALK_PATH,
+    apply: Annotated[
+        bool, typer.Option(help="Write the promotions (default: dry-run report only).")
+    ] = False,
+    reviewed_by: Annotated[str, typer.Option(help="reviewed_by stamp for promoted rows.")] = (
+        "curate-operators"
+    ),
+) -> None:
+    """Promote `pending` operators to `reviewed` via the recherche-entreprises API (FSC-56).
+
+    Accepts a SIREN only on a single, unambiguous, public-sector match (exact name / sigle /
+    containment) — golden rule #5: never guess. Dry-run by default (reports what *would* move); pass
+    ``--apply`` to write. `reviewed`/`category` curation is preserved; re-running is idempotent.
+    """
+    entries = load_entries(crosswalk)
+    base_url = get_source("recherche_entreprises").raw.get("endpoint_hint")
+    if not isinstance(base_url, str) or not base_url.strip():
+        raise typer.BadParameter("recherche_entreprises source has no endpoint_hint base URL")
+    reviewed_at = datetime.now(tz=UTC).date().isoformat()
+    with httpx.Client(headers={"User-Agent": "cfp-curate/0.1"}, timeout=20.0) as client:
+        result = curate(
+            entries,
+            _recherche_search_fn(client, base_url.strip()),
+            reviewed_by=reviewed_by,
+            reviewed_at=reviewed_at,
+        )
+    report = result.report
+    action = "promoted" if apply else "would promote"
+    typer.echo(
+        f"[curate-operators] {action} {report['promoted_to_reviewed']} of {report['pending_in']} "
+        f"pending; {report['still_pending']} remain in the backlog"
+    )
+    if apply:
+        dump_entries(result.entries, crosswalk, maintainer="contact@cartographie-fonds-publics.fr")
+        typer.echo(f"[curate-operators] wrote {crosswalk}")
+    else:
+        typer.echo("[curate-operators] dry-run — pass --apply to write the promotions")
 
 
 if __name__ == "__main__":

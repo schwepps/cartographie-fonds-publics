@@ -55,6 +55,12 @@ resolve: ## Resolve the offline operator sample via the crosswalk (report + reso
 resolve-seed: ## Regenerate the crosswalk from the spike CSV (merge-aware; run a spike-resolve first)
 	uv run python -m ingestion.cli resolve-seed --resolution-csv spikes/phase0_siren_match/out/operator_resolution.csv
 
+coverage: ## Report operator->SIREN coverage over the committed crosswalk (FSC-56 acceptance metric)
+	uv run python -m ingestion.cli coverage
+
+curate: ## Promote pending operators to reviewed via recherche-entreprises (dry-run; --apply to write, FSC-56)
+	uv run python -m ingestion.cli curate-operators
+
 operators: ## Transform the offline operator sample into entities + tutelle edges (report + rate, FSC-25)
 	uv run python -m ingestion.cli operators --operators spikes/phase0_siren_match/fixtures/operateurs_resolve_sample.csv
 

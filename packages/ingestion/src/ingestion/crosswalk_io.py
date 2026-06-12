@@ -48,6 +48,14 @@ _DEFAULT_MINISTERES_PATH = (
 )
 MINISTERES_PATH = Path(os.environ.get("CFP_MINISTERES_PATH", _DEFAULT_MINISTERES_PATH))
 
+# Curated LOLF-mission -> tutelle-ministry-code reference (FSC-56). The live Jaune records an
+# operator's supervision as a mission, not a ministry code; this maps the mission to its lead
+# ministry's code (which `ministeres.yaml` resolves to a SIREN). Same governance as the crosswalks.
+_DEFAULT_MISSIONS_PATH = (
+    Path(__file__).resolve().parents[4] / "data" / "crosswalk" / "missions.yaml"
+)
+MISSIONS_PATH = Path(os.environ.get("CFP_MISSIONS_PATH", _DEFAULT_MISSIONS_PATH))
+
 # Fields persisted per entry, in stable order. ``normalized_name`` is derived (not persisted):
 # the denomination is the source of truth, so writing the key back would only invite drift.
 _ENTRY_FIELDS = (
@@ -116,6 +124,38 @@ def load_ministries(path: Path | str = MINISTERES_PATH) -> list[CrosswalkEntry]:
             )
         seen[code] = entry.denomination
     return entries
+
+
+def load_missions(path: Path | str = MISSIONS_PATH) -> dict[str, str]:
+    """Load the reviewed mission -> ministry-code map (FSC-56).
+
+    Returns ``{mission_label: ministry_code}`` keyed by the *raw* mission label (the operators
+    transform normalizes for lookup). Fails loud on a malformed file, a blank mission/code, or a
+    duplicate mission, so an operator's mission can never silently resolve to the wrong ministry
+    (golden rule #5). The referenced codes are validated against ``ministeres.yaml`` by the caller.
+    """
+    with open(path, encoding="utf-8") as fh:
+        data = yaml.safe_load(fh) or {}
+    if not isinstance(data, dict):
+        raise ValueError(f"{path}: top-level YAML must be a mapping, got {type(data).__name__}")
+    if data.get("schema_version") != SCHEMA_VERSION:
+        raise ValueError(
+            f"{path}: unsupported schema_version {data.get('schema_version')!r}, "
+            f"expected {SCHEMA_VERSION}"
+        )
+    rows = data.get("missions", [])
+    if not isinstance(rows, list):
+        raise ValueError(f"{path}: 'missions' must be a list, got {type(rows).__name__}")
+    out: dict[str, str] = {}
+    for row in rows:
+        mission = str((row or {}).get("mission") or "").strip()
+        code = str((row or {}).get("tutelle") or "").strip()
+        if not mission or not code:
+            raise ValueError(f"{path}: every mission row needs a non-empty 'mission' + 'tutelle'")
+        if mission in out:
+            raise ValueError(f"{path}: duplicate mission {mission!r}")
+        out[mission] = code
+    return out
 
 
 def _entry_to_row(entry: CrosswalkEntry) -> dict[str, Any]:
