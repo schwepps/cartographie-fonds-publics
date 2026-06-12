@@ -46,3 +46,21 @@ Mixed-perimeter totals are never silently presented as consolidated sums; the ca
 one place (`core.methodology` / `lib/perimeter.ts`) and surfaced consistently in the UI. Adding a new
 universe (e.g. APU, a finer social breakdown) is a mapping edit plus, if it is a new `budget_facts`
 nomenclature, a `CHECK`-constraint migration — not a change to every aggregation site.
+
+## Verification (FSC-58)
+The convention is proven on combined, multi-universe data, not only documented:
+
+- `core.methodology.perimeter_totals(facts)` is the canonical per-universe breakdown — its keys
+  **partition** the facts, so the values never double-count across universes (it is deliberately not
+  a consolidated total). `tests/test_methodology.py` checks the partition is exact, that a combined
+  set is flagged `mixes_perimeters`, and that a State→local transfer `Edge` cannot enter a universe
+  total (it is a flow, not a `budget_facts` row).
+- `packages/ingestion/tests/test_reconciliation.py` builds the **real merged 4-layer bundle** offline
+  (`build_bundle(ALL_SOURCE_IDS)`) and reconciles it: the per-universe sums partition the grand CP
+  total exactly, LOLF voted vs executed are kept separate (the residual is named, the headline filters
+  to voted), and the delegation hop (contracts) is disjoint from the budget universes.
+- `test_pipeline_integration.py` (FSC-57) adds the same reconciliation on the **actually-loaded**
+  Postgres graph (every fact carries a universe; per-universe sums reconcile to the grand total; the
+  breakdown is logged so any residual is visible, not hidden).
+- The web `perimetre` view is asserted to never render a consolidated cross-universe figure and to
+  state the non-consolidation convention.

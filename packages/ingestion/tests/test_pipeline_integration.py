@@ -35,15 +35,17 @@ from pathlib import Path
 from urllib.parse import urlparse, urlunparse
 
 import pytest
+from core.methodology import universe_for_nomenclature
+from core.models import Nomenclature
 from ingestion.load import ALL_SOURCE_IDS, LoadBundle, emit_load_sql
-from ingestion.snapshot import write_snapshot
+
+# The whole-perimeter fixture slice + drift guard live in conftest (whole_perimeter_snapshot_root),
+# so this DB test and the offline `test_reconciliation` reconcile the *same* cross-source data.
 
 _REPO_ROOT = Path(__file__).resolve().parents[3]
-_FIXTURES = Path(__file__).resolve().parent / "fixtures"
 _MIGRATIONS = _REPO_ROOT / "supabase" / "migrations"
 _ROLES_SHIM = _REPO_ROOT / "supabase" / "tests" / "supabase_roles.sql"
 _RLS_CHECKS = _REPO_ROOT / "supabase" / "tests" / "rls_checks.sql"
-_EXTRACTED_AT = "2026-06-09T00:00:00+00:00"
 
 # The operators sample resolves 3 of 5 rows against the committed crosswalk (2 are deliberately
 # unresolvable); the full population's target is FSC-56's ≥90%. Here we only guard against a
@@ -53,26 +55,6 @@ _MATCH_RATE_MIN = 0.5
 # A throwaway database in the same cluster as DATABASE_URL — created and dropped by this module so
 # the run is disposable and never mutates the caller's graph.
 _IT_DBNAME = "cfp_pipeline_it"
-
-# source_id -> committed fixture. État-central + social reuse the per-connector samples (already a
-# coherent slice). OFGL uses the dedicated integration fixture (see module docstring).
-_FIXTURE_BY_SOURCE: dict[str, Path] = {
-    "operateurs_etat": _REPO_ROOT
-    / "spikes/phase0_siren_match/fixtures/operateurs_resolve_sample.csv",
-    "finances_locales_ofgl": _FIXTURES / "integration" / "ofgl.csv",
-    "comptes_sociaux": _FIXTURES / "comptes_sociaux_sample.csv",
-    "budget_plf_lfi": _FIXTURES / "plf_depenses_sample.csv",
-    "budget_execution_mensuelle": _FIXTURES / "ods_situation_mensuelle.csv",
-    "decp_commande_publique": _FIXTURES / "decp_consolidated_sample.csv",
-    "epl_sem_spl": _FIXTURES / "epl_sem_spl_sample.csv",
-}
-
-# Collection-time guard: the integration fixtures must cover exactly the sources the load spans, so
-# a source added to ALL_SOURCE_IDS without a fixture (or vice-versa) can't silently under-test.
-assert set(_FIXTURE_BY_SOURCE) == set(ALL_SOURCE_IDS), (
-    "integration fixtures must cover every source in ALL_SOURCE_IDS: "
-    f"{set(ALL_SOURCE_IDS) ^ set(_FIXTURE_BY_SOURCE)} mismatched"
-)
 
 _DATABASE_URL = os.environ.get("DATABASE_URL")
 
@@ -123,19 +105,13 @@ def pipeline_db() -> Iterator[str]:
 
 
 @pytest.fixture(scope="module")
-def loaded(pipeline_db: str, tmp_path_factory: pytest.TempPathFactory) -> tuple[str, LoadBundle]:
-    """Snapshot every source from its fixture, render the whole-perimeter load, and apply it."""
+def loaded(pipeline_db: str, whole_perimeter_snapshot_root: Path) -> tuple[str, LoadBundle]:
+    """Render the whole-perimeter load from the shared fixture slice and apply it to the DB."""
     url = pipeline_db
-    snapshot_root = tmp_path_factory.mktemp("snapshots")
-    for source_id, fixture in _FIXTURE_BY_SOURCE.items():
-        write_snapshot(
-            fixture.read_bytes(),
-            source_id=source_id,
-            extracted_at=_EXTRACTED_AT,
-            root=snapshot_root,
-        )
     load_sql, bundle = emit_load_sql(
-        snapshot_root / "load.sql", source_ids=ALL_SOURCE_IDS, snapshot_root=snapshot_root
+        whole_perimeter_snapshot_root / "load.sql",
+        source_ids=ALL_SOURCE_IDS,
+        snapshot_root=whole_perimeter_snapshot_root,
     )
     _psql(url, file=load_sql)
     return url, bundle
@@ -191,3 +167,66 @@ def test_graph_neighbors_reachable_as_anon(loaded: tuple[str, LoadBundle]) -> No
     )
     counts = [int(line) for line in out.splitlines() if line.strip().isdigit()]
     assert counts and counts[-1] >= 1
+
+
+# --- Anti-double-counting reconciliation on the actually-loaded data (FSC-58) ----------------
+
+
+def _universe_sums(url: str) -> dict[str, float]:
+    """Per-universe CP totals of the loaded ``budget_facts`` (m14 folds into M57), mapped through
+    the authoritative ``core.methodology`` nomenclature→universe convention."""
+    out = _psql(
+        url,
+        sql="select nomenclature, coalesce(sum(amount_cp_eur), 0) from budget_facts "
+        "group by nomenclature",
+    )
+    totals: dict[str, float] = {}
+    for line in out.splitlines():
+        if not line.strip():
+            continue
+        nomenclature, total = line.split("|")
+        universe = universe_for_nomenclature(Nomenclature(nomenclature))
+        totals[universe] = totals.get(universe, 0.0) + float(total)
+    return totals
+
+
+def test_every_budget_fact_carries_a_universe(loaded: tuple[str, LoadBundle]) -> None:
+    """The partition key is always present on loaded rows — no fact can escape the reconciliation by
+    landing in a NULL/unknown universe (the 0006 CHECK constraint backstops the allowed values)."""
+    url, _ = loaded
+    missing = _count(url, "select count(*) from budget_facts where nomenclature is null")
+    assert missing == 0, f"{missing} loaded budget_facts row(s) carry no nomenclature"
+
+
+def test_per_universe_sums_partition_the_loaded_total(loaded: tuple[str, LoadBundle]) -> None:
+    """AC2 on actually-loaded data: grouping ``budget_facts`` by accounting universe reconciles to
+    the grand CP total exactly (no row dropped), and the combined load spans >1 universe. The
+    breakdown is printed so any residual is visible in CI logs, never hidden (golden rule #8)."""
+    url, _ = loaded
+    totals = _universe_sums(url)
+    grand = float(_psql(url, sql="select coalesce(sum(amount_cp_eur), 0) from budget_facts"))
+    print("\nPer-universe CP reconciliation (loaded budget_facts):")
+    for universe, total in sorted(totals.items()):
+        print(f"  {universe}: {total:,.0f} €")
+    print(f"  Σ universes = {sum(totals.values()):,.0f} €   (grand total = {grand:,.0f} €)")
+    assert sum(totals.values()) == pytest.approx(grand)
+    assert len(totals) > 1, "combined load should span more than one accounting universe"
+
+
+def test_transfers_live_in_edges_not_in_budget_facts(loaded: tuple[str, LoadBundle]) -> None:
+    """AC1 structural on loaded data: the funding/delegation hops are ``edges`` (and ``contracts``),
+    disjoint from the entity-keyed ``budget_facts``. A transfer amount has no column to land in on
+    ``budget_facts`` (no source→target pair), so it can never be summed into a universe total — the
+    per-universe sums come solely from ``budget_facts``."""
+    url, _ = loaded
+    hop_edges = _count(url, "select count(*) from edges where type in ('funds', 'delegates')")
+    assert hop_edges >= 1, "no funding/delegation edges loaded — the hop layer is missing"
+    cols = set(
+        _psql(
+            url,
+            sql="select column_name from information_schema.columns "
+            "where table_name = 'budget_facts'",
+        ).splitlines()
+    )
+    assert "source_siren" not in cols and "target_siren" not in cols
+    assert "amount_cp_eur" in cols
