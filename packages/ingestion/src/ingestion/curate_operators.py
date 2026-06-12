@@ -97,9 +97,11 @@ def _match_signal(
     sigle = normalize_name(candidate.get("sigle") or "")
     if acronym and sigle and normalize_name(acronym) == sigle:
         return "sigle"
-    cand_tokens = frozenset().union(*cand_token_sets) if cand_token_sets else frozenset()
+    # Containment is tested against EACH candidate-name token set, never their union: a SIREN needs
+    # supported by a *single* sourced name. Unioning nom_complet + nom_raison_sociale could match an
+    # operator whose tokens are split across the two names — a guess no one name supports (rule #5).
     for vt in variant_tokens:
-        if len(vt) >= 2 and vt <= cand_tokens:
+        if len(vt) >= 2 and any(vt <= ct for ct in cand_token_sets):
             return "containment"
     return None
 

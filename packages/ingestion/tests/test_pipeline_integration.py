@@ -67,6 +67,13 @@ _FIXTURE_BY_SOURCE: dict[str, Path] = {
     "epl_sem_spl": _FIXTURES / "epl_sem_spl_sample.csv",
 }
 
+# Collection-time guard: the integration fixtures must cover exactly the sources the load spans, so
+# a source added to ALL_SOURCE_IDS without a fixture (or vice-versa) can't silently under-test.
+assert set(_FIXTURE_BY_SOURCE) == set(ALL_SOURCE_IDS), (
+    "integration fixtures must cover every source in ALL_SOURCE_IDS: "
+    f"{set(ALL_SOURCE_IDS) ^ set(_FIXTURE_BY_SOURCE)} mismatched"
+)
+
 _DATABASE_URL = os.environ.get("DATABASE_URL")
 
 pytestmark = pytest.mark.skipif(
@@ -174,12 +181,13 @@ def test_rls_public_read_and_writes_blocked(loaded: tuple[str, LoadBundle]) -> N
 def test_graph_neighbors_reachable_as_anon(loaded: tuple[str, LoadBundle]) -> None:
     """A loaded tutelle edge is walkable through the public RPC the UI calls, as the anon role."""
     url, _ = loaded
-    # `set role` precedes the SELECT in one session; psql prints its `SET` tag first, so read the
-    # final line (the count) walked as the anon role through the public RPC the UI calls.
+    # `set role` precedes the SELECT in one session; psql also prints its `SET` tag, so pick the
+    # numeric line — the neighbour count walked as anon through the public RPC the UI calls.
     out = _psql(
         url,
         sql="set role anon; "
         "select count(*) from graph_neighbors("
         "(select source_siren from edges where provenance = 'operateurs_etat' limit 1), 1)",
     )
-    assert int(out.splitlines()[-1]) >= 1
+    counts = [int(line) for line in out.splitlines() if line.strip().isdigit()]
+    assert counts and counts[-1] >= 1

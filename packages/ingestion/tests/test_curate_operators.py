@@ -11,7 +11,6 @@ from __future__ import annotations
 from pathlib import Path
 
 import httpx
-import respx
 import yaml
 from core.crosswalk import CrosswalkEntry, CrosswalkStatus
 from ingestion.cli import app
@@ -105,6 +104,20 @@ def test_multiple_public_matches_stay_pending() -> None:
     assert not proposal.accepted
     assert proposal.siren is None
     assert proposal.candidate_sirens == ["186701224", "186901567"]
+
+
+def test_containment_does_not_union_two_candidate_name_fields() -> None:
+    # Regression: tokens split across nom_complet + nom_raison_sociale must NOT match containment —
+    # a SIREN must be supported by a *single* sourced name, never the union of two (rule #5).
+    entry = _pending("Institut Recherche")  # tokens {institut, recherche}
+    candidate = {
+        "siren": "130000016",
+        "nom_complet": "INSTITUT NATIONAL",  # has 'institut', not 'recherche'
+        "nom_raison_sociale": "AGENCE RECHERCHE",  # has 'recherche', not 'institut'
+        "nature_juridique": "7389",
+    }
+    proposal = propose(entry, _search_returning(candidate))
+    assert not proposal.accepted  # neither single name contains both tokens
 
 
 def test_private_candidate_is_not_accepted() -> None:
@@ -230,8 +243,9 @@ def test_coverage_command_reports_and_gates(tmp_path: Path) -> None:
     assert fail.exit_code == 1
 
 
-@respx.mock
-def test_curate_operators_cli_apply_promotes_a_unique_public_match(tmp_path: Path) -> None:
+def test_curate_operators_cli_apply_promotes_a_unique_public_match(
+    respx_mock, tmp_path: Path
+) -> None:
     cw = tmp_path / "operateurs.yaml"
     _write_crosswalk(
         cw,
@@ -240,7 +254,7 @@ def test_curate_operators_cli_apply_promotes_a_unique_public_match(tmp_path: Pat
             {"denomination": "Already Reviewed", "status": "reviewed", "siren": "180089013"},
         ],
     )
-    respx.get(_RECHERCHE_URL).mock(
+    respx_mock.get(_RECHERCHE_URL).mock(
         return_value=httpx.Response(
             200,
             json={
@@ -267,12 +281,11 @@ def test_curate_operators_cli_apply_promotes_a_unique_public_match(tmp_path: Pat
     assert promoted.tutelle == "MC"  # preserved
 
 
-@respx.mock
-def test_curate_operators_cli_dry_run_does_not_write(tmp_path: Path) -> None:
+def test_curate_operators_cli_dry_run_does_not_write(respx_mock, tmp_path: Path) -> None:
     cw = tmp_path / "operateurs.yaml"
     _write_crosswalk(cw, [{"denomination": "Musée Picasso", "status": "pending"}])
     before = cw.read_text(encoding="utf-8")
-    respx.get(_RECHERCHE_URL).mock(
+    respx_mock.get(_RECHERCHE_URL).mock(
         return_value=httpx.Response(
             200,
             json={
