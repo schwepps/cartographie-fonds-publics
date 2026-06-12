@@ -5,34 +5,2618 @@
 schema_version: 1
 maintainer: contact@cartographie-fonds-publics.fr
 entries:
-- denomination: Bibliothèque nationale de France
+- denomination: ACADEMIE DES SCIENCES D'OUTRE MER
   status: auto
+  siren: '180044034'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: Académie des technologies
+  status: auto
+  siren: '130003320'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: ACMOSS - Agence des Communications Mobiles Opérationnelles de Sécurité
+    et de Secours
+  status: auto
+  siren: '130030851'
+  tutelle: Administration générale et territoriale de l'État
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: ADEME - Agence de l'environnement et de la maîtrise de l'énergie
+  status: auto
+  siren: '385290309'
+  tutelle: Écologie, développement et mobilité durables
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: AEFE - Agence pour l'enseignement français à l'étranger
+  status: auto
+  siren: '180006082'
+  tutelle: Action extérieure de l'État
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: AFITF - Agence de financement des infrastructures de transport de
+    France
+  status: pending
+  tutelle: Écologie, développement et mobilité durables
+  top_match_ratio: 0.0
+  source: spike-backlog
+- denomination: AFPA - Agence nationale pour la formation professionnelle des adultes
+  status: auto
+  siren: '824228142'
+  tutelle: Travail et emploi
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: AFR - Académie de France à Rome
+  status: pending
+  tutelle: Culture
+  top_match_ratio: 0.0
+  source: spike-backlog
+- denomination: AGENCE BIBLIOGRAPHIQUE DE L'ENSEIGNEMENT SUPERIEUR
+  status: auto
+  siren: '180044224'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: AGENCE DE L'EAU ADOUR GARONNE
+  status: auto
+  siren: '183100064'
+  tutelle: Écologie, développement et mobilité durables
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: AGENCE DE L EAU ARTOIS PICARDIE
+  status: auto
+  siren: '185911781'
+  tutelle: Écologie, développement et mobilité durables
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: AGENCE DE L'EAU LOIRE-BRETAGNE
+  status: auto
+  siren: '184503019'
+  tutelle: Écologie, développement et mobilité durables
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: AGENCE DE L'EAU RHIN MEUSE
+  status: auto
+  siren: '185703014'
+  tutelle: Écologie, développement et mobilité durables
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: AGENCE DE L'EAU RHONE MEDITERRANEE ET CORSE
+  status: auto
+  siren: '186901559'
+  tutelle: Écologie, développement et mobilité durables
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: AGENCE DE L'EAU SEINE-NORMANDIE
+  status: auto
+  siren: '187500095'
+  tutelle: Écologie, développement et mobilité durables
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: AGENCE ERASMUS+FRANCE/EDUCATION FORMATION
+  status: auto
+  siren: '187512512'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: AGENCE DE MUTUALISATION DES UNIVERSITES ET DES ETABLISSEMENTS (AMUE)
+  status: pending
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 0.0
+  source: spike-backlog
+- denomination: AGENCE REGIONALE DE SANTE AUVERGNE-RHONE-ALPES
+  status: auto
+  siren: '130008071'
+  tutelle: Solidarité, insertion et égalité des chances
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: AGENCE REGIONALE DE SANTE BOURGOGNE-FRANCHE-COMTE
+  status: auto
+  siren: '130007933'
+  tutelle: Solidarité, insertion et égalité des chances
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: AGENCE REGIONALE DE SANTE DE BRETAGNE
+  status: auto
+  siren: '130007966'
+  tutelle: Solidarité, insertion et égalité des chances
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: AGENCE REGIONALE DE SANTE DU CENTRE-VAL DE LOIRE
+  status: auto
+  siren: '130007842'
+  tutelle: Solidarité, insertion et égalité des chances
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: AGENCE REGIONALE DE SANTE DE CORSE
+  status: auto
+  siren: '130007990'
+  tutelle: Solidarité, insertion et égalité des chances
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: AGENCE REGIONALE DE SANTE GRAND EST
+  status: auto
+  siren: '130007834'
+  tutelle: Solidarité, insertion et égalité des chances
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: AGENCE REGIONALE DE SANTE DE GUYANE
+  status: auto
+  siren: '130007859'
+  tutelle: Solidarité, insertion et égalité des chances
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: AGENCE REGIONALE DE SANTE HAUTS-DE-FRANCE
+  status: auto
+  siren: '130007974'
+  tutelle: Solidarité, insertion et égalité des chances
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: AGENCE REGIONALE DE SANTE ILE DE FRANCE
+  status: auto
+  siren: '130008014'
+  tutelle: Solidarité, insertion et égalité des chances
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: AGENCE REGIONALE DE SANTE DE MARTINIQUE
+  status: auto
+  siren: '130007883'
+  tutelle: Solidarité, insertion et égalité des chances
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: AGENCE REGIONALE DE SANTE DE MAYOTTE
+  status: auto
+  siren: '130025927'
+  tutelle: Solidarité, insertion et égalité des chances
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: AGENCE REGIONALE DE SANTE NORMANDIE
+  status: auto
+  siren: '130007909'
+  tutelle: Solidarité, insertion et égalité des chances
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: AGENCE REGIONALE DE SANTE NOUVELLE-AQUITAINE
+  status: auto
+  siren: '130007867'
+  tutelle: Solidarité, insertion et égalité des chances
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: AGENCE REGIONALE DE SANTE OCCITANIE
+  status: auto
+  siren: '130008048'
+  tutelle: Solidarité, insertion et égalité des chances
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: AGENCE REGIONALE DE SANTE PAYS DE LOIRE
+  status: auto
+  siren: '130008006'
+  tutelle: Solidarité, insertion et égalité des chances
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: AGENCE REGIONALE DE SANTE DE PROVENCE ALPES COTE D'AZUR
+  status: auto
+  siren: '130007982'
+  tutelle: Solidarité, insertion et égalité des chances
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: AGENCE REGIONALE DE SANTE DE LA REUNION
+  status: auto
+  siren: '130026057'
+  tutelle: Solidarité, insertion et égalité des chances
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: AGENCE DE SANTE DE GUADELOUPE, SAINT-MARTIN ET SAINT-BARTHELEMY
+  status: reviewed
+  siren: '130008030'
+  tutelle: Solidarité, insertion et égalité des chances
+  source: api-curated
+  reviewed_by: curate-operators
+  reviewed_at: '2026-06-12'
+  notes: recherche-entreprises «AGENCE REGIONALE DE SANTE DE GUADELOUPE, SAINT-MARTIN
+    ET SAINT-BARTHELEMY (ARS)» (nature 7385, sigle ARS) — containment-match
+- denomination: AGRASC - Agence de gestion et de recouvrement des avoirs saisis et
+    confisqués
+  status: auto
+  siren: '130014442'
+  tutelle: Justice
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: ANACT - Agence nationale pour l'amélioration des conditions de travail
+  status: auto
+  siren: '180037012'
+  tutelle: Travail et emploi
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: ANAH - Agence nationale de l'habitat
+  status: auto
+  siren: '180067027'
+  tutelle: Cohésion des territoires
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: ANCOLS - Agence nationale de contrôle du logement social
+  status: auto
+  siren: '130020464'
+  tutelle: Cohésion des territoires
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: ANCT - Agence nationale de la cohésion des territoires
+  status: auto
+  siren: '130026032'
+  tutelle: Cohésion des territoires
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: ANDRA - Agence nationale pour la gestion des déchets radioactifs
+  status: pending
+  tutelle: Écologie, développement et mobilité durables
+  top_match_ratio: 0.0
+  source: spike-backlog
+- denomination: ANFr - Agence nationale des fréquences
+  status: auto
+  siren: '180053027'
+  tutelle: Économie
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: ANGDM - Agence nationale pour la garantie des droits des mineurs
+  status: auto
+  siren: '180092538'
+  tutelle: Écologie, développement et mobilité durables
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: ANR - Agence nationale de la recherche
+  status: pending
+  tutelle: Recherche et enseignement supérieur
+  candidate_sirens:
+  - '130002504'
+  - '187512744'
+  top_match_ratio: 1.0
+  source: spike-backlog
+- denomination: ANS - Agence nationale du sport
+  status: pending
+  tutelle: Sport, jeunesse et vie associative
+  top_match_ratio: 0.0
+  source: spike-backlog
+- denomination: ANSC - Agence nationale du numérique de la sécurité civile
+  status: pending
+  tutelle: Sécurités
+  top_match_ratio: 0.0
+  source: spike-backlog
+- denomination: ANSéS - Agence nationale de sécurité sanitaire, de l'alimentation,
+    de l'environnement et du travail
+  status: auto
+  siren: '130012024'
+  tutelle: Agriculture, alimentation, forêt et affaires rurales
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: ANTAI - Agence nationale de traitement automatisé des infractions
+  status: auto
+  siren: '130014541'
+  tutelle: Contrôle de la circulation et du stationnement routiers
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: ANTS - Agence nationale des titres sécurisés
+  status: auto
+  siren: '130003262'
+  tutelle: Administration générale et territoriale de l'État
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: APIJ - Agence publique pour l'immobilier de la Justice
+  status: auto
+  siren: '180092256'
+  tutelle: Justice
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: ASC - Agence du service civique
+  status: pending
+  tutelle: Sport, jeunesse et vie associative
+  top_match_ratio: 0.0
+  source: spike-backlog
+- denomination: ASP - Agence de services et de paiement
+  status: auto
+  siren: '130006372'
+  tutelle: Agriculture, alimentation, forêt et affaires rurales
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: ASSOCIATION DE COORDINATION TECHNIQUE AGRICOLE
+  status: auto
+  siren: '784523318'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: ASSOCIATION DE COORDINATION TECHNIQUE POUR L'INDUSTRIE AGRO ALIMENTAIRE
+  status: pending
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 0.0
+  source: spike-backlog
+- denomination: Atout-France
+  status: reviewed
+  siren: '340709211'
+  tutelle: Économie
+  source: api-curated
+  reviewed_by: curate-operators
+  reviewed_at: '2026-06-12'
+  notes: recherche-entreprises «ATOUT FRANCE AGENCE FRANCAISE DE DEVELOPPEMENT TOURISTIQUE»
+    (nature 6220) — containment-match
+- denomination: Bibliothèque nationale de France
+  status: reviewed
   siren: '180046252'
   tutelle: MC
+  source: manual
+  reviewed_by: francois.schuers
+  reviewed_at: '2026-06-12'
+  notes: Alias propre pour le seed/fixtures offline; même SIREN que « BnF - … » (FSC-56).
+- denomination: BIBLIOTHEQUE NATIONALE ET UNIVERSITAIRE DE STRASBOURG
+  status: auto
+  siren: '180044067'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: BIBLIOTHEQUE UNIVERSITAIRE DES LANGUES ET CIVILISATIONS
+  status: auto
+  siren: '187512702'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: GIP - BIO - Agence française pour le développement et la promotion
+    de l'agriculture biologique
+  status: pending
+  tutelle: Agriculture, alimentation, forêt et affaires rurales
+  top_match_ratio: 0.0
+  source: spike-backlog
+- denomination: BnF - Bibliothèque nationale de France
+  status: auto
+  siren: '180046252'
+  tutelle: Médias, livre et industries culturelles
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: BPI - Bibliothèque publique d'information
+  status: auto
+  siren: '180043093'
+  tutelle: Médias, livre et industries culturelles
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: BRGM - Bureau de recherches géologiques et minières
+  status: pending
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 0.19
+  source: spike-backlog
+- denomination: Business France
+  status: auto
+  siren: '451930051'
+  tutelle: Économie
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: ETABLISSEMENT PUBLIC CAMPUS CONDORCET
+  status: auto
+  siren: '130016371'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: CAMPUS France
+  status: auto
+  siren: '752195438'
+  tutelle: Action extérieure de l'État
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: CAPA - Cité de l'architecture et du patrimoine
+  status: pending
+  tutelle: Culture
+  top_match_ratio: 0.0
+  source: spike-backlog
+- denomination: CASA DE VELASQUEZ A MADRID
+  status: pending
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 0.0
+  source: spike-backlog
+- denomination: CEA - Commissariat à l'énergie atomique et aux énergies alternatives
+  status: auto
+  siren: '775685019'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: CELRL - Conservatoire de l'espace littoral et des rivages lacustres
+  status: auto
+  siren: '180005019'
+  tutelle: Écologie, développement et mobilité durables
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: CENTRALE LILLE INSTITUT
+  status: auto
+  siren: '195903497'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: CENTRALESUPELEC
+  status: auto
+  siren: '130020761'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: CENTRE INFORMATIQUE NATIONAL DE L'ENSEIGNEMENT SUPERIEUR
+  status: auto
+  siren: '193415940'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: CENTRE NATIONAL DES OEUVRES UNIVERSITAIRES ET SCOLAIRES - CNOUS
+  status: auto
+  siren: '180044018'
+  tutelle: Enseignement scolaire
   top_match_ratio: 1.0
   source: spike-auto
 - denomination: Centre national de la recherche scientifique
-  status: auto
+  status: reviewed
   siren: '180089013'
   tutelle: MESR
+  source: manual
+  reviewed_by: francois.schuers
+  reviewed_at: '2026-06-12'
+  notes: Alias propre (sans sigle) pour le seed/fixtures offline; même SIREN que «
+    CNRS - … » (FSC-56).
+- denomination: CENTRE REGIONAL OEUVRES UNIV SCOLAIRES - AIX - MARSEILLE
+  status: pending
+  tutelle: Enseignement scolaire
+  top_match_ratio: 0.0
+  source: spike-backlog
+- denomination: CENTRE REGIONAL OEUVRES UNIV SCOLAIRES - AMIENS
+  status: pending
+  tutelle: Enseignement scolaire
+  top_match_ratio: 0.916
+  source: spike-backlog
+- denomination: CENTRE REGIONAL OEUVRES UNIV SCOLAIRES - ANTILLES GUYANE
+  status: pending
+  tutelle: Enseignement scolaire
+  top_match_ratio: 0.0
+  source: spike-backlog
+- denomination: CENTRE REGIONAL OEUVRES UNIV SCOLAIRES - BORDEAUX
+  status: pending
+  tutelle: Enseignement scolaire
+  top_match_ratio: 0.901
+  source: spike-backlog
+- denomination: CENTRE REGIONAL OEUVRES UNIV SCOLAIRES - BOURGOGNE FRANCHE-COMTE
+  status: pending
+  tutelle: Enseignement scolaire
+  top_match_ratio: 0.0
+  source: spike-backlog
+- denomination: CENTRE REGIONAL OEUVRES UNIV SCOLAIRES - CLERMONT FERRAND
+  status: pending
+  tutelle: Enseignement scolaire
+  top_match_ratio: 0.848
+  source: spike-backlog
+- denomination: CENTRE REGIONAL OEUVRES UNIV SCOLAIRES - CORTE
+  status: pending
+  tutelle: Enseignement scolaire
+  top_match_ratio: 0.932
+  source: spike-backlog
+- denomination: CENTRE REGIONAL OEUVRES UNIV SCOLAIRES - CRETEIL
+  status: pending
+  tutelle: Enseignement scolaire
+  top_match_ratio: 0.911
+  source: spike-backlog
+- denomination: CENTRE REGIONAL OEUVRES UNIV SCOLAIRES - GRENOBLE
+  status: pending
+  tutelle: Enseignement scolaire
+  top_match_ratio: 0.901
+  source: spike-backlog
+- denomination: CENTRE REGIONAL OEUVRES UNIV SCOLAIRES - LILLE
+  status: pending
+  tutelle: Enseignement scolaire
+  top_match_ratio: 0.927
+  source: spike-backlog
+- denomination: CENTRE REGIONAL OEUVRES UNIV SCOLAIRES - LIMOGES
+  status: pending
+  tutelle: Enseignement scolaire
+  top_match_ratio: 0.911
+  source: spike-backlog
+- denomination: CENTRE REGIONAL OEUVRES UNIV SCOLAIRES - LYON
+  status: pending
+  tutelle: Enseignement scolaire
+  top_match_ratio: 0.938
+  source: spike-backlog
+- denomination: CENTRE REGIONAL OEUVRES UNIV SCOLAIRES - MONTPELLIER
+  status: pending
+  tutelle: Enseignement scolaire
+  top_match_ratio: 0.864
+  source: spike-backlog
+- denomination: CENTRE REGIONAL OEUVRES UNIV SCOLAIRES - NANCY - METZ
+  status: pending
+  tutelle: Enseignement scolaire
+  top_match_ratio: 0.0
+  source: spike-backlog
+- denomination: CENTRE REGIONAL OEUVRES UNIV SCOLAIRES - NANTES
+  status: pending
+  tutelle: Enseignement scolaire
+  top_match_ratio: 0.916
+  source: spike-backlog
+- denomination: CENTRE REGIONAL OEUVRES UNIV SCOLAIRES - NICE
+  status: pending
+  tutelle: Enseignement scolaire
+  top_match_ratio: 0.938
+  source: spike-backlog
+- denomination: CENTRE REGIONAL OEUVRES UNIV SCOLAIRES - NORMANDIE
+  status: pending
+  tutelle: Enseignement scolaire
+  top_match_ratio: 0.884
+  source: spike-backlog
+- denomination: CENTRE REGIONAL OEUVRES UNIV SCOLAIRES - ORLEANS - TOURS
+  status: pending
+  tutelle: Enseignement scolaire
+  top_match_ratio: 0.896
+  source: spike-backlog
+- denomination: CENTRE REGIONAL OEUVRES UNIV SCOLAIRES - PARIS
+  status: pending
+  tutelle: Enseignement scolaire
+  top_match_ratio: 0.932
+  source: spike-backlog
+- denomination: CENTRE REGIONAL OEUVRES UNIV SCOLAIRES - POITIERS
+  status: pending
+  tutelle: Enseignement scolaire
+  top_match_ratio: 0.901
+  source: spike-backlog
+- denomination: CENTRE REGIONAL OEUVRES UNIV SCOLAIRES - REIMS
+  status: pending
+  tutelle: Enseignement scolaire
+  top_match_ratio: 0.932
+  source: spike-backlog
+- denomination: CENTRE REGIONAL OEUVRES UNIV SCOLAIRES - RENNES
+  status: pending
+  tutelle: Enseignement scolaire
+  top_match_ratio: 0.921
+  source: spike-backlog
+- denomination: CENTRE REGIONAL OEUVRES UNIV SCOLAIRES - REUNION
+  status: pending
+  tutelle: Enseignement scolaire
+  top_match_ratio: 0.0
+  source: spike-backlog
+- denomination: CENTRE REGIONAL OEUVRES UNIV SCOLAIRES - STRASBOURG
+  status: pending
+  tutelle: Enseignement scolaire
+  top_match_ratio: 0.903
+  source: spike-backlog
+- denomination: CENTRE REGIONAL OEUVRES UNIV SCOLAIRES - TOULOUSE
+  status: pending
+  tutelle: Enseignement scolaire
+  top_match_ratio: 0.923
+  source: spike-backlog
+- denomination: CENTRE REGIONAL OEUVRES UNIV SCOLAIRES - VERSAILLES
+  status: pending
+  tutelle: Enseignement scolaire
+  top_match_ratio: 0.882
+  source: spike-backlog
+- denomination: CENTRE TECHNIQUE DU LIVRE DE L'ENSEIGNEMENT SUPERIEUR (CTLES)
+  status: auto
+  siren: '180044232'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: CEREMA - Centre d'études et d'expertise sur les risques, l'environnement,
+    la mobilité et l'aménagement
+  status: auto
+  siren: '130018310'
+  tutelle: Écologie, développement et mobilité durables
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: CEREQ - Centre d'Etudes et de Recherches sur les Qualifications
+  status: auto
+  siren: '180043036'
+  tutelle: Enseignement scolaire
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: CGLLS - Caisse de garantie du logement locatif social
+  status: auto
+  siren: '180092272'
+  tutelle: Cohésion des territoires
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: Chaillot – Théâtre national de la Danse
+  status: auto
+  siren: '692039514'
+  tutelle: Culture
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: CHANCELLERIE DES UNIVERSITES DE PARIS
+  status: auto
+  siren: '187500079'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: Etablissement public du château de Fontainebleau
+  status: auto
+  siren: '130006513'
+  tutelle: Culture
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: Cinémathèque française
+  status: auto
+  siren: '775671464'
+  tutelle: Médias, livre et industries culturelles
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: CIRAD - Centre de coopération internationale en recherche agronomique
+    pour le développement
+  status: pending
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 0.207
+  source: spike-backlog
+- denomination: CLERMONT AUVERGNE INP
+  status: auto
+  siren: '130021918'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: CMN - Centre des monuments nationaux
+  status: auto
+  siren: '180046013'
+  tutelle: Culture
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: CNAC - Centre national des arts du cirque
+  status: pending
+  tutelle: Culture
+  top_match_ratio: 0.0
+  source: spike-backlog
+- denomination: CNAC-GP - Centre national d'art et de culture - Georges Pompidou
+  status: pending
+  tutelle: Culture
+  top_match_ratio: 0.0
+  source: spike-backlog
+- denomination: CNAP - Centre national des arts plastiques
+  status: auto
+  siren: '180046054'
+  tutelle: Culture
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: CNAPS - Conseil national des activités privées de sécurité
+  status: auto
+  siren: '130015712'
+  tutelle: Administration générale et territoriale de l'État
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: CNC - Centre national du cinéma et de l'image animée
+  status: auto
+  siren: '180046039'
+  tutelle: Médias, livre et industries culturelles
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: CND - Centre national de la danse
+  status: auto
+  siren: '417822632'
+  tutelle: Culture
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: CNED - Centre national d'enseignement à distance
+  status: auto
+  siren: '197529050'
+  tutelle: Enseignement scolaire
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: CNES - Centre national d'études spatiales
+  status: auto
+  siren: '775665912'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: CNL - Centre national du livre
+  status: auto
+  siren: '180046047'
+  tutelle: Médias, livre et industries culturelles
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: CNM - Centre national de la musique
+  status: auto
+  siren: '882539786'
+  tutelle: Médias, livre et industries culturelles
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: CNPF - Centre national de la propriété forestière
+  status: pending
+  tutelle: Agriculture, alimentation, forêt et affaires rurales
+  top_match_ratio: 0.0
+  source: spike-backlog
+- denomination: CNRS - Centre national de la recherche scientifique
+  status: auto
+  siren: '180089013'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: CNSAD - Conservatoire national supérieur d'art dramatique
+  status: auto
+  siren: '197534696'
+  tutelle: Culture
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: CNSMD Lyon - Conservatoire national supérieur de musique et de danse
+    de Lyon
+  status: pending
+  tutelle: Culture
+  top_match_ratio: 0.855
+  source: spike-backlog
+- denomination: CNSMD Paris - Conservatoire national supérieur de musique et de danse
+    de Paris
+  status: pending
+  tutelle: Culture
+  top_match_ratio: 0.0
+  source: spike-backlog
+- denomination: COLLEGE DE FRANCE
+  status: auto
+  siren: '197534803'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: Comédie Française
+  status: auto
+  siren: '302977145'
+  tutelle: Culture
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: COMMUNAUTE D'UNIVERSITES ET ETABLISSEMENTS NORMANDIE UNIVERSITE -
+    établissement expérimental
+  status: pending
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 0.0
+  source: spike-backlog
+- denomination: 'COMMUNAUTE D''UNIVERSITES ET ETABLISSEMENTS UNIVERSITE ANGERS - LE
+    MANS - établissement
+
+    expérimental'
+  status: pending
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 0.0
+  source: spike-backlog
+- denomination: COMMUNAUTE D'UNIVERSITES ET D'ETABLISSEMENTS UNIVERSITE FEDERALE DE
+    TOULOUSE MIDI- PYRENEES
+  status: auto
+  siren: '130003643'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: COMMUNAUTE D'UNIVERSITES ET ETABLISSEMENTS UNIVERSITE DE LYON
+  status: reviewed
+  siren: '130003767'
+  tutelle: Recherche et enseignement supérieur
+  source: api-curated
+  reviewed_by: curate-operators
+  reviewed_at: '2026-06-12'
+  notes: recherche-entreprises «COMMUNAUTE D'UNIVERSITES ET ETABLISSEMENTS (COMUE)
+    UNIVERSITE DE LYON (COMUE)» (nature 7383, sigle COMUE) — containment-match
+- denomination: COMMUNAUTE D'UNIVERSITES ET ETABLISSEMENTS UNIVERSITE PARIS EST
+  status: pending
+  tutelle: Recherche et enseignement supérieur
+  candidate_sirens:
+  - '130021454'
+  - '130003734'
+  - '130028079'
+  top_match_ratio: 1.0
+  source: spike-backlog
+- denomination: Conseil national des communes « Compagnon de la Libération »
+  status: auto
+  siren: '180000028'
+  tutelle: Anciens combattants, mémoire et liens avec la Nation
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: CONSERVATOIRE NATIONAL DES ARTS ET METIERS
+  status: auto
+  siren: '197534712'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: CY CERGY PARIS UNIVERSITE - établissement public expérimental
+  status: pending
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 0.0
+  source: spike-backlog
+- denomination: Ecole de l'air et de l'espace
+  status: auto
+  siren: '130024540'
+  tutelle: Défense
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: ECOLE CENTRALE DE LYON
+  status: auto
+  siren: '196901870'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: ECOLE CENTRALE DE MARSEILLE
+  status: auto
+  siren: '191333400'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: ECOLE CENTRALE DE NANTES
+  status: auto
+  siren: '194401006'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: Ecole d'économie et de sciences quantitatives
+  status: reviewed
+  siren: '130030620'
+  tutelle: Recherche et enseignement supérieur
+  source: api-curated
+  reviewed_by: curate-operators
+  reviewed_at: '2026-06-12'
+  notes: recherche-entreprises «ECOLE D'ECONOMIE ET DE SCIENCES SOCIALES QUANTITATIVES
+    DE TOULOUSE - TSE (TSE)» (nature 7383, sigle TSE) — containment-match
+- denomination: ECOLE FRANCAISE D'ATHENES
+  status: reviewed
+  siren: '180044083'
+  tutelle: Recherche et enseignement supérieur
+  source: api-curated
+  reviewed_by: curate-operators
+  reviewed_at: '2026-06-12'
+  notes: recherche-entreprises «ECOLE FRANCAISE D'ARCHEOLOGIE D'ATHENES» (nature 7383)
+    — containment-match
+- denomination: ECOLE FRANCAISE D'EXTREME ORIENT
+  status: auto
+  siren: '180044117'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: ECOLE FRANCAISE DE ROME
+  status: auto
+  siren: '180044091'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: ECOLE DES HAUTES ETUDES EN SCIENCES SOCIALES
+  status: auto
+  siren: '197537426'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: Ecole du Louvre
+  status: auto
+  siren: '197546872'
+  tutelle: Culture
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: ECOLE NATIONALE DES CHARTES
+  status: auto
+  siren: '197534787'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: ECOLE NATIONALE DU GENIE DE L'EAU ET DE L'ENVIRONNEMENT DE STRASBOURG
+  status: auto
+  siren: '196701890'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: ECOLE NATIONALE D'INGENIEURS DE BREST
+  status: pending
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 0.928
+  source: spike-backlog
+- denomination: ECOLE NATIONALE D INGENIEURS TARBES
+  status: pending
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 0.805
+  source: spike-backlog
+- denomination: ECOLE NATIONALE DES SPORTS DE MONTAGNE
+  status: auto
+  siren: '197400682'
+  tutelle: Sport, jeunesse et vie associative
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: ECOLE NATIONALE SUPERIEURE D ARCHITECTURE DE BRETAGNE
+  status: auto
+  siren: '193500899'
+  tutelle: Culture
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: ECOLE NATIONALE SUPERIEURE D ARCHITECTURE DE CLERMONT-FERRAND
+  status: auto
+  siren: '196312870'
+  tutelle: Culture
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: ECOLE NATIONALE SUPERIEURE D ARCHITECTURE DE GRENOBLE
+  status: auto
+  siren: '193801412'
+  tutelle: Culture
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: ECOLE NATIONALE SUPERIEURE D ARCHITECTURE DE LYON
+  status: auto
+  siren: '196901847'
+  tutelle: Culture
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: ECOLE NATIONALE SUPERIEURE D ARCHITECTURE DE MARNE-VALLEE
+  status: pending
+  tutelle: Culture
+  top_match_ratio: 0.0
+  source: spike-backlog
+- denomination: ECOLE NATIONALE SUPERIEURE D ARCHITECTURE DE MARSEILLE
+  status: auto
+  siren: '191302363'
+  tutelle: Culture
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: ECOLE NATIONALE SUPERIEURE D ARCHITECTURE DE MONTPELLIER
+  status: auto
+  siren: '193401320'
+  tutelle: Culture
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: ECOLE NATIONALE SUPERIEURE D ARCHITECTURE DE NANCY
+  status: auto
+  siren: '195401351'
+  tutelle: Culture
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: ECOLE NATIONALE SUPERIEURE D ARCHITECTURE DE NANTES
+  status: auto
+  siren: '194401048'
+  tutelle: Culture
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: ECOLE NATIONALE SUPERIEURE D ARCHITECTURE DE NORMANDIE
+  status: auto
+  siren: '197601644'
+  tutelle: Culture
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: ECOLE NATIONALE SUPERIEURE D ARCHITECTURE DE PARIS BELLEVILLE
+  status: auto
+  siren: '197518772'
+  tutelle: Culture
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: ECOLE NATIONALE SUPERIEURE D ARCHITECTURE DE PARIS MALAQUAIS
+  status: auto
+  siren: '180092215'
+  tutelle: Culture
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: ECOLE NATIONALE SUPERIEURE D ARCHITECTURE DE PARIS VAL DE SEINE
+  status: auto
+  siren: '180092207'
+  tutelle: Culture
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: ECOLE NATIONALE SUPERIEURE D ARCHITECTURE DE PARIS LA VILLETTE
+  status: auto
+  siren: '197518756'
+  tutelle: Culture
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: ECOLE NATIONALE SUPERIEURE D ARCHITECTURE ET DE PAYSAGE DE BORDEAUX
+  status: auto
+  siren: '193301991'
+  tutelle: Culture
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: ECOLE NATIONALE SUPERIEURE D ARCHITECTURE DE ST-ETIENNE
+  status: pending
+  tutelle: Culture
+  top_match_ratio: 0.0
+  source: spike-backlog
+- denomination: ECOLE NATIONALE SUPERIEURE D ARCHITECTURE DE STRASBOURG
+  status: auto
+  siren: '196701866'
+  tutelle: Culture
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: ECOLE NATIONALE SUPERIEURE D ARCHITECTURE DE TOULOUSE
+  status: auto
+  siren: '193101508'
+  tutelle: Culture
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: ECOLE NATIONALE SUPERIEURE D ARCHITECTURE DE VERSAILLES
+  status: auto
+  siren: '197804123'
+  tutelle: Culture
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: ECOLE NATIONALE SUPERIEURE D'ART DE BOURGES
+  status: auto
+  siren: '180092389'
+  tutelle: Culture
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: ECOLE NATIONALE SUPERIEURE D'ART DE CERGY
+  status: auto
+  siren: '180092405'
+  tutelle: Culture
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: ECOLE NATIONALE SUPERIEURE D'ART DE DIJON
+  status: auto
+  siren: '180092413'
+  tutelle: Culture
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: ECOLE NATIONALE SUPERIEURE D'ART DE LIMOGES-AUBUSSON
+  status: pending
+  tutelle: Culture
+  top_match_ratio: 0.826
+  source: spike-backlog
+- denomination: ECOLE NATIONALE SUPERIEURE D'ART DE NANCY
+  status: reviewed
+  siren: '180092371'
+  tutelle: Culture
+  source: api-curated
+  reviewed_by: curate-operators
+  reviewed_at: '2026-06-12'
+  notes: recherche-entreprises «ECOLE NATIONALE SUPERIEURE D'ART ET DE DESIGN DE NANCY
+    (ENSAD)» (nature 7384, sigle ENSAD) — containment-match
+- denomination: ECOLE NATIONALE SUPERIEURE DES ARTS ET INDUSTRIES TEXTILES
+  status: auto
+  siren: '195903380'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: ECOLE NATIONALE SUPERIEURE DES ARTS ET METIERS (ENSAM)
+  status: auto
+  siren: '197534720'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: ECOLE NATIONALE SUPERIEURE DES ARTS ET TECHNIQUES DU THEATRE
+  status: auto
+  siren: '197507734'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: ECOLE NATIONALE SUPERIEURE DE CHIMIE DE MONTPELLIER
+  status: auto
+  siren: '193401122'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: ECOLE NATIONALE SUPERIEURE DE CHIMIE DE PARIS
+  status: auto
+  siren: '130021421'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: ECOLE NATIONALE SUPERIEURE DE CHIMIE DE RENNES
+  status: pending
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 0.937
+  source: spike-backlog
+- denomination: ECOLE NATIONALE SUPERIEURE DE L'ELECTRONIQUE ET DE SES APPLICATIONS
+  status: auto
+  siren: '199513763'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: ECOLE NATIONALE SUPERIEURE DE FORMATION DE L'ENSEIGNEMENT AGRICOLE
+  status: auto
+  siren: '193101433'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: ECOLE NATIONALE SUPERIEURE D' INFORMATIQUE POUR L' INDUSTRIE ET L'
+    ENTREPRISE
+  status: auto
+  siren: '130002140'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: ECOLE NATIONALE SUPERIEURE INGENIEURS DE CAEN
+  status: auto
+  siren: '191417203'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: ECOLE NATIONALE SUPERIEURE LOUIS LUMIERE
+  status: auto
+  siren: '197506611'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: ECOLE NATIONALE SUPERIEURE MECANIQUE ET AEROTECHNIQUE
+  status: reviewed
+  siren: '198600736'
+  tutelle: Recherche et enseignement supérieur
+  source: api-curated
+  reviewed_by: curate-operators
+  reviewed_at: '2026-06-12'
+  notes: recherche-entreprises «ECOLE NATIONALE SUPERIEURE DE MECANIQUE ET D'AEROTECHNIQUE
+    DE POITIERS (ENSMA)» (nature 7383, sigle ENSMA) — containment-match
+- denomination: ECOLE NATIONALE SUPERIEURE DE MECANIQUE ET DES MICROTECHNIQUES
+  status: auto
+  siren: '192500825'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: ECOLE NATIONALE SUPERIEURE DU PAYSAGE
+  status: pending
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 0.907
+  source: spike-backlog
+- denomination: ECOLE NATIONALE SUPERIEURE DE LA PHOTOGRAPHIE
+  status: auto
+  siren: '191333426'
+  tutelle: Culture
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: ECOLE NATIONALE SUPERIEURE DES SCIENCES AGRONOMIQUES DE BORDEAUX AQUITAINE
+    BORDEAUX SCIENCES AGRO
+  status: auto
+  siren: '193302031'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: ECOLE NATIONALE SUPERIEURE DES SCIENCES DE L'INFORMATION ET DES BIBLIOTHEQUES
+  status: auto
+  siren: '196924591'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: ECOLE NATIONALE VETERINAIRE AGROALIMENTAIRE ET DE L'ALIMENTATION NANTES
+    ATLANTIQUE
+  status: auto
+  siren: '130008535'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: ECOLE NATIONALE VETERINAIRE D'ALFORT
+  status: auto
+  siren: '199406083'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: ECOLE NATIONALE VETERINAIRE DE TOULOUSE
+  status: auto
+  siren: '193101532'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: ECOLE NATIONALE DE VOILE ET DES SPORTS NAUTIQUES
+  status: pending
+  tutelle: Sport, jeunesse et vie associative
+  top_match_ratio: 0.0
+  source: spike-backlog
+- denomination: Ecole navale
+  status: auto
+  siren: '150000966'
+  tutelle: Défense
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: ECOLE NORMALE SUPERIEURE
+  status: pending
+  tutelle: Recherche et enseignement supérieur
+  candidate_sirens:
+  - '197534597'
+  - '197534621'
+  - '199208125'
+  top_match_ratio: 1.0
+  source: spike-backlog
+- denomination: ECOLE NORMALE SUPERIEURE DE LYON
+  status: pending
+  tutelle: Recherche et enseignement supérieur
+  candidate_sirens:
+  - '130008121'
+  - '196932594'
+  top_match_ratio: 1.0
+  source: spike-backlog
+- denomination: ECOLE NORMALE SUPERIEURE PARIS-SACLAY
+  status: auto
+  siren: '199406075'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: ECOLE NORMALE SUPERIEURE DE RENNES
+  status: auto
+  siren: '130018484'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: ECOLE PRATIQUE DES HAUTES ETUDES
+  status: auto
+  siren: '197534860'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: ECPAD - Etablissement de communication et de production audiovisuelle
+    de la défense
+  status: auto
+  siren: '180092231'
+  tutelle: Défense
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: ENAC - Ecole nationale de l'aviation civile
+  status: auto
+  siren: '193112562'
+  tutelle: Contrôle et exploitation aériens
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: ENAP - Ecole nationale de l'administration pénitentiaire
+  status: auto
+  siren: '180092199'
+  tutelle: Justice
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: ENIM - Etablissement national des invalides de la marine
+  status: auto
+  siren: '180065021'
+  tutelle: Régimes sociaux et de retraite
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: ENM - Ecole nationale de la magistrature
+  status: auto
+  siren: '193322393'
+  tutelle: Justice
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: ENPC - Ecole nationale des Ponts et Chaussées
+  status: pending
+  tutelle: Écologie, développement et mobilité durables
+  top_match_ratio: 0.42
+  source: spike-backlog
+- denomination: ENSAD - Ecole nationale supérieure des arts décoratifs
+  status: auto
+  siren: '197534704'
+  tutelle: Culture
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: ENSBA - Ecole nationale supérieure des beaux-arts
+  status: auto
+  siren: '197536675'
+  tutelle: Culture
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: ENSCI - Ecole nationale supérieure de création industrielle
+  status: pending
+  tutelle: Culture
+  top_match_ratio: 0.0
+  source: spike-backlog
+- denomination: Ensemble intercontemporain
+  status: pending
+  tutelle: Culture
+  top_match_ratio: 0.316
+  source: spike-backlog
+- denomination: ENSM - Ecole nationale supérieure maritime
+  status: auto
+  siren: '130013097'
+  tutelle: Écologie, développement et mobilité durables
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: ENSMIS - Ecole nationale supérieure des métiers de l'image et du son
+  status: pending
+  tutelle: Culture
+  top_match_ratio: 0.0
+  source: spike-backlog
+- denomination: ENSPolice - Ecole nationale supérieure de la police
+  status: pending
+  tutelle: Sécurités
+  top_match_ratio: 0.0
+  source: spike-backlog
+- denomination: ENSTA - Ecole nationale supérieure de techniques avancées
+  status: auto
+  siren: '197500036'
+  tutelle: Défense
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: ENTPE - Ecole nationale des travaux publics de l'Etat
+  status: pending
+  tutelle: Écologie, développement et mobilité durables
+  candidate_sirens:
+  - '130002884'
+  - '160000055'
+  top_match_ratio: 1.0
+  source: spike-backlog
+- denomination: GIP Les entreprises s’engagent
+  status: pending
+  tutelle: Travail et emploi
+  top_match_ratio: 0.0
+  source: spike-backlog
+- denomination: EPAURIF - Etablissement public d'aménagement universitaire de la région
+    Ile-de-France
+  status: auto
+  siren: '180092058'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: EPCMPP - Etablissement public de la Cité de la musique - Philharmonie
+    de Paris
+  status: pending
+  tutelle: Culture
+  top_match_ratio: 0.0
+  source: spike-backlog
+- denomination: EPIDE - Etablissement pour l'insertion dans l'emploi
+  status: pending
+  tutelle: Travail et emploi
+  top_match_ratio: 0.0
+  source: spike-backlog
+- denomination: EPMQB - Etablissement public du musée du quai Branly
+  status: pending
+  tutelle: Culture
+  top_match_ratio: 0.0
+  source: spike-backlog
+- denomination: EPMSM - Etablissement public du Mont- Saint-Michel
+  status: pending
+  tutelle: Culture
+  top_match_ratio: 0.0
+  source: spike-backlog
+- denomination: EPPD - Etablissement public du palais de la porte Dorée
+  status: pending
+  tutelle: Culture
+  top_match_ratio: 0.0
+  source: spike-backlog
+- denomination: EPPGHV - Etablissement public du parc et de la grande halle de la
+    Villette
+  status: pending
+  tutelle: Culture
+  top_match_ratio: 0.0
+  source: spike-backlog
+- denomination: EPRNDP - Etablissement public chargé de la conservation et de la restauration
+    de la cathédrale Notre-Dame de Paris
+  status: pending
+  tutelle: Culture
+  top_match_ratio: 0.0
+  source: spike-backlog
+- denomination: EPSF - Etablissement public de sécurité ferroviaire
+  status: auto
+  siren: '130001316'
+  tutelle: Écologie, développement et mobilité durables
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: EPV - Etablissement public du musée et du domaine national de Versailles
+  status: pending
+  tutelle: Culture
+  top_match_ratio: 0.0
+  source: spike-backlog
+- denomination: FEI – France éducation international
+  status: auto
+  siren: '180043069'
+  tutelle: Enseignement scolaire
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: FNAP - Fonds national des aides à la pierre
+  status: auto
+  siren: '130022551'
+  tutelle: Cohésion des territoires
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: FONDATION MAISON DES SCIENCES DE L HOMME
+  status: auto
+  siren: '775664105'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: FONDATION NATIONALE SCIENCES POLITIQUES
+  status: auto
+  siren: '784308249'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: France Compétences
+  status: auto
+  siren: '130024565'
+  tutelle: Travail et emploi
   top_match_ratio: 1.0
   source: spike-auto
 - denomination: France Travail
-  status: auto
+  status: reviewed
   siren: '130005481'
   tutelle: MTPEI
+  source: manual
+  reviewed_by: francois.schuers
+  reviewed_at: '2026-06-12'
+  notes: Conservé pour le seed/fixtures offline (hors liste Jaune PLF 2026) (FSC-56).
+- denomination: FranceAgriMer
+  status: pending
+  tutelle: Agriculture, alimentation, forêt et affaires rurales
+  top_match_ratio: 0.433
+  source: spike-backlog
+- denomination: FUN-MOOC
+  status: pending
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 0.348
+  source: spike-backlog
+- denomination: GENES - Groupe des écoles nationales d'économie et statistique
+  status: auto
+  siren: '130014228'
+  tutelle: Recherche et enseignement supérieur
   top_match_ratio: 1.0
   source: spike-auto
-- denomination: Opérateur ambigu
+- denomination: Génopole
+  status: auto
+  siren: '189100142'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: GEODERIS
+  status: auto
+  siren: '185722949'
+  tutelle: Écologie, développement et mobilité durables
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: Grande Chancellerie de la Légion d'Honneur
+  status: auto
+  siren: '180000010'
+  tutelle: Direction de l'action du Gouvernement
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: IERDJ - Institut des études et de la recherche sur le droit et la
+    justice
   status: pending
-  tutelle: MEF
+  tutelle: Justice
+  top_match_ratio: 0.0
+  source: spike-backlog
+- denomination: IFCE - Institut français du cheval et de l'équitation
+  status: auto
+  siren: '130010440'
+  tutelle: Agriculture, alimentation, forêt et affaires rurales
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: IFPEN - IFP Energies Nouvelles
+  status: pending
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 0.0
+  source: spike-backlog
+- denomination: IFREMER - Institut français de recherche pour l'exploitation de la
+    mer
+  status: auto
+  siren: '330715368'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: IGN - Institut national de l'information géographique et forestière
+  status: auto
+  siren: '180067019'
+  tutelle: Écologie, développement et mobilité durables
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: IHEDN - Institut des hautes études de Défense nationale
+  status: auto
+  siren: '197546864'
+  tutelle: Direction de l'action du Gouvernement
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: INAO - Institut national de l'origine et de la qualité
+  status: auto
+  siren: '130002702'
+  tutelle: Agriculture, alimentation, forêt et affaires rurales
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: INCa - Institut National du Cancer
+  status: auto
+  siren: '187512777'
+  tutelle: Santé
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: INED - Institut national d'études démographiques
+  status: auto
+  siren: '180037020'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: INERIS - Institut national de l'environnement industriel et des risques
+  status: auto
+  siren: '381984921'
+  tutelle: Écologie, développement et mobilité durables
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: INFOMA - Institut national de formation des personnels du ministère
+    de l'agriculture
+  status: auto
+  siren: '180092033'
+  tutelle: Agriculture, alimentation, forêt et affaires rurales
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: INI - Institution nationale des Invalides
+  status: auto
+  siren: '180007023'
+  tutelle: Anciens combattants, mémoire et liens avec la Nation
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: INP - Institut national du patrimoine
+  status: auto
+  siren: '197512346'
+  tutelle: Culture
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: INPI - Institut national de la propriété industrielle
+  status: pending
+  tutelle: Économie
+  top_match_ratio: 0.652
+  source: spike-backlog
+- denomination: INRAE - Institut national pour la recherche en agriculture, alimentation
+    et environnement
+  status: reviewed
+  siren: '180070039'
+  tutelle: Recherche et enseignement supérieur
+  source: api-curated
+  reviewed_by: curate-operators
+  reviewed_at: '2026-06-12'
+  notes: recherche-entreprises «INSTITUT NATIONAL DE RECHERCHE POUR L'AGRICULTURE
+    L'ALIMENTATION ET L'ENVIRONNEMENT (INRAE)» (nature 7389, sigle INRAE) — exact-match
+- denomination: INRAP - Institut national de recherches archéologiques préventives
+  status: auto
+  siren: '180092264'
+  tutelle: Culture
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: INRIA - Institut national de recherche en informatique et en automatique
+  status: auto
+  siren: '180089047'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: INSEP - Institut national du sport, de l'expertise et de la performance
+  status: auto
+  siren: '130010804'
+  tutelle: Sport, jeunesse et vie associative
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: INSERM - Institut national de la santé et de la recherche médicale
+  status: auto
+  siren: '180036048'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: INSP - Institut national du service public
+  status: auto
+  siren: '197534639'
+  tutelle: Direction de l'action du Gouvernement
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: INSTITUT D'ADMINISTRATION DES ENTREPRISES DE PARIS
+  status: auto
+  siren: '197500028'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: INSTITUT D’ENSEIGNEMENT SUPERIEUR ET DE RECHERCHE EN ALIMENTATION,
+    SANTE ANIMALE, SCIENCES AGRONOMIQUES ET DE L’ENVIRONNEMENT
+  status: auto
+  siren: '130008584'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: INSTITUT D'ETUDES POLITIQUES - AIX EN PROVENCE
+  status: auto
+  siren: '191333467'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: INSTITUT D'ETUDES POLITIQUES - BORDEAUX
+  status: reviewed
+  siren: '193301926'
+  tutelle: Recherche et enseignement supérieur
+  source: api-curated
+  reviewed_by: curate-operators
+  reviewed_at: '2026-06-12'
+  notes: recherche-entreprises «INSTITUT D'ETUDES POLITIQUES DE BORDEAUX - SCIENCES
+    PO BORDEAUX (IEP)» (nature 7384, sigle IEP) — containment-match
+- denomination: INSTITUT D'ETUDES POLITIQUES - GRENOBLE
+  status: auto
+  siren: '193801347'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: INSTITUT D ETUDES POLITIQUES - LILLE
+  status: auto
+  siren: '195958764'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: INSTITUT D'ETUDES POLITIQUES DE LYON
+  status: auto
+  siren: '196901730'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: INSTITUT D'ETUDES POLITIQUES DE PARIS-SCIENCES PO
+  status: auto
+  siren: '197534316'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: INSTITUT D'ETUDES POLITIQUES - RENNES
+  status: auto
+  siren: '193523172'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: INSTITUT D'ETUDES POLITIQUES - TOULOUSE
+  status: auto
+  siren: '193113867'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: Institut Français
+  status: pending
+  tutelle: Action extérieure de l'État
+  top_match_ratio: 0.81
+  source: spike-backlog
+- denomination: INSTITUT FRANCAIS D'ARCHEOLOGIE ORIENTALE
+  status: reviewed
+  siren: '180046195'
+  tutelle: Recherche et enseignement supérieur
+  source: api-curated
+  reviewed_by: curate-operators
+  reviewed_at: '2026-06-12'
+  notes: recherche-entreprises «INSTITUT FRANCAIS D'ARCHEOLOGIE ORIENTALE DU CAIRE
+    (IFAO)» (nature 7383, sigle IFAO) — containment-match
+- denomination: INSTITUT MINES TELECOM
+  status: auto
+  siren: '180092025'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: INSTITUT NATIONAL D'ENSEIGNEMENT SUPERIEUR POUR L'AGRICULTURE, L'ALIMENTATION
+    ET L'ENVIRONNEMENT
+  status: auto
+  siren: '130026222'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: INSTITUT NATIONAL D' HISTOIRE DE L'ART
+  status: auto
+  siren: '197546880'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: INSTITUT NATIONAL DES LANGUES ET CIVILISATIONS ORIENTALES
+  status: auto
+  siren: '197534886'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: INSTITUT NATIONAL POLYTECHNIQUE DE TOULOUSE
+  status: auto
+  siren: '193113818'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: INSTITUT NATIONAL DES SCIENCES APPLIQUEES CENTRE VAL DE LOIRE
+  status: auto
+  siren: '130018336'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: INSTITUT NATIONAL DES SCIENCES APPLIQUEES HAUTS-DE-FRANCE
+  status: auto
+  siren: '130025752'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: INSTITUT NATIONAL DES SCIENCES APPLIQUEES LYON
+  status: auto
+  siren: '196901920'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: INSTITUT NATIONAL DES SCIENCES APPLIQUEES RENNES
+  status: auto
+  siren: '193500972'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: INSTITUT NATIONAL DES SCIENCES APPLIQUEES ROUEN
+  status: auto
+  siren: '197601651'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: INSTITUT NATIONAL DES SCIENCES APPLIQUEES STRASBOURG
+  status: auto
+  siren: '196727671'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: INSTITUT NATIONAL DES SCIENCES APPLIQUEES TOULOUSE
+  status: auto
+  siren: '193101524'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: INSTITUT NATIONAL SUPERIEUR DE FORMATION ET DE RECHERCHE POUR L'EDUCATION
+    DES JEUNES HANDICAPES ET LES ENSEIGNEMENTS ADAPTES
+  status: pending
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 0.0
+  source: spike-backlog
+- denomination: INSTITUT NATIONAL UNIVERSITAIRE JEAN-FRANCOIS CHAMPOLLION
+  status: auto
+  siren: '198112013'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: INSTITUT D OPTIQUE THEORIQUE APPLIQUEE
+  status: pending
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 0.0
+  source: spike-backlog
+- denomination: INSTITUT DE PHYSIQUE DU GLOBE DE PARIS
+  status: auto
+  siren: '197534282'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: INSTITUT POLYTECHNIQUE DE BORDEAUX
+  status: auto
+  siren: '130006356'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: INSTITUT POLYTECHNIQUE DE GRENOBLE
+  status: auto
+  siren: '193819125'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: INSTITUT REGIONAL D'ADMINISTRATION - BASTIA
+  status: pending
+  tutelle: Transformation et fonction publiques
+  top_match_ratio: 0.907
+  source: spike-backlog
+- denomination: INSTITUT REGIONAL D'ADMINISTRATION - LILLE
+  status: pending
+  tutelle: Transformation et fonction publiques
+  top_match_ratio: 0.919
+  source: spike-backlog
+- denomination: INSTITUT REGIONAL D'ADMINISTRATION - LYON
+  status: pending
+  tutelle: Transformation et fonction publiques
+  top_match_ratio: 0.928
+  source: spike-backlog
+- denomination: INSTITUT REGIONAL D'ADMINISTRATION - METZ
+  status: pending
+  tutelle: Transformation et fonction publiques
+  top_match_ratio: 0.928
+  source: spike-backlog
+- denomination: INSTITUT REGIONAL D'ADMINISTRATION - NANTES
+  status: pending
+  tutelle: Transformation et fonction publiques
+  top_match_ratio: 0.907
+  source: spike-backlog
+- denomination: INSTITUT DES SCIENCES ET INDUSTRIES DU VIVANT ET DE L'ENVIRONNEMENT
+    AGRO PARIS TECH
+  status: pending
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 0.0
+  source: spike-backlog
+- denomination: INSTITUT SUPERIEUR DE MECANIQUE DE PARIS
+  status: auto
+  siren: '199306036'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: INTEFP - Institut national du travail, de l'emploi et de la formation
+    professionnelle
+  status: auto
+  siren: '130000136'
+  tutelle: Travail et emploi
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: IPEV - Institut polaire français Paul-Emile Victor
+  status: auto
+  siren: '180089369'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: IPP - Institut Polytechnique de Paris
+  status: pending
+  tutelle: Défense
+  top_match_ratio: 0.0
+  source: spike-backlog
+- denomination: IRD - Institut de recherche pour le développement
+  status: auto
+  siren: '180006025'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: ISAE - Institut supérieur de l'aéronautique et de l'espace
+  status: auto
+  siren: '130004278'
+  tutelle: Défense
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: LADOM - L'agence de l'Outre-mer pour la mobilité
+  status: pending
+  tutelle: Outre-mer
   candidate_sirens:
-  - '111222333'
-  - '444555666'
+  - '130021959'
+  - '130020191'
   top_match_ratio: 1.0
   source: spike-backlog
-- denomination: Opérateur introuvable
+- denomination: LNE - Laboratoire national de métrologie et d'essais
   status: pending
-  tutelle: MEF
+  tutelle: Recherche et enseignement supérieur
   top_match_ratio: 0.0
+  source: spike-backlog
+- denomination: Manufactures nationales, Mobilier-Sèvres
+  status: reviewed
+  siren: '939106274'
+  tutelle: Culture
+  source: api-curated
+  reviewed_by: curate-operators
+  reviewed_at: '2026-06-12'
+  notes: recherche-entreprises «MANUFACTURES NATIONALES - SEVRES ET MOBILIER NATIONAL»
+    (nature 7389) — containment-match
+- denomination: Etablissement public du Marais poitevin
+  status: auto
+  siren: '130015001'
+  tutelle: Écologie, développement et mobilité durables
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: Météo-France
+  status: auto
+  siren: '180060030'
+  tutelle: Écologie, développement et mobilité durables
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: MINES PARIS TECH
+  status: pending
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 0.364
+  source: spike-backlog
+- denomination: MNS - Musée national du sport
+  status: pending
+  tutelle: Sport, jeunesse et vie associative
+  top_match_ratio: 0.0
+  source: spike-backlog
+- denomination: MuCEM - Musée des civilisations de l'Europe et de la Méditerranée
+  status: pending
+  tutelle: Culture
+  candidate_sirens:
+  - '130017890'
+  - '160046165'
+  top_match_ratio: 1.0
+  source: spike-backlog
+- denomination: Musée de l'air et de l'espace
+  status: auto
+  siren: '180090052'
+  tutelle: Défense
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: Musée de l'armée
+  status: auto
+  siren: '180090011'
+  tutelle: Défense
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: Musée des arts décoratifs
+  status: pending
+  tutelle: Culture
+  top_match_ratio: 0.833
+  source: spike-backlog
+- denomination: Musée Guimet
+  status: auto
+  siren: '160046173'
+  tutelle: Culture
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: Musée Henner-Moreau
+  status: reviewed
+  siren: '130023088'
+  tutelle: Culture
+  source: api-curated
+  reviewed_by: curate-operators
+  reviewed_at: '2026-06-12'
+  notes: recherche-entreprises «ETABLISSEMENT PUBLIC DU MUSEE NATIONAL JEAN JACQUES
+    HENNER ET DU MUSEE NATIONAL GUSTAVE MOREAU» (nature 7389) — containment-match
+- denomination: Musée du Louvre
+  status: auto
+  siren: '180046237'
+  tutelle: Culture
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: Musée national de la marine
+  status: auto
+  siren: '180090029'
+  tutelle: Défense
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: Musée d'Orsay et musée de l'Orangerie
+  status: reviewed
+  siren: '180092447'
+  tutelle: Culture
+  source: api-curated
+  reviewed_by: curate-operators
+  reviewed_at: '2026-06-12'
+  notes: recherche-entreprises «ETABLISSEMENT PUBLIC DU MUSEE D'ORSAY ET DU MUSEE
+    DE L'ORANGERIE - VALERY GISCARD D'ESTAING» (nature 7389) — containment-match
+- denomination: Musée Picasso
+  status: auto
+  siren: '160046140'
+  tutelle: Culture
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: MUSEUM NATIONAL D HISTOIRE NATURELLE
+  status: auto
+  siren: '180044174'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: NANTES UNIVERSITE
+  status: auto
+  siren: '130029747'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: Nîmes Université
+  status: auto
+  siren: '932491574'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: OBSERVATOIRE DE LA COTE D'AZUR
+  status: auto
+  siren: '190615633'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: OBSERVATOIRE DE PARIS
+  status: auto
+  siren: '197534969'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: ODEADOM - Office de développement de l'économie agricole d'Outre-mer
+  status: auto
+  siren: '130006547'
+  tutelle: Agriculture, alimentation, forêt et affaires rurales
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: OFB - Office français de la biodiversité
+  status: auto
+  siren: '130025919'
+  tutelle: Écologie, développement et mobilité durables
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: OFDT - Observatoire Français des Drogues et des Tendances addictives
+  status: auto
+  siren: '180036105'
+  tutelle: Direction de l'action du Gouvernement
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: OFII - Office français de l'immigration et de l'intégration
+  status: auto
+  siren: '180034027'
+  tutelle: Immigration, asile et intégration
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: OFPRA - Office français de protection des réfugiés et apatrides
+  status: auto
+  siren: '180006033'
+  tutelle: Immigration, asile et intégration
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: ONAC-VG - Office national des anciens combattants et victimes de guerre
+  status: pending
+  tutelle: Anciens combattants, mémoire et liens avec la Nation
+  top_match_ratio: 0.0
+  source: spike-backlog
+- denomination: ONERA - Office national d'études et de recherches aérospatiales
+  status: pending
+  tutelle: Défense
+  top_match_ratio: 0.0
+  source: spike-backlog
+- denomination: ONF - Office national des forêts
+  status: auto
+  siren: '662043116'
+  tutelle: Agriculture, alimentation, forêt et affaires rurales
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: ONISEP - Office national d'information sur les enseignements et les
+    professions
+  status: auto
+  siren: '180043028'
+  tutelle: Enseignement scolaire
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: Opéra comique
+  status: auto
+  siren: '488480005'
+  tutelle: Culture
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: Opéra national de Paris
+  status: auto
+  siren: '784396079'
+  tutelle: Culture
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: OPPIC - Opérateur du patrimoine et des projets immobiliers de la Culture
+  status: auto
+  siren: '180092082'
+  tutelle: Culture
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: PARC AMAZONIEN DE GUYANE
+  status: auto
+  siren: '200008431'
+  tutelle: Écologie, développement et mobilité durables
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: PARC NATIONAL LES CALANQUES
+  status: auto
+  siren: '130016793'
+  tutelle: Écologie, développement et mobilité durables
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: PARC NATIONAL DES CEVENNES
+  status: auto
+  siren: '184800050'
+  tutelle: Écologie, développement et mobilité durables
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: PARC NATIONAL DES ECRINS
+  status: auto
+  siren: '180503013'
+  tutelle: Écologie, développement et mobilité durables
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: PARC NATIONAL DE FORETS
+  status: auto
+  siren: '130025935'
+  tutelle: Écologie, développement et mobilité durables
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: PARC NATIONAL DE LA GUADELOUPE
+  status: auto
+  siren: '189710080'
+  tutelle: Écologie, développement et mobilité durables
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: PARC NATIONAL DU MERCANTOUR
+  status: auto
+  siren: '180600058'
+  tutelle: Écologie, développement et mobilité durables
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: PARC NATIONAL DE PORT CROS
+  status: auto
+  siren: '188300057'
+  tutelle: Écologie, développement et mobilité durables
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: PARC NATIONAL DES PYRENEES
+  status: auto
+  siren: '186500047'
+  tutelle: Écologie, développement et mobilité durables
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: PARC NATIONAL DE LA REUNION
+  status: auto
+  siren: '200008357'
+  tutelle: Écologie, développement et mobilité durables
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: PARC NATIONAL LA VANOISE
+  status: auto
+  siren: '187300033'
+  tutelle: Écologie, développement et mobilité durables
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: Pass Culture
+  status: auto
+  siren: '853318459'
+  tutelle: Culture
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: GIP Plateforme de l’inclusion
+  status: pending
+  tutelle: Travail et emploi
+  top_match_ratio: 0.0
+  source: spike-backlog
+- denomination: Pôle emploi
+  status: pending
+  tutelle: Travail et emploi
+  top_match_ratio: 0.759
+  source: spike-backlog
+- denomination: RESEAU NATIONAL DE TELECOMMUNICATION POUR LA TECHNOLOGIE D'ENSEIGNEMENT
+    ET LA RECHERCHE
+  status: auto
+  siren: '180089476'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: Réseau des œuvres universitaires et scolaires
+  status: pending
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 0.0
+  source: spike-backlog
+- denomination: Rmn-GP - Réunion des musées nationaux - Grand Palais
+  status: pending
+  tutelle: Culture
+  top_match_ratio: 0.0
+  source: spike-backlog
+- denomination: SGP - Société du Grand Paris
+  status: reviewed
+  siren: '525046017'
+  tutelle: Écologie, développement et mobilité durables
+  source: api-curated
+  reviewed_by: curate-operators
+  reviewed_at: '2026-06-12'
+  notes: recherche-entreprises «SOCIETE DES GRANDS PROJETS (SOCIETE DES GRANDS PROJETS)
+    (SGP)» (nature 4110, sigle SGP) — sigle-match
+- denomination: SHOM - Service hydrographique et océanographique de la marine
+  status: auto
+  siren: '130003981'
+  tutelle: Défense
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: SOLIDEO Alpes 2030 - Société de livraison des équipements olympiques
+    et paralympiques
+  status: pending
+  tutelle: Sport, jeunesse et vie associative
+  top_match_ratio: 0.0
+  source: spike-backlog
+- denomination: SORBONNE UNIVERSITE
+  status: auto
+  siren: '130023385'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: TNC - Théâtre national de la Colline
+  status: pending
+  tutelle: Culture
+  top_match_ratio: 0.0
+  source: spike-backlog
+- denomination: TNO - Théâtre national de l'Odéon
+  status: auto
+  siren: '784276180'
+  tutelle: Culture
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: TNS - Théâtre national de Strasbourg
+  status: auto
+  siren: '588502310'
+  tutelle: Culture
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: Universcience
+  status: pending
+  tutelle: Culture
+  top_match_ratio: 0.867
+  source: spike-backlog
+- denomination: UNIVERSITE D'AIX MARSEILLE
+  status: auto
+  siren: '130015332'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: UNIVERSITE AMIENS PICARDIE JULES VERNE
+  status: auto
+  siren: '198013443'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: UNIVERSITE D'ANGERS
+  status: auto
+  siren: '194909701'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: UNIVERSITE DES ANTILLES
+  status: auto
+  siren: '199715855'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: UNIVERSITE D ARTOIS
+  status: auto
+  siren: '196244016'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: UNIVERSITE AVIGNON ET DES PAYS DE VAUCLUSE
+  status: pending
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 0.516
+  source: spike-backlog
+- denomination: UNIVERSITE DE BORDEAUX
+  status: auto
+  siren: '130018351'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: UNIVERSITE BORDEAUX MONTAIGNE BORDEAUX III
+  status: auto
+  siren: '193317666'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: UNIVERSITE BOURGOGNE FRANCHE COMTE
+  status: reviewed
+  siren: '130020910'
+  tutelle: Recherche et enseignement supérieur
+  source: api-curated
+  reviewed_by: curate-operators
+  reviewed_at: '2026-06-12'
+  notes: recherche-entreprises «COMMUNAUTE D'UNIVERSITES ET ETABLISSEMENTS UNIVERSITE
+    BOURGOGNE - FRANCHE-COMTE (COMUE)» (nature 7383, sigle COMUE) — containment-match
+- denomination: Université Brest
+  status: auto
+  siren: '941298317'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: UNIVERSITE DE BRETAGNE SUD
+  status: auto
+  siren: '195617188'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: UNIVERSITE DE CAEN
+  status: pending
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 0.75
+  source: spike-backlog
+- denomination: UNIVERSITE DE CHAMBERY
+  status: pending
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 0.625
+  source: spike-backlog
+- denomination: UNIVERSITE CLAUDE BERNARD LYON 1
+  status: auto
+  siren: '196917744'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: UNIVERSITE CLERMONT AUVERGNE
+  status: pending
+  tutelle: Recherche et enseignement supérieur
+  candidate_sirens:
+  - '130028061'
+  - '130022775'
+  top_match_ratio: 1.0
+  source: spike-backlog
+- denomination: UNIVERSITE DE CORSE P PAOLI
+  status: auto
+  siren: '192026649'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: UNIVERSITE COTE AZUR - établissement expérimental
+  status: pending
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 0.0
+  source: spike-backlog
+- denomination: UNIVERSITE D'EVRY VAL D'ESSONNE
+  status: auto
+  siren: '199119751'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: UNIVERSITE GRENOBLE ALPES
+  status: pending
+  tutelle: Recherche et enseignement supérieur
+  candidate_sirens:
+  - '130026081'
+  - '130021397'
+  top_match_ratio: 1.0
+  source: spike-backlog
+- denomination: UNIVERSITE GUSTAVE EIFFEL - établissement expérimental
+  status: pending
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 0.0
+  source: spike-backlog
+- denomination: UNIVERSITE DE LA GUYANE
+  status: auto
+  siren: '130020597'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: UNIVERSITE DU HAVRE
+  status: reviewed
+  siren: '197627623'
+  tutelle: Recherche et enseignement supérieur
+  source: api-curated
+  reviewed_by: curate-operators
+  reviewed_at: '2026-06-12'
+  notes: recherche-entreprises «UNIVERSITE LE HAVRE NORMANDIE» (nature 7383) — containment-match
+- denomination: UNIVERSITE DE LILLE
+  status: pending
+  tutelle: Recherche et enseignement supérieur
+  candidate_sirens:
+  - '130029754'
+  - '130023583'
+  top_match_ratio: 1.0
+  source: spike-backlog
+- denomination: UNIVERSITE DE LIMOGES
+  status: auto
+  siren: '198706699'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: UNIVERSITE DU LITTORAL
+  status: reviewed
+  siren: '195944038'
+  tutelle: Recherche et enseignement supérieur
+  source: api-curated
+  reviewed_by: curate-operators
+  reviewed_at: '2026-06-12'
+  notes: recherche-entreprises «UNIVERSITE DU LITTORAL COTE D'OPALE» (nature 7383)
+    — containment-match
+- denomination: UNIVERSITE DE LORRAINE
+  status: auto
+  siren: '130015506'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: UNIVERSITE LYON 3 JEAN MOULIN
+  status: auto
+  siren: '196924377'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: UNIVERSITE LYON II LUMIERE
+  status: pending
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 0.372
+  source: spike-backlog
+- denomination: UNIVERSITE LE MANS
+  status: auto
+  siren: '197209166'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: Université Marie et Louis Pasteur
+  status: auto
+  siren: '938106564'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: Université de Mayotte
+  status: auto
+  siren: '130016314'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: UNIVERSITE DE MONTPELLIER
+  status: pending
+  tutelle: Recherche et enseignement supérieur
+  candidate_sirens:
+  - '130029796'
+  - '130020548'
+  top_match_ratio: 1.0
+  source: spike-backlog
+- denomination: Université de Montpellier Paul-Valéry
+  status: auto
+  siren: '932490899'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: UNIVERSITE DE MULHOUSE
+  status: pending
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 0.714
+  source: spike-backlog
+- denomination: UNIVERSITE DE NOUVELLE CALEDONIE
+  status: auto
+  siren: '130003221'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: UNIVERSITE D'ORLEANS
+  status: auto
+  siren: '194508552'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: UNIVERSITE PARIS 1 PANTHEON-SORBONNE
+  status: auto
+  siren: '197517170'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: UNIVERSITE PARIS DAUPHINE
+  status: auto
+  siren: '197546922'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: UNIVERSITE PARIS EST CRETEIL VAL DE MARNE
+  status: auto
+  siren: '199411117'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: UNIVERSITE DE PARIS - établissement expérimental
+  status: pending
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 0.0
+  source: spike-backlog
+- denomination: UNIVERSITE PARIS III SORBONNE NOUVELLE
+  status: auto
+  siren: '197517196'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: UNIVERSITE PARIS-PANTHEON-ASSAS
+  status: auto
+  siren: '130029952'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: UNIVERSITE PARIS-SACLAY - établissement exéprimental
+  status: pending
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 0.0
+  source: spike-backlog
+- denomination: UNIVERSITE PARIS SCIENCES ET LETTRES (PSL) - établissement expérimental
+  status: pending
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 0.0
+  source: spike-backlog
+- denomination: UNIVERSITE DE PARIS VIII.PARIS VINCENNES
+  status: auto
+  siren: '199318270'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: UNIVERSITE PARIS X
+  status: pending
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 0.791
+  source: spike-backlog
+- denomination: UNIVERSITE PARIS XIII PARIS-NORD VILLETANEUSE
+  status: pending
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 0.929
+  source: spike-backlog
+- denomination: UNIVERSITE DE PAU ET DU PAYS DE L'ADOUR
+  status: auto
+  siren: '196402515'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: UNIVERSITE DE PERPIGNAN
+  status: reviewed
+  siren: '196604375'
+  tutelle: Recherche et enseignement supérieur
+  source: api-curated
+  reviewed_by: curate-operators
+  reviewed_at: '2026-06-12'
+  notes: recherche-entreprises «UNIVERSITE DE PERPIGNAN VIA DOMITIA (UPVD)» (nature
+    7383, sigle UPVD) — containment-match
+- denomination: UNIVERSITE DE POITIERS
+  status: auto
+  siren: '198608564'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: UNIVERSITE DE LA POLYNESIE FRANCAISE
+  status: auto
+  siren: '199870015'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: UNIVERSITE POLYTECHNIQUE HAUTS DE France - établissement expérimental
+  status: pending
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 0.0
+  source: spike-backlog
+- denomination: UNIVERSITE DE REIMS CHAMPAGNE-ARDENNE
+  status: auto
+  siren: '195112966'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: Université de Rennes
+  status: auto
+  siren: '130030513'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: UNIVERSITE RENNES II HAUTE BRETAGNE
+  status: auto
+  siren: '193509379'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: UNIVERSITE DE LA REUNION
+  status: auto
+  siren: '199744780'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: UNIVERSITE DE LA ROCHELLE
+  status: reviewed
+  siren: '191700327'
+  tutelle: Recherche et enseignement supérieur
+  source: api-curated
+  reviewed_by: curate-operators
+  reviewed_at: '2026-06-12'
+  notes: recherche-entreprises «LA ROCHELLE UNIVERSITE» (nature 7383) — exact-match
+- denomination: UNIVERSITE DE ROUEN-NORMANDIE
+  status: auto
+  siren: '197619042'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: UNIVERSITE DE SAINT ETIENNE
+  status: reviewed
+  siren: '194210951'
+  tutelle: Recherche et enseignement supérieur
+  source: api-curated
+  reviewed_by: curate-operators
+  reviewed_at: '2026-06-12'
+  notes: recherche-entreprises «UNIVERSITE JEAN MONNET SAINT ETIENNE» (nature 7383)
+    — containment-match
+- denomination: UNIVERSITE DE STRASBOURG
+  status: auto
+  siren: '130005457'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: UNIVERSITE TECHNOLOGIE BELFORT MONTBELIARD
+  status: auto
+  siren: '199003567'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: UNIVERSITE DE TECHNOLOGIE DE COMPIEGNE
+  status: auto
+  siren: '196012231'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: UNIVERSITE DE TECHNOLOGIE DE TROYES
+  status: auto
+  siren: '191010602'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: UNIVERSITE DE TOULON
+  status: auto
+  siren: '198307662'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: Université de Toulouse
+  status: auto
+  siren: '938271392'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: Université Toulouse Capitole
+  status: auto
+  siren: '130030612'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: UNIVERSITE TOULOUSE II
+  status: auto
+  siren: '193113834'
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: UNIVERSITE DE TOURS FRANCOIS RABELAIS
+  status: pending
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 0.778
+  source: spike-backlog
+- denomination: UNIVERSITE VERSAILLES ST QUENTIN YVELINE
+  status: pending
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 0.952
+  source: spike-backlog
+- denomination: Universités et assimilés
+  status: pending
+  tutelle: Recherche et enseignement supérieur
+  top_match_ratio: 0.0
+  source: spike-backlog
+- denomination: EPA VILLA ARSON
+  status: auto
+  siren: '190608364'
+  tutelle: Culture
+  top_match_ratio: 1.0
+  source: spike-auto
+- denomination: VNF - Voies navigables de France
+  status: pending
+  tutelle: Écologie, développement et mobilité durables
+  candidate_sirens:
+  - '130017791'
+  - '552017303'
+  top_match_ratio: 1.0
+  source: spike-backlog
+- denomination: X - Ecole polytechnique
+  status: pending
+  tutelle: Défense
+  top_match_ratio: 0.627
   source: spike-backlog

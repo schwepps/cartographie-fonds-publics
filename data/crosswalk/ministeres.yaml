@@ -87,3 +87,46 @@ entries:
   reviewed_by: francois.schuers
   reviewed_at: '2026-06-09'
   notes: Vérifié via recherche-entreprises (nature 7113).
+- denomination: Ministère de la Transition écologique, de la Biodiversité, de la Pêche et de la Mer
+  status: reviewed
+  siren: '110068012'
+  tutelle: MTE
+  source: manual
+  reviewed_by: francois.schuers
+  reviewed_at: '2026-06-12'
+  notes: Vérifié via recherche-entreprises (nature 7113). Tutelle des missions Écologie, Cohésion
+    des territoires et Contrôle et exploitation aériens (FSC-56).
+- denomination: Ministère des Sports, de la Jeunesse et de la Vie associative
+  status: reviewed
+  siren: '130016587'
+  tutelle: MS
+  source: manual
+  reviewed_by: francois.schuers
+  reviewed_at: '2026-06-12'
+  notes: Vérifié via recherche-entreprises (nature 7113). Tutelle de la mission « Sport, jeunesse
+    et vie associative » (FSC-56).
+- denomination: Services du Premier ministre
+  status: reviewed
+  siren: '110001013'
+  tutelle: PM
+  source: manual
+  reviewed_by: francois.schuers
+  reviewed_at: '2026-06-12'
+  notes: Vérifié via recherche-entreprises (nature 7111 — services du Premier ministre). Tutelle
+    de la mission « Direction de l'action du Gouvernement » (FSC-56).
+- denomination: Ministère de la Santé
+  status: reviewed
+  siren: '110036019'
+  tutelle: MSAN
+  source: manual
+  reviewed_by: francois.schuers
+  reviewed_at: '2026-06-12'
+  notes: Vérifié via recherche-entreprises (nature 7113). Tutelle de la mission « Santé » (FSC-56).
+- denomination: Ministère des Outre-mer
+  status: reviewed
+  siren: '110019015'
+  tutelle: MOM
+  source: manual
+  reviewed_by: francois.schuers
+  reviewed_at: '2026-06-12'
+  notes: Vérifié via recherche-entreprises (nature 7113). Tutelle de la mission « Outre-mer » (FSC-56).

@@ -1,0 +1,64 @@
+# Reviewed mission -> tutelle-ministry reference (FSC-56). Hand-curated, never generated.
+#
+# The live Jaune « Opérateurs de l'État » records an operator's supervision as a LOLF **mission**
+# (e.g. « Recherche et enseignement supérieur »), not a ministry code. This file maps each mission
+# to the code of its **lead ministry** in `ministeres.yaml`, so the operators transform can anchor a
+# `ministry -> operator` tutelle edge (MinistryIndex resolves the mission, then the code -> SIREN).
+#
+# It is a documented *lead-ministry* heuristic: a few missions are interministerial (e.g. « Cohésion
+# des territoires », « Direction de l'action du Gouvernement »); each is mapped to the single most
+# defensible responsible ministry and noted. Every `tutelle` code below MUST exist in
+# `ministeres.yaml` (loading fails loud otherwise). See data/crosswalk/README.md.
+schema_version: 1
+maintainer: contact@cartographie-fonds-publics.fr
+missions:
+- mission: Recherche et enseignement supérieur
+  tutelle: MESR
+- mission: Culture
+  tutelle: MC
+- mission: Médias, livre et industries culturelles
+  tutelle: MC
+- mission: Écologie, développement et mobilité durables
+  tutelle: MTE
+- mission: Cohésion des territoires
+  tutelle: MTE
+- mission: Contrôle et exploitation aériens
+  tutelle: MTE
+- mission: Enseignement scolaire
+  tutelle: MENJ
+- mission: Solidarité, insertion et égalité des chances
+  tutelle: MTPEI
+- mission: Travail et emploi
+  tutelle: MTPEI
+- mission: Régimes sociaux et de retraite
+  tutelle: MTPEI
+- mission: Défense
+  tutelle: MA
+- mission: Anciens combattants, mémoire et liens avec la Nation
+  tutelle: MA
+- mission: Agriculture, alimentation, forêt et affaires rurales
+  tutelle: MASA
+- mission: Sport, jeunesse et vie associative
+  tutelle: MS
+- mission: Justice
+  tutelle: MJ
+- mission: Économie
+  tutelle: MEF
+- mission: Transformation et fonction publiques
+  tutelle: MEF
+- mission: Direction de l'action du Gouvernement
+  tutelle: PM
+- mission: Administration générale et territoriale de l'État
+  tutelle: MI
+- mission: Sécurités
+  tutelle: MI
+- mission: Immigration, asile et intégration
+  tutelle: MI
+- mission: Contrôle de la circulation et du stationnement routiers
+  tutelle: MI
+- mission: Action extérieure de l'État
+  tutelle: MEAE
+- mission: Santé
+  tutelle: MSAN
+- mission: Outre-mer
+  tutelle: MOM

@@ -5,10 +5,14 @@ from __future__ import annotations
 
 import csv
 import json
+import time
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Annotated
 
+import httpx
 import typer
+from core.crosswalk import CrosswalkStatus
 from core.models import Entity, Level
 from core.resolution import resolve_entities
 
@@ -22,9 +26,10 @@ from .crosswalk_io import (
     load_seed_csv,
     merge_seed,
 )
+from .curate_operators import SearchFn, curate
 from .demo_seed import DEMO_SQL_PATH, emit_demo_sql
 from .load import LOAD_SQL_PATH, emit_load_sql, load_summary
-from .registry import Source, sources
+from .registry import Source, get_source, sources
 from .seed import SEED_SQL_PATH, emit_seed_sql
 from .snapshot import SNAPSHOT_ROOT
 from .tabular import parse_csv_bytes
@@ -34,6 +39,18 @@ app = typer.Typer(help="Registry-driven ingestion pipeline.")
 
 # Resolution rate below this fails the run (CI gate). Matches the Phase-0.5 spike's RESOLVE_MIN.
 RESOLVE_RATE_MIN = 0.5
+
+# Coverage floor for `make coverage` (FSC-56). The acceptance target is ≥90% (incremental curation);
+# this floor guards against a regression below the 66% machine-seeded `auto` baseline.
+COVERAGE_RATE_MIN = 0.66
+
+# recherche-entreprises politeness (curation): the published limit is ~7 req/s. Same values the
+# spike names (RATE_LIMIT_SLEEP / SEARCH_PAGE_SIZE) — kept here so the CLI is self-contained.
+_RECHERCHE_RATE_LIMIT_S = 0.15
+_RECHERCHE_PAGE_SIZE = 10
+
+# Default crosswalk maintainer stamped on a regenerated file (shared by resolve-seed + curate).
+_DEFAULT_MAINTAINER = "contact@cartographie-fonds-publics.fr"
 
 
 def _resolve(s: Source) -> Connector | None:
@@ -235,9 +252,7 @@ def resolve_seed(
     crosswalk: Annotated[
         Path, typer.Option(help="Crosswalk YAML to write (merge-aware).")
     ] = CROSSWALK_PATH,
-    maintainer: Annotated[
-        str, typer.Option(help="File maintainer.")
-    ] = "contact@cartographie-fonds-publics.fr",
+    maintainer: Annotated[str, typer.Option(help="File maintainer.")] = _DEFAULT_MAINTAINER,
 ) -> None:
     """Regenerate the crosswalk from a resolver-spike CSV, preserving human-reviewed rows.
 
@@ -313,6 +328,132 @@ def load(
     written, bundle = emit_load_sql(out, snapshot_root=root, allow_empty=allow_empty)
     typer.echo(load_summary(bundle))
     typer.echo(f"[load] wrote {written}")
+
+
+@app.command()
+def coverage(
+    crosswalk: Annotated[Path, typer.Option(help="Crosswalk YAML path.")] = CROSSWALK_PATH,
+    out: Annotated[Path, typer.Option(help="Report output path.")] = Path(
+        "out/coverage_report.json"
+    ),
+    min_rate: Annotated[
+        float, typer.Option(help="Exit nonzero below this resolved share.")
+    ] = COVERAGE_RATE_MIN,
+) -> None:
+    """Report operator→SIREN coverage over the committed crosswalk (FSC-56 acceptance metric).
+
+    Coverage is measured over **distinct operators**, not rows: resolved = the distinct SIRENs
+    carried by `auto`/`reviewed` rows; the denominator adds the `pending` backlog (operators still
+    needing a SIREN). Counting distinct SIRENs means clean-name seed/fixture aliases (which share
+    a SIREN with a live `auto` row) never inflate the metric. `category` labels are excluded
+    (unresolved by design). Target is ≥90% (curation is incremental — the `pending` backlog is the
+    documented human-review queue); the floor guards against a regression below the `auto` baseline.
+    """
+    entries = load_entries(crosswalk)
+    by_status: dict[str, int] = {}
+    for entry in entries:
+        by_status[entry.status.value] = by_status.get(entry.status.value, 0) + 1
+    _accepted = (CrosswalkStatus.auto, CrosswalkStatus.reviewed)
+    resolved_sirens = {e.siren for e in entries if e.status in _accepted and e.siren is not None}
+    pending = by_status.get("pending", 0)
+    total = len(resolved_sirens) + pending
+    rate = (len(resolved_sirens) / total) if total else 0.0
+    report = {
+        "distinct_resolved_sirens": len(resolved_sirens),
+        "pending_backlog": pending,
+        "total_operators": total,
+        "coverage_rate": rate,
+        "by_status": by_status,
+    }
+    _write_report(report, out)
+    typer.echo(
+        f"[coverage] {len(resolved_sirens)}/{total} distinct operators carry a SIREN "
+        f"(coverage {rate:.1%}); pending backlog {pending} -> {out}"
+    )
+    for status, count in sorted(by_status.items()):
+        typer.echo(f"  {status}: {count}")
+    if rate < min_rate:
+        typer.echo(f"[coverage] coverage {rate:.1%} < {min_rate:.0%} floor", err=True)
+        raise typer.Exit(code=1)
+
+
+def _recherche_search_fn(client: httpx.Client, base_url: str, failures: list[str]) -> SearchFn:
+    """A rate-limited recherche-entreprises search (registry-driven base URL, never hardcoded).
+
+    A failed lookup is **recorded** in ``failures`` (not silently treated as "no match"), so a
+    flaky API can't quietly leave operators ``pending`` without a signal — the caller reports the
+    count and fails loud. The rate-limit sleep runs in ``finally`` (every call, success or error),
+    so a burst of errors never bypasses the published ~7 req/s throttle.
+    """
+
+    def search(name: str) -> list[dict[str, object]]:
+        try:
+            resp = client.get(
+                base_url, params={"q": name, "page": 1, "per_page": _RECHERCHE_PAGE_SIZE}
+            )
+            resp.raise_for_status()
+            results = resp.json().get("results", [])
+            return results if isinstance(results, list) else []
+        except (httpx.HTTPError, ValueError):
+            failures.append(name)
+            return []
+        finally:
+            time.sleep(_RECHERCHE_RATE_LIMIT_S)
+
+    return search
+
+
+@app.command(name="curate-operators")
+def curate_operators(
+    crosswalk: Annotated[
+        Path, typer.Option(help="Crosswalk YAML to curate (merge-aware).")
+    ] = CROSSWALK_PATH,
+    apply: Annotated[
+        bool, typer.Option(help="Write the promotions (default: dry-run report only).")
+    ] = False,
+    reviewed_by: Annotated[str, typer.Option(help="reviewed_by stamp for promoted rows.")] = (
+        "curate-operators"
+    ),
+    maintainer: Annotated[str, typer.Option(help="File maintainer.")] = _DEFAULT_MAINTAINER,
+) -> None:
+    """Promote `pending` operators to `reviewed` via the recherche-entreprises API (FSC-56).
+
+    Accepts a SIREN only on a single, unambiguous, public-sector match (exact name / sigle /
+    containment) — golden rule #5: never guess. Dry-run by default (reports what *would* move); pass
+    ``--apply`` to write. `reviewed`/`category` curation is preserved; re-running is idempotent.
+    Exits nonzero if any API lookup failed, so a flaky run is never mistaken for a clean backlog.
+    """
+    entries = load_entries(crosswalk)
+    base_url = get_source("recherche_entreprises").raw.get("endpoint_hint")
+    if not isinstance(base_url, str) or not base_url.strip():
+        raise typer.BadParameter("recherche_entreprises source has no endpoint_hint base URL")
+    reviewed_at = datetime.now(tz=UTC).date().isoformat()
+    failures: list[str] = []
+    with httpx.Client(headers={"User-Agent": "cfp-curate/0.1"}, timeout=20.0) as client:
+        result = curate(
+            entries,
+            _recherche_search_fn(client, base_url.strip(), failures),
+            reviewed_by=reviewed_by,
+            reviewed_at=reviewed_at,
+        )
+    report = result.report
+    action = "promoted" if apply else "would promote"
+    typer.echo(
+        f"[curate-operators] {action} {report['promoted_to_reviewed']} of {report['pending_in']} "
+        f"pending; {report['still_pending']} remain in the backlog"
+    )
+    if apply:
+        dump_entries(result.entries, crosswalk, maintainer=maintainer)
+        typer.echo(f"[curate-operators] wrote {crosswalk}")
+    else:
+        typer.echo("[curate-operators] dry-run — pass --apply to write the promotions")
+    if failures:
+        typer.echo(
+            f"[curate-operators] {len(failures)} API lookup(s) failed — results are partial; "
+            "re-run to retry (a failed lookup is never treated as 'no match')",
+            err=True,
+        )
+        raise typer.Exit(code=1)
 
 
 if __name__ == "__main__":
