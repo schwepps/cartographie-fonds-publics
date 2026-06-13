@@ -15,6 +15,10 @@
 --     (https://www.senat.fr/rap/l24-144-324/l24-144-324_mono.html) + budget.gouv.fr PAP.
 --   * Contracts — DECP consolidées (DAJ/Etalab), data.gouv.fr resource
 --     22847056-61df-452d-837d-8b8ceadbfc52 (extrait 2026-06-09).
+--   * Attributions — décrets d'attribution (Légifrance/JORF, DILA); resolved to the ministry
+--     SIREN via data/crosswalk/ministeres.yaml. Source: data/attributions/ministres.yaml (FSC-27).
+--   * Mentions — Cour des comptes publications (ccomptes.fr), linked to the entity SIREN via the
+--     reviewed mapping data/mentions/cour_des_comptes.yaml (FSC-62).
 
 
 begin;
@@ -48,6 +52,19 @@ insert into budget_facts (entity_siren, exercice, mission, programme, amount_ae_
 insert into contracts (acheteur_siren, titulaire_siren, montant_eur, nature, exercice, provenance) values
   ('180089013', '329200521', 1800000, 'marche', 2026, 'decp_commande_publique'),
   ('180089013', '326556578', 84925.39, 'marche', 2026, 'decp_commande_publique');
+
+-- Attributions: real décrets d'attribution on seeded ministries (FSC-27).
+insert into attributions (entity_siren, legal_ref, txt, source_url, provenance) values
+  ('110000072', 'Décret n° 2025-1001 du 29 octobre 2025 relatif aux attributions du ministre du travail et des solidarités', 'Le ministre du travail et des solidarités prépare et met en œuvre la politique du Gouvernement dans les domaines du travail, de l''emploi, de l''insertion professionnelle, de l''apprentissage, de la formation professionnelle, du dialogue social et de la solidarité.', 'https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000052456634', 'legifrance_attributions'),
+  ('110044013', 'Décret n° 2025-1021 du 29 octobre 2025 relatif aux attributions du ministre de l''enseignement supérieur, de la recherche et de l''espace', 'Le ministre prépare et met en œuvre la politique du Gouvernement en matière d''enseignement supérieur, de vie étudiante, de recherche, de technologie et d''espace civil.', 'https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000052457282', 'legifrance_attributions'),
+  ('110046018', 'Décret n° 2025-1016 du 29 octobre 2025 relatif aux attributions du ministre de la culture', 'Le ministre de la culture conduit la politique de sauvegarde, de protection et de mise en valeur du patrimoine, favorise la création et la diffusion des œuvres, l''accès de tous à la culture, les enseignements artistiques, les médias et les industries culturelles, et le rayonnement culturel de la France.', 'https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000052457068', 'legifrance_attributions');
+
+-- Mentions: real Cour des comptes publications on seeded entities (FSC-62).
+insert into mentions (entity_siren, report_ref, report_date, mention_type, url, note, provenance, license) values
+  ('130005481', 'La gestion de Pôle emploi, dix ans après sa création', '2020-07-16', 'rapport', 'https://www.ccomptes.fr/fr/publications/la-gestion-de-pole-emploi-dix-ans-apres-sa-creation', 'Bilan dix ans après la fusion ANPE/Assédic : croissance continue des moyens, objectifs atteints mais peu ambitieux, interrogations sur certaines rémunérations dirigeantes.', 'cour_des_comptes', 'Licence Ouverte 2.0'),
+  ('130005481', 'France Travail et l''intelligence artificielle', '2026-01-08', 'rapport', 'https://www.ccomptes.fr/fr/publications/france-travail-et-lintelligence-artificielle', 'Premier rapport de la Cour entièrement consacré à l''usage de l''IA par un grand opérateur de l''État : déploiement, effets et gouvernance, avec des points de vigilance (RGPD, encadrement éthique).', 'cour_des_comptes', 'Licence Ouverte 2.0'),
+  ('180089013', 'Le CNRS et les sciences humaines et sociales', '2021-04-27', 'recommandation', 'https://www.ccomptes.fr/fr/publications/le-cnrs-et-les-sciences-humaines-et-sociales', 'Référé sur le pilotage des SHS via l''InSHS : progrès notés mais lacunes de coordination (alliance Athéna) et faiblesses d''infrastructures ; trois recommandations.', 'cour_des_comptes', 'Licence Ouverte 2.0'),
+  ('180089013', 'Le Centre national de la recherche scientifique (CNRS)', '2025-03-25', 'rapport', 'https://www.ccomptes.fr/fr/publications/le-centre-national-de-la-recherche-scientifique-cnrs', 'Trésorerie pléthorique (~1,4 Md€ fin 2023) et sous-exécution budgétaire récurrente ; recrutements de chercheurs en baisse, gestion décentralisée des unités à renforcer.', 'cour_des_comptes', 'Licence Ouverte 2.0');
 
 
 commit;

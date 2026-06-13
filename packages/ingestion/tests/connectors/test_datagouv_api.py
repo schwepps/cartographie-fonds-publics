@@ -66,6 +66,34 @@ def test_snapshot_writes_provenance_parquet(load_fixture, tmp_path, monkeypatch)
     assert (tmp_path / "operateurs_etat" / "latest.json").is_file()
 
 
+def test_select_resource_prefers_csv_then_falls_back_to_non_csv() -> None:
+    # CSV present → the largest CSV wins (existing CSV sources unaffected by the FSC-62 relaxation).
+    dataset = {
+        "title": "X",
+        "resources": [
+            {"format": "csv", "url": "csv-small", "filesize": 10},
+            {"format": "csv", "url": "csv-big", "filesize": 99},
+            {"format": "pdf", "url": "pdf-huge", "filesize": 1000},
+        ],
+    }
+    assert DatagouvApiConnector._select_resource(dataset)["url"] == "csv-big"
+    # No CSV (the Cour des comptes corpus is PDF/txt) → fall back to the largest resource of any
+    # format, so discovery still resolves a snapshot-able resource (FSC-62).
+    txt_only = {
+        "title": "Recommandations publiées par la Cour des comptes",
+        "resources": [
+            {"format": "txt", "url": "txt", "filesize": 5},
+            {"format": "pdf", "url": "pdf", "filesize": 50},
+        ],
+    }
+    assert DatagouvApiConnector._select_resource(txt_only)["url"] == "pdf"
+
+
+def test_select_resource_fails_loud_on_empty_dataset() -> None:
+    with pytest.raises(ValueError, match="No resource"):
+        DatagouvApiConnector._select_resource({"title": "Empty", "resources": []})
+
+
 def test_stage_defers_to_fsc35() -> None:
     with pytest.raises(NotImplementedError, match="FSC-35"):
         DatagouvApiConnector().stage("snap://x", "operateurs_etat")

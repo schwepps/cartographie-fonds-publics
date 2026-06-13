@@ -22,6 +22,7 @@ import pytest
 from core.models import Edge, EdgeType, Entity, Level
 from ingestion.errors import LoadError
 from ingestion.load import (
+    EDITORIAL_SOURCE_IDS,
     ETAT_CENTRAL_SOURCE_IDS,
     LoadBundle,
     build_bundle,
@@ -180,9 +181,34 @@ def test_render_emits_provenance_scoped_contract(tmp_path: Path, fixtures_dir: P
     # Contracts are loaded too, provenance-scoped to DECP.
     assert "delete from contracts where provenance in ('decp_commande_publique');" in sql
     assert "insert into contracts (acheteur_siren, titulaire_siren, montant_eur" in sql
-    # No whole-table truncate, and a table this load does not own is never touched.
+    # No whole-table truncate, and a table this load does not own is never touched: the État-central
+    # load emits the editorial sections' scaffolding (empty-row comments) but never a real
+    # insert/delete on attributions or mentions (those are the opt-in EDITORIAL_SOURCE_IDS load).
     assert "truncate" not in sql
-    assert "attributions" not in sql
+    assert "insert into attributions (" not in sql
+    assert "delete from attributions where" not in sql
+    assert "insert into mentions (" not in sql
+    assert "delete from mentions where" not in sql
+
+
+def test_editorial_bundle_renders_provenance_scoped_attributions_and_mentions() -> None:
+    # The opt-in editorial layers (FSC-27/FSC-62) read committed YAML, so their transforms ignore
+    # the snapshot rows — inject empty rows. The bundle emits provenance-scoped delete+insert for
+    # attributions (legifrance_attributions) and mentions (cour_des_comptes), and the guard must NOT
+    # fire (these sources legitimately produce only attributions/mentions, no entities/edges).
+    bundle = build_bundle(EDITORIAL_SOURCE_IDS, read_rows=lambda _sid: ([], []))
+    assert bundle.attributions and bundle.mentions
+    assert all(a.provenance == "legifrance_attributions" for a in bundle.attributions)
+    assert all(m.provenance == "cour_des_comptes" for m in bundle.mentions)
+
+    sql = render_load_sql(bundle)
+    assert "delete from attributions where provenance in ('legifrance_attributions');" in sql
+    assert "insert into attributions (entity_siren, legal_ref, txt, source_url, provenance)" in sql
+    assert "delete from mentions where provenance in ('cour_des_comptes');" in sql
+    assert "insert into mentions (entity_siren, report_ref, report_date, mention_type" in sql
+
+    summary = load_summary(bundle)
+    assert "attributions:" in summary and "mentions:" in summary
 
 
 def test_render_skips_delete_for_a_table_with_no_rows() -> None:
@@ -202,6 +228,8 @@ def test_render_skips_delete_for_a_table_with_no_rows() -> None:
         edges=[],
         budget_facts=[],
         contracts=[],
+        attributions=[],
+        mentions=[],
         provenances=("operateurs_etat",),
         skipped_unresolved=0,
         reports={},
@@ -229,6 +257,8 @@ def test_entity_upsert_guards_authoritative_level_against_delegated_clobber() ->
         edges=[],
         budget_facts=[],
         contracts=[],
+        attributions=[],
+        mentions=[],
         provenances=("decp_commande_publique",),
         skipped_unresolved=0,
         reports={},
@@ -252,6 +282,8 @@ def test_render_fails_loud_on_row_missing_provenance() -> None:
         ],
         budget_facts=[],
         contracts=[],
+        attributions=[],
+        mentions=[],
         provenances=("operateurs_etat",),
         skipped_unresolved=0,
         reports={},

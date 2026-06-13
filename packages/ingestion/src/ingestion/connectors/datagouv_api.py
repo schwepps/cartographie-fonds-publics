@@ -53,7 +53,7 @@ class DatagouvApiConnector(Connector):
         query = self._query_from_strategy(source)
         with httpx.Client(headers={"User-Agent": USER_AGENT}, timeout=HTTP_TIMEOUT) as client:
             dataset = self._discover_dataset(client, query)
-        resource = self._select_csv_resource(dataset)
+        resource = self._select_resource(dataset)
         # Capture provenance from the registry source for snapshot().
         self._source_id = str(source.get("id") or self._source_id)
         self._license = source.get("license")
@@ -144,17 +144,24 @@ class DatagouvApiConnector(Connector):
         return best
 
     @staticmethod
-    def _select_csv_resource(dataset: dict[str, Any]) -> dict[str, Any]:
-        """Pick the primary CSV resource — the largest by catalog filesize (annexes are smaller)."""
-        csvs = [
-            r for r in dataset.get("resources", []) if str(r.get("format", "")).lower() == "csv"
-        ]
-        if not csvs:
-            raise ValueError(f"No CSV resource in dataset {dataset.get('title')!r}.")
+    def _select_resource(dataset: dict[str, Any]) -> dict[str, Any]:
+        """Pick the primary resource — the largest CSV when present, else the largest of any format.
+
+        Most sources here are CSV (the largest by catalog filesize; annexes are smaller). The Cour
+        des comptes oversight corpus (FSC-62) is only PDF/txt, and discovery just needs to snapshot
+        *a* resource for provenance (the curated mentions come from the reviewed editorial mapping,
+        not the file body), so a non-CSV fallback keeps discovery working without weakening CSV
+        sources — they always have a CSV, so the preference still selects it.
+        """
+        resources = dataset.get("resources", [])
+        if not resources:
+            raise ValueError(f"No resource in dataset {dataset.get('title')!r}.")
+        csvs = [r for r in resources if str(r.get("format", "")).lower() == "csv"]
+        candidates = csvs or resources
         # Stable tie-break on id/url so equal-size, equal-mtime candidates resolve identically
         # run to run — discovery's whole point is a reproducible millésime pick.
         return max(
-            csvs,
+            candidates,
             key=lambda r: (
                 r.get("filesize") or 0,
                 r.get("last_modified") or "",

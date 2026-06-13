@@ -41,6 +41,17 @@ CONTRACT_COLUMNS = (
     "exercice",
     "provenance",
 )
+ATTRIBUTION_COLUMNS = ("entity_siren", "legal_ref", "txt", "source_url", "provenance")
+MENTION_COLUMNS = (
+    "entity_siren",
+    "report_ref",
+    "report_date",
+    "mention_type",
+    "url",
+    "note",
+    "provenance",
+    "license",
+)
 
 
 def sql_literal(value: object) -> str:

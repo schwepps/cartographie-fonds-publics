@@ -1,0 +1,39 @@
+# Editorial Cour des comptes oversight mentions (FSC-62) — « épinglé par la Cour ».
+#
+# Metadata-first (golden rule #10: real, verifiable publications only). The data.gouv
+# `cour_des_comptes` source is discovered + snapshotted by the datagouv_api connector, but the
+# corpus is PDF + thin metadata with no structured entity field, so the report->entity link is
+# supplied here for the demonstrable subset. Each entry references an entity by name (resolved to a
+# SIREN via data/crosswalk/operateurs.yaml or ministeres.yaml — never a SIREN here); the transform
+# (ingestion.transforms.cour_des_comptes) resolves it and emits a `mentions` row. Unresolved entries
+# are reported, never guessed.
+#
+# Scaling path (full-text NLP report -> entity, FSC-67): explicitly out of scope here. Reports are
+# from the Cour des comptes (ccomptes.fr), Licence Ouverte 2.0 unless an entry overrides `license`.
+schema_version: 1
+maintainer: contact@cartographie-fonds-publics.fr
+entries:
+  - entity_denomination: Centre national de la recherche scientifique
+    report_ref: "Le Centre national de la recherche scientifique (CNRS)"
+    report_date: "2025-03-25"
+    mention_type: rapport
+    url: "https://www.ccomptes.fr/fr/publications/le-centre-national-de-la-recherche-scientifique-cnrs"
+    note: "Trésorerie pléthorique (~1,4 Md€ fin 2023) et sous-exécution budgétaire récurrente ; recrutements de chercheurs en baisse, gestion décentralisée des unités à renforcer."
+  - entity_denomination: Centre national de la recherche scientifique
+    report_ref: "Le CNRS et les sciences humaines et sociales"
+    report_date: "2021-04-27"
+    mention_type: recommandation
+    url: "https://www.ccomptes.fr/fr/publications/le-cnrs-et-les-sciences-humaines-et-sociales"
+    note: "Référé sur le pilotage des SHS via l'InSHS : progrès notés mais lacunes de coordination (alliance Athéna) et faiblesses d'infrastructures ; trois recommandations."
+  - entity_denomination: France Travail
+    report_ref: "France Travail et l'intelligence artificielle"
+    report_date: "2026-01-08"
+    mention_type: rapport
+    url: "https://www.ccomptes.fr/fr/publications/france-travail-et-lintelligence-artificielle"
+    note: "Premier rapport de la Cour entièrement consacré à l'usage de l'IA par un grand opérateur de l'État : déploiement, effets et gouvernance, avec des points de vigilance (RGPD, encadrement éthique)."
+  - entity_denomination: France Travail
+    report_ref: "La gestion de Pôle emploi, dix ans après sa création"
+    report_date: "2020-07-16"
+    mention_type: rapport
+    url: "https://www.ccomptes.fr/fr/publications/la-gestion-de-pole-emploi-dix-ans-apres-sa-creation"
+    note: "Bilan dix ans après la fusion ANPE/Assédic : croissance continue des moyens, objectifs atteints mais peu ambitieux, interrogations sur certaines rémunérations dirigeantes."

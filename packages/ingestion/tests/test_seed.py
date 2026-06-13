@@ -16,7 +16,17 @@ from __future__ import annotations
 
 import pytest
 from core.crosswalk import Crosswalk
-from core.models import BudgetFact, Contract, Edge, EdgeType, Entity, Level
+from core.models import (
+    Attribution,
+    BudgetFact,
+    Contract,
+    Edge,
+    EdgeType,
+    Entity,
+    Level,
+    Mention,
+    MentionType,
+)
 from core.resolve import normalize_name
 from ingestion.crosswalk_io import load_crosswalk, load_ministries
 from ingestion.seed import (
@@ -81,6 +91,13 @@ def test_referential_integrity() -> None:
     # Contracts hang off the graph via a seeded acheteur (titulaires are external suppliers).
     assert all(c.acheteur_siren in siren_set for c in bundle.contracts)
 
+    # Attributions (FSC-27) + Cour des comptes mentions (FSC-62) hang off a seeded entity — the seed
+    # keeps only the editorial rows whose entity is seeded, so none can orphan.
+    for attribution in bundle.attributions:
+        assert attribution.entity_siren in siren_set
+    for mention in bundle.mentions:
+        assert mention.entity_siren in siren_set
+
 
 def test_seed_rows_carry_a_registry_resolvable_provenance() -> None:
     """Entities and edges are stamped with a real registry source id (not a 'seed' sentinel), so the
@@ -94,6 +111,21 @@ def test_seed_rows_carry_a_registry_resolvable_provenance() -> None:
     )
     assert any(edge.provenance == "decp_commande_publique" for edge in bundle.edges)  # delegates
     assert all(c.provenance == "decp_commande_publique" for c in bundle.contracts)
+
+
+def test_seed_includes_editorial_attributions_and_mentions() -> None:
+    """FSC-27/FSC-62: the seed carries a real subset of the editorial layers, resolved + stamped."""
+    bundle = build_seed()
+    assert bundle.attributions and bundle.mentions
+    assert all(isinstance(a, Attribution) for a in bundle.attributions)
+    assert all(isinstance(m, Mention) for m in bundle.mentions)
+    # Stamped with the real registry provenance so the web provenance UI resolves them.
+    assert all(a.provenance == "legifrance_attributions" for a in bundle.attributions)
+    assert all(m.provenance == "cour_des_comptes" for m in bundle.mentions)
+    # Mandates link to a real Légifrance reference; mentions carry a type + a source URL.
+    assert all((a.source_url or "").startswith("https://") for a in bundle.attributions)
+    assert all(isinstance(m.mention_type, MentionType) for m in bundle.mentions)
+    assert all((m.url or "").startswith("https://") for m in bundle.mentions)
 
 
 def test_sirens_come_from_the_committed_crosswalk() -> None:

@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { acronymOf } from "../../lib/acronyms";
@@ -18,6 +18,7 @@ import {
   Chip,
   DataTable,
   ExampleFlag,
+  External,
   Flow,
   Graph as GraphIcon,
   LevelBadge,
@@ -28,8 +29,42 @@ import {
   Warning,
   type DataTableColumn,
 } from "../../lib/ui";
-import type { BudgetFactRow, ContractRow, RelatedEntity } from "./types";
+import type { BudgetFactRow, ContractRow, MentionRow, RelatedEntity } from "./types";
 import { useEntitySheet } from "./useEntitySheet";
+
+/** Accept only http(s) URLs so a `javascript:`/`data:` URL can never reach an `href` (RGAA + XSS). */
+function safeHttpUrl(raw: string | null | undefined): string | null {
+  if (!raw) return null;
+  try {
+    const u = new URL(raw);
+    return u.protocol === "http:" || u.protocol === "https:" ? u.href : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Month-day-year in French; ISO parsed as UTC so the day never shifts across time zones. */
+function frDate(iso: string | null): string {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleDateString("fr-FR", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+}
+
+/** External link with the DSFR/RGAA "new window" affordance (visually-hidden warning + icon). */
+function ExtLink({ href, children }: { href: string; children: ReactNode }) {
+  return (
+    <a className="fr-link" href={href} target="_blank" rel="noopener noreferrer">
+      {children} <External style={{ width: 14, height: 14 }} />
+      <span className="sr-only"> (nouvelle fenêtre)</span>
+    </a>
+  );
+}
 
 function MissionBars({ rows }: { rows: BudgetFactRow[] }) {
   if (!rows.length) return null;
@@ -109,7 +144,7 @@ export default function EntityPage() {
     );
   }
 
-  const { edges, budgetFacts, children, contracts, related } = state;
+  const { edges, budgetFacts, children, contracts, attributions, mentions, related } = state;
   const nameOf = (s: string) => related.get(s)?.name ?? s;
   const levelOf = (s: string) => related.get(s)?.level ?? null;
 
@@ -202,6 +237,44 @@ export default function EntityPage() {
       sortValue: (r) => r.montant_eur ?? 0,
     },
     { key: "exercice", header: "Millésime", num: true, render: (r) => r.exercice ?? "—" },
+  ];
+
+  const mentionCols: DataTableColumn<MentionRow>[] = [
+    {
+      key: "report_date",
+      header: "Date",
+      num: true,
+      render: (r) => frDate(r.report_date),
+      sortValue: (r) => r.report_date ?? "",
+    },
+    {
+      key: "mention_type",
+      header: "Type",
+      render: (r) => (
+        <span className="tag tag--sm">
+          {r.mention_type === "recommandation" ? "Recommandation" : "Rapport"}
+        </span>
+      ),
+    },
+    {
+      key: "report_ref",
+      header: "Référence",
+      sortable: false,
+      render: (r) => {
+        const href = safeHttpUrl(r.url);
+        return href ? (
+          <ExtLink href={href}>{r.report_ref ?? "Source"}</ExtLink>
+        ) : (
+          (r.report_ref ?? "—")
+        );
+      },
+    },
+    {
+      key: "note",
+      header: "Extrait",
+      sortable: false,
+      render: (r) => <span className="fr-sm">{r.note ?? "—"}</span>,
+    },
   ];
 
   return (
@@ -359,6 +432,54 @@ export default function EntityPage() {
             )}
           </section>
 
+          {entity.level === "state" ? (
+            <section>
+              <div className="section-head" style={{ marginBottom: 16 }}>
+                <div className="section-head__title">
+                  <span className="eyebrow">Cadre juridique</span>
+                  <h2 className="fr-h3">Attributions / mandat légal</h2>
+                </div>
+              </div>
+              {attributions.length ? (
+                <>
+                  <ul
+                    className="stack"
+                    style={{ gap: 14, listStyle: "none", padding: 0, margin: 0 }}
+                  >
+                    {attributions.map((a, i) => {
+                      const href = safeHttpUrl(a.source_url);
+                      return (
+                        <li key={`${a.legal_ref ?? "ref"}|${i}`}>
+                          {a.txt ? (
+                            <p className="fr-sm" style={{ margin: "0 0 4px" }}>
+                              {a.txt}
+                            </p>
+                          ) : null}
+                          <div className="fr-xs text-mention">
+                            {href ? (
+                              <ExtLink href={href}>{a.legal_ref ?? "Référence légale"}</ExtLink>
+                            ) : (
+                              <span>{a.legal_ref ?? "—"}</span>
+                            )}
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                  {attributions[0]?.provenance ? (
+                    <div style={{ marginTop: 12 }}>
+                      <ProvenanceBadge provenanceId={attributions[0].provenance} />
+                    </div>
+                  ) : null}
+                </>
+              ) : (
+                <Callout>
+                  <p className="fr-sm">Aucune attribution légale renseignée pour cette entité.</p>
+                </Callout>
+              )}
+            </section>
+          ) : null}
+
           {out.length ? (
             <section>
               <div className="section-head" style={{ marginBottom: 16 }}>
@@ -405,6 +526,37 @@ export default function EntityPage() {
               </div>
             </section>
           ) : null}
+
+          <section>
+            <div className="section-head" style={{ marginBottom: 16 }}>
+              <div className="section-head__title">
+                <span className="eyebrow">Contrôle</span>
+                <h2 className="fr-h3">Cour des comptes</h2>
+              </div>
+            </div>
+            {mentions.length ? (
+              <>
+                <DataTable
+                  caption={`Mentions Cour des comptes — ${entity.name}`}
+                  columns={mentionCols}
+                  rows={mentions}
+                  getRowKey={(r) => `${r.report_ref}|${r.report_date}|${r.mention_type}`}
+                />
+                {mentions[0]?.provenance ? (
+                  <div style={{ marginTop: 10 }}>
+                    <ProvenanceBadge provenanceId={mentions[0].provenance} />
+                  </div>
+                ) : null}
+              </>
+            ) : (
+              <Callout>
+                <p className="fr-sm">
+                  Aucune mention de la Cour des comptes recensée pour cette entité dans le périmètre
+                  suivi.
+                </p>
+              </Callout>
+            )}
+          </section>
         </div>
 
         <aside className="stack" style={{ gap: 20 }}>

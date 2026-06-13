@@ -61,6 +61,8 @@ uv (Python), pnpm (web). Ruff, mypy, pytest. Full table in ARCHITECTURE.md.
 
 - `data/registry/` — the source registry (single source of truth).
 - `data/crosswalk/` — the reviewed name→SIREN crosswalk + its review process (governance).
+- `data/attributions/`, `data/mentions/` — reviewed editorial files for the "why" (décrets
+  d'attribution, FSC-27) and "contrôle" (Cour des comptes mentions, FSC-62) layers.
 - `packages/ingestion` — connectors (discover/extract/validate/snapshot/stage); crosswalk I/O.
 - `packages/core` — domain model + entity resolution (`normalize_siren`, `crosswalk`, `resolution`).
 - `supabase/migrations` — schema, RLS, the `graph_neighbors` RPC. **This is the API.**
@@ -108,5 +110,6 @@ uv (Python), pnpm (web). Ruff, mypy, pytest. Full table in ARCHITECTURE.md.
 resolve → load → read) runs end-to-end over the four-layer perimeter (État central, delegated
 services, local authorities, social sphere) with anti-double-counting proven on the real merged
 dataset, and the React/DSFR web app (graph, entity sheet, Sankey, search, sources, périmètre) reads
-it via Supabase. **Remaining before a public launch:** ministerial **attributions** (FSC-27), a
-**Cour des comptes oversight** layer, and **deployment** to production. See [ROADMAP.md](ROADMAP.md).
+it via Supabase. Ministerial **attributions** (FSC-27, editorial/manual-first) and the **Cour des
+comptes oversight** layer (FSC-62, metadata-first mentions on fiches) are now delivered. **Remaining
+before a public launch:** **deployment** to production. See [ROADMAP.md](ROADMAP.md).

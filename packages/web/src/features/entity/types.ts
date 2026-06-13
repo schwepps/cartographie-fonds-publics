@@ -50,3 +50,35 @@ export interface RelatedEntity {
   level: string | null;
   category: string | null;
 }
+
+/** Curated `attributions` row (FSC-27) — a legal mandate with a Légifrance reference. */
+export interface AttributionRow {
+  entity_siren: string;
+  /** Human legal reference (e.g. the JORF décret number). */
+  legal_ref: string | null;
+  /** The competence / mandate text. */
+  txt: string | null;
+  /** Légifrance/JORF URL backing the legal_ref (validated http(s) before render). */
+  source_url: string | null;
+  /** Registry source id that contributed this row. */
+  provenance: string | null;
+}
+
+/** Curated `mentions` row (FSC-62) — a Cour des comptes / CRTC oversight mention. */
+export interface MentionRow {
+  entity_siren: string;
+  /** Report title / reference. */
+  report_ref: string | null;
+  /** ISO date string; formatted fr-FR at render. */
+  report_date: string | null;
+  /** "rapport" | "recommandation". */
+  mention_type: string | null;
+  /** Source report URL (validated http(s) before render). */
+  url: string | null;
+  /** Short note / excerpt. */
+  note: string | null;
+  /** Registry source id that contributed this row. */
+  provenance: string | null;
+  /** Per-row licence (the audit corpus is not uniformly licensed). */
+  license: string | null;
+}
