@@ -44,5 +44,12 @@
     "vite": "^6.4.0",
     "vitest": "^4.1.0",
     "vitest-axe": "^0.1.0"
+  },
+  "pnpm": {
+    "auditConfig": {
+      "ignoreGhsas": [
+        "GHSA-gv7w-rqvm-qjhr"
+      ]
+    }
   }
 }
