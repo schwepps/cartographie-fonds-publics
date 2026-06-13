@@ -1,0 +1,46 @@
+# DO NOT auto-load. Generated décret→ministry CANDIDATES for human review (FSC-66).
+# Verify a `matched` candidate against its source_url, then copy tutelle/legal_ref/
+# source_url/txt into data/attributions/ministres.yaml (the SIREN is re-resolved at build
+# time, never carried over). `unresolved` rows first need their ministry in ministeres.yaml.
+# See data/attributions/README.md for the promotion process.
+schema_version: 1
+candidates:
+- legal_ref: Décret n° 2025-1001 du 29 octobre 2025 relatif aux attributions du ministre
+    du travail et des solidarités
+  source_url: https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000052456634
+  status: matched
+  matched_tutelle: MTPEI
+  entity_siren: '110000072'
+  denomination: Ministère du Travail et des Solidarités
+  match_ratio: 0.8
+  txt: Le ministre du travail et des solidarités prépare et met en œuvre la politique
+    du Gouvernement dans les domaines du travail, de l'emploi, de l'insertion professionnelle,
+    de l'apprentissage, de la formation professionnelle, du dialogue social et de
+    la solidarité.
+  provenance: legifrance_attributions
+  license: Licence Ouverte 2.0
+- legal_ref: Décret n° 2025-1016 du 29 octobre 2025 relatif aux attributions du ministre
+    de la culture
+  source_url: https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000052457068
+  status: matched
+  matched_tutelle: MC
+  entity_siren: '110046018'
+  denomination: Ministère de la Culture
+  match_ratio: 0.6957
+  txt: Le ministre de la culture conduit la politique de sauvegarde, de protection
+    et de mise en valeur du patrimoine.
+  provenance: legifrance_attributions
+  license: Licence Ouverte 2.0
+- legal_ref: Décret n° 2025-1021 du 29 octobre 2025 relatif aux attributions du ministre
+    de l'enseignement supérieur, de la recherche et de l'espace
+  source_url: https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000052457282
+  status: matched
+  matched_tutelle: MESR
+  entity_siren: '110044013'
+  denomination: Ministère de l'Enseignement supérieur et de la Recherche
+  match_ratio: 0.7961
+  txt: Le ministre prépare et met en œuvre la politique du Gouvernement en matière
+    d'enseignement supérieur, de vie étudiante, de recherche, de technologie et d'espace
+    civil.
+  provenance: legifrance_attributions
+  license: Licence Ouverte 2.0

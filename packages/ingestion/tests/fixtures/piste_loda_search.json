@@ -1,0 +1,29 @@
+{
+  "totalResultNumber": 2,
+  "results": [
+    {
+      "nature": "DECRET",
+      "titles": [
+        {
+          "id": "JORFTEXT000052457068",
+          "cid": "JORFTEXT000052457068",
+          "title": "Décret n° 2025-1016 du 29 octobre 2025 relatif aux attributions du ministre de la culture",
+          "legalStatus": "VIGUEUR",
+          "datePubli": "2025-10-30"
+        }
+      ]
+    },
+    {
+      "nature": "DECRET",
+      "titles": [
+        {
+          "id": "JORFTEXT000052457900",
+          "cid": "JORFTEXT000052457900",
+          "title": "Décret n° 2025-1042 du 29 octobre 2025 relatif aux attributions du ministre de la mer et de la pêche",
+          "legalStatus": "VIGUEUR",
+          "datePubli": "2025-10-30"
+        }
+      ]
+    }
+  ]
+}

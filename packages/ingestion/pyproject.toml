@@ -2,7 +2,7 @@
 name = "ingestion"
 version = "0.0.0"
 requires-python = ">=3.11"
-dependencies = ["core", "pyyaml>=6", "httpx>=0.27", "pandas>=2.2", "duckdb>=1.1", "frictionless>=5", "pydantic>=2", "typer>=0.12"]
+dependencies = ["core", "pyyaml>=6", "httpx>=0.27", "pandas>=2.2", "duckdb>=1.1", "frictionless>=5", "pydantic>=2", "typer>=0.12", "pypdf>=6.12,<7"]
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"

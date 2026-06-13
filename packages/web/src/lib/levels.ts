@@ -72,6 +72,13 @@ export const LEVELS: Record<Level, LevelMeta> = {
 /** Neutral grey for an entity whose SIREN is unresolved / outside a bounded fetch. */
 export const UNRESOLVED_COLOR = "#b4b4b4";
 
+/**
+ * Oversight marker hue — entities « épinglé par la Cour des comptes » (carry ≥1 `mention`, FSC-65).
+ * Okabe–Ito vermillion: distinct from every level hue (incl. the delegated amber) and the Bleu
+ * France chrome, and colour-blind-safe. SSOT shared by the graph canvas badge + its legend swatch.
+ */
+export const MENTION_COLOR = "#d55e00";
+
 export const UNRESOLVED_META: LevelMeta = {
   id: "unresolved",
   label: "Non résolu",

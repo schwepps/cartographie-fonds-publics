@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { euroCompact } from "../../lib/format";
-import { levelMeta } from "../../lib/levels";
+import { levelMeta, MENTION_COLOR } from "../../lib/levels";
 import { radiusForCp } from "../../lib/magnitude";
 import {
   buildAdjacency,
@@ -412,6 +412,18 @@ export function GraphCanvas({
           ctx.textAlign = "center";
           ctx.textBaseline = "middle";
           ctx.fillText("+", P.x + r * 0.8, P.y - r * 0.8 + 0.5);
+        }
+        // Oversight marker: a small vermillion dot (top-left, distinct quadrant from the "+") on
+        // entities « épinglé par la Cour des comptes ». Meaning is carried by the legend + the table
+        // fallback, so the dot is purely a navigational cue, never the sole signal (FSC-65).
+        if (n.hasMention) {
+          ctx.beginPath();
+          ctx.arc(P.x - r * 0.8, P.y - r * 0.8, 5 * st.scale, 0, Math.PI * 2);
+          ctx.fillStyle = MENTION_COLOR;
+          ctx.fill();
+          ctx.strokeStyle = "#fff";
+          ctx.lineWidth = 1 * st.scale;
+          ctx.stroke();
         }
         ctx.restore();
 

@@ -44,6 +44,8 @@ vi.mock("../../lib/supabase", () => {
     budget_facts: [
       { entity_siren: "110044013", exercice: 2025, amount_cp_eur: 26_000_000_000, executed: false },
     ],
+    // CNRS is épinglé par la Cour; MESR is not — exercises the FSC-65 badge both ways.
+    mentions: [{ entity_siren: "180089013" }],
   };
   const from = (table: string) => {
     const result = { data: data[table] ?? [], error: null };
@@ -86,6 +88,29 @@ describe("GraphPage (institutional graph)", () => {
   it("documents keyboard navigation for accessibility", async () => {
     renderGraph();
     expect(await screen.findByText(/navigable au clavier/)).toBeInTheDocument();
+  });
+
+  it("shows the « épinglé par la Cour » entry in the graph legend (FSC-65)", async () => {
+    renderGraph();
+    await screen.findByText(/institutions affichées sur/);
+    expect(screen.getByText(/Épinglé par la Cour des comptes/)).toBeInTheDocument();
+  });
+
+  it("marks épinglé entities in the table fallback and not others (FSC-65)", async () => {
+    renderGraph();
+    await screen.findByText(/institutions affichées sur/);
+    const toggle = screen.getByRole("group", { name: /Mode d’affichage/ });
+    await userEvent.click(within(toggle).getByRole("button", { name: /Vue tableau/ }));
+    const table = await screen.findByRole("table", { name: /Institutions affichées/ });
+    const cnrsRow = within(table)
+      .getByRole("link", { name: /Centre national de la recherche scientifique/ })
+      .closest("tr") as HTMLElement;
+    const mesrRow = within(table)
+      .getByRole("link", { name: /^MESR$/ })
+      .closest("tr") as HTMLElement;
+    // The flag is textual (never sight-only): the CNRS row names the Cour, the MESR row does not.
+    expect(within(cnrsRow).getByText(/Cour des comptes/)).toBeInTheDocument();
+    expect(within(mesrRow).queryByText(/Cour des comptes/)).not.toBeInTheDocument();
   });
 
   // The canvas itself can't be scanned in jsdom (no 2D context), but the page chrome — toolbar,
