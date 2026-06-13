@@ -43,7 +43,7 @@ function safeHttpUrl(raw: string | null | undefined): string | null {
   }
 }
 
-/** Month-day-year in French; ISO parsed as UTC so the day never shifts across time zones. */
+/** Long French date (day month year); ISO parsed as UTC so the day never shifts across time zones. */
 function frDate(iso: string | null): string {
   if (!iso) return "—";
   const d = new Date(iso);
@@ -54,6 +54,13 @@ function frDate(iso: string | null): string {
     year: "numeric",
     timeZone: "UTC",
   });
+}
+
+/** Display label for a mention type; an unknown/NULL value (legacy rows) is never mislabeled. */
+function mentionTypeLabel(type: string | null): string {
+  if (type === "recommandation") return "Recommandation";
+  if (type === "rapport") return "Rapport";
+  return "—";
 }
 
 /** External link with the DSFR/RGAA "new window" affordance (visually-hidden warning + icon). */
@@ -250,11 +257,7 @@ export default function EntityPage() {
     {
       key: "mention_type",
       header: "Type",
-      render: (r) => (
-        <span className="tag tag--sm">
-          {r.mention_type === "recommandation" ? "Recommandation" : "Rapport"}
-        </span>
-      ),
+      render: (r) => <span className="tag tag--sm">{mentionTypeLabel(r.mention_type)}</span>,
     },
     {
       key: "report_ref",

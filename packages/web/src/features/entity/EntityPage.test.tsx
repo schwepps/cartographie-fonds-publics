@@ -152,6 +152,19 @@ vi.mock("../../lib/supabase", () => {
         license: "Licence Ouverte 2.0",
       },
     ],
+    // A legacy/NULL mention_type must not be mislabeled as "Rapport".
+    "180035024": [
+      {
+        entity_siren: "180035024",
+        report_ref: "Sécurité sociale 2024",
+        report_date: "2024-09-01",
+        mention_type: null,
+        url: "https://www.ccomptes.fr/fr/publications/securite-sociale-2024",
+        note: "RALFSS.",
+        provenance: "cour_des_comptes",
+        license: "Licence Ouverte 2.0",
+      },
+    ],
   };
 
   const from = (table: string) => {
@@ -304,6 +317,14 @@ describe("EntityPage (fiche)", () => {
     renderSheet(MESR); // no mentions seeded for MESR
     await screen.findByRole("heading", { name: /Cour des comptes/ });
     expect(screen.getByText(/Aucune mention de la Cour des comptes recensée/)).toBeInTheDocument();
+  });
+
+  it("does not mislabel a NULL mention_type as Rapport (FSC-62)", async () => {
+    renderSheet("180035024"); // its single mention has mention_type: null
+    const table = await screen.findByRole("table", { name: /Mentions Cour des comptes/ });
+    expect(within(table).queryByText("Rapport")).not.toBeInTheDocument();
+    expect(within(table).queryByText("Recommandation")).not.toBeInTheDocument();
+    expect(within(table).getByText("—")).toBeInTheDocument(); // neutral placeholder for the type
   });
 
   it("has no accessibility violations", async () => {
