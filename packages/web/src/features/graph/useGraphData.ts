@@ -26,21 +26,23 @@ export function useGraphData(): GraphState {
     let cancelled = false;
 
     async function load() {
-      const [entityRes, edgeRes, budgetRes] = await Promise.all([
+      const [entityRes, edgeRes, budgetRes, mentionRes] = await Promise.all([
         supabase.from("entities").select("siren,name,level,category,parent_siren").limit(5000),
         supabase
           .from("edges")
           .select("source_siren,target_siren,type,amount_eur,exercice")
           .limit(20000),
         supabase.from("budget_facts").select("entity_siren,exercice,amount_cp_eur,executed"),
+        supabase.from("mentions").select("entity_siren"),
       ]);
       if (cancelled) return;
 
-      if (entityRes.error || edgeRes.error || budgetRes.error) {
+      if (entityRes.error || edgeRes.error || budgetRes.error || mentionRes.error) {
         console.error("Graph load failed", {
           entity: entityRes.error,
           edge: edgeRes.error,
           budget: budgetRes.error,
+          mention: mentionRes.error,
         });
         setState({ status: "error" });
         return;
@@ -49,7 +51,11 @@ export function useGraphData(): GraphState {
       const entities = (entityRes.data as EntityRow[] | null) ?? [];
       const edges = (edgeRes.data as GraphEdge[] | null) ?? [];
       const budget = (budgetRes.data as BudgetRow[] | null) ?? [];
-      setState({ status: "ready", model: buildGraphModel(entities, edges, budget) });
+      const mentionRows = (mentionRes.data as { entity_siren: string | null }[] | null) ?? [];
+      const flaggedSirens = new Set(
+        mentionRows.map((m) => m.entity_siren).filter((s): s is string => s != null),
+      );
+      setState({ status: "ready", model: buildGraphModel(entities, edges, budget, flaggedSirens) });
     }
 
     void load();

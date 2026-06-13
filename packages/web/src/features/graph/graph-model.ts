@@ -21,6 +21,8 @@ export interface GraphNode {
   /** Roots that seed the visible set (ministries, caisses, collectivités). */
   isAnchor: boolean;
   isMinistry: boolean;
+  /** true → this entity carries ≥1 Cour des comptes `mention` (« épinglé par la Cour », FSC-65). */
+  hasMention: boolean;
   degree: number;
   // Mutable simulation state.
   x?: number;
@@ -82,12 +84,15 @@ export function passFilter(
 /**
  * Build the force-graph model from curated rows: derive each entity's CP magnitude, add unresolved
  * placeholder nodes for edge endpoints with no entity row, then compute the cluster / anchor /
- * degree fields the layout + visibility logic need. Pure and deterministic — unit-tested.
+ * degree fields the layout + visibility logic need. `flaggedSirens` (SIRENs present in the `mentions`
+ * layer) flags entities « épinglé par la Cour des comptes » — defaulted empty so existing call-sites
+ * stay valid. Pure and deterministic — unit-tested.
  */
 export function buildGraphModel(
   entities: EntityRow[],
   edges: GraphEdge[],
   budget: BudgetRow[] = [],
+  flaggedSirens: Set<string> = new Set(),
 ): GraphModel {
   const magnitude = buildMagnitudeMap(edges, budgetCpBySiren(budget));
 
@@ -105,6 +110,7 @@ export function buildGraphModel(
       cluster: "",
       isAnchor: false,
       isMinistry: e.category === MINISTRY_CATEGORY,
+      hasMention: flaggedSirens.has(e.siren),
       degree: 0,
     });
   }
@@ -125,6 +131,7 @@ export function buildGraphModel(
         cluster: "grp_unresolved",
         isAnchor: false,
         isMinistry: false,
+        hasMention: false,
         degree: 0,
       });
     }

@@ -81,6 +81,23 @@ describe("buildGraphModel", () => {
     expect(kept).toHaveLength(3);
     expect(byId.get("180089013")?.degree).toBe(3); // tutelle + funds in, delegates out
   });
+
+  it("flags entities whose SIREN is in flaggedSirens; leaves others and placeholders unflagged", () => {
+    const { byId } = buildGraphModel(entities, edges, budget, new Set(["180089013"]));
+    expect(byId.get("180089013")?.hasMention).toBe(true); // CNRS épinglé
+    expect(byId.get("110044013")?.hasMention).toBe(false); // MESR not flagged
+    expect(byId.get("999000999")?.hasMention).toBe(false); // unresolved placeholder never flagged
+  });
+
+  it("defaults hasMention to false when no flagged set is passed (backward compatible)", () => {
+    const { byId } = buildGraphModel(entities, edges, budget);
+    expect(byId.get("180089013")?.hasMention).toBe(false);
+  });
+
+  it("ignores a flagged SIREN with no entity row (no crash, no node created)", () => {
+    const { byId } = buildGraphModel(entities, edges, budget, new Set(["000000000"]));
+    expect(byId.has("000000000")).toBe(false);
+  });
 });
 
 const allFilters = (): GraphFilters => ({

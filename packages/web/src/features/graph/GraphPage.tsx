@@ -1,10 +1,11 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { euroCompact } from "../../lib/format";
-import { LEVELS } from "../../lib/levels";
+import { LEVELS, MENTION_COLOR } from "../../lib/levels";
 import { mixesPerimeters } from "../../lib/perimeter";
 import { tutelleChain } from "../../lib/tutelle";
 import {
+  Badge,
   Bars,
   Breadcrumb,
   Button,
@@ -21,6 +22,7 @@ import {
   LevelShape,
   MethodologyNote,
   Minus,
+  Pin,
   Plus,
   Reset,
   Search as SearchIcon,
@@ -96,6 +98,15 @@ function GraphLegend() {
           />
         </svg>{" "}
         Délégation
+      </div>
+      <h2 style={{ marginTop: 10 }}>Contrôle</h2>
+      <div className="legend__row">
+        <span className="legend__swatch">
+          <svg width="13" height="13" aria-hidden="true">
+            <circle cx="6.5" cy="6.5" r="5" fill={MENTION_COLOR} stroke="#fff" strokeWidth="1.5" />
+          </svg>
+        </span>
+        Épinglé par la Cour des comptes
       </div>
       <div className="legend__row fr-xs text-mention" style={{ marginTop: 4 }}>
         Taille du nœud ∝ crédits de paiement (échelle log)
@@ -369,6 +380,19 @@ function GraphTableView({ model, filters }: { model: GraphModel; filters: GraphF
       sortValue: (r) => r.level ?? "",
     },
     { key: "category", header: "Catégorie", render: (r) => r.category ?? "—" },
+    {
+      key: "hasMention",
+      header: "Épinglé",
+      render: (r) =>
+        r.hasMention ? (
+          <Badge tone="warning">
+            <Pin style={{ width: 12, height: 12 }} /> Cour des comptes
+          </Badge>
+        ) : (
+          "—"
+        ),
+      sortValue: (r) => (r.hasMention ? 1 : 0),
+    },
     {
       key: "cp",
       header: "CP (exemple)",
