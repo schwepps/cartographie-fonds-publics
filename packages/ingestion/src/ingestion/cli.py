@@ -8,7 +8,7 @@ import json
 import time
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Any
 
 import httpx
 import typer
@@ -18,7 +18,7 @@ from core.models import Entity, Level
 from core.resolution import resolve_entities
 
 from .connectors import Connector, UnknownPlatformError, get_connector
-from .connectors.rest import RestConnector
+from .connectors.rest import EXTRACT_ENVELOPE_KEY, RestConnector
 from .crosswalk_io import (
     CROSSWALK_PATH,
     CURATED_STATUSES,
@@ -382,7 +382,7 @@ def attributions_candidates(
     source = get_source(LEGIFRANCE_SOURCE_ID).raw
     resolved = connector.discover(source)
     raw = connector.extract(resolved)
-    decrees = json.loads(raw).get("texts", [])
+    decrees = json.loads(raw).get(EXTRACT_ENVELOPE_KEY, [])
     result = extract_attribution_candidates(decrees, ministries=load_ministries())
     write_candidates(result, out)
     rate = result.report["match_rate"]
@@ -403,13 +403,23 @@ def attributions_candidates(
         raise typer.Exit(code=1)
 
 
-def _load_report_specs(path: Path) -> list[dict[str, str]]:
-    """Read a YAML list of report specs (url/report_ref/report_date/mention_type[/license])."""
+def _load_report_specs(path: Path) -> list[dict[str, Any]]:
+    """Read a YAML list of report specs (url/report_ref/report_date/mention_type[/license]).
+
+    Fields may be optional/null, but each entry must be a mapping carrying a non-empty ``url`` —
+    validated here so a malformed reports file fails with an actionable CLI error, not a later
+    ``KeyError`` mid-fetch.
+    """
     with open(path, encoding="utf-8") as fh:
         data = yaml.safe_load(fh) or {}
     specs = data.get("reports") if isinstance(data, dict) else None
     if not isinstance(specs, list) or not specs:
         raise typer.BadParameter(f"{path}: expected a non-empty 'reports' list")
+    for index, spec in enumerate(specs):
+        if not isinstance(spec, dict) or not str(spec.get("url") or "").strip():
+            raise typer.BadParameter(
+                f"{path}: reports[{index}] must be a mapping with a non-empty 'url'"
+            )
     return specs
 
 

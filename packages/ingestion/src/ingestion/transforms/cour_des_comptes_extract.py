@@ -208,7 +208,10 @@ def link_entities(
     """Scan ``text`` for gazetteer surfaces (word-boundary), one candidate per distinct entity."""
     by_canonical: dict[str, MentionCandidate] = {}
     for term in gazetteer.terms:
-        pattern = re.compile(rf"(?<!\w){re.escape(term.surface)}(?!\w)", re.IGNORECASE)
+        # Acronyms are matched case-sensitively (the precision guard): "CNRS" must not hit "cnrs".
+        # Full denominations stay case-insensitive (sentence-case in prose is expected).
+        flags = 0 if term.kind == "acronym" else re.IGNORECASE
+        pattern = re.compile(rf"(?<!\w){re.escape(term.surface)}(?!\w)", flags)
         matches = list(pattern.finditer(text))
         if not matches:
             continue

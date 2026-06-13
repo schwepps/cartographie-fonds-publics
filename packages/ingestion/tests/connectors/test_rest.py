@@ -79,7 +79,10 @@ def test_discover_mints_token_and_resolves_loda_texts(load_fixture, _creds, resp
     # Text ids come from the payload, never hardcoded (golden rule #2).
     cids = [t["cid"] for t in resolved["texts"]]
     assert cids == ["JORFTEXT000052457068", "JORFTEXT000052457900"]
-    assert resolved["texts"][0]["url"].endswith("/JORFTEXT000052457068")
+    # JORF text ids resolve under /jorf/id/ (not /loda/id/) — matches the committed example backlog.
+    assert (
+        resolved["texts"][0]["url"] == "https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000052457068"
+    )
     assert resolved["license"] == "Licence Ouverte 2.0"
 
 

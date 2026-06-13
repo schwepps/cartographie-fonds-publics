@@ -119,6 +119,24 @@ def test_word_boundary_prevents_substring_false_positive() -> None:
     assert all(c.entity_denomination != "Agence Alpha" for c in cands)
 
 
+def test_acronym_match_is_case_sensitive() -> None:
+    # An acronym surface ("ABC") is the precision guard: it must match uppercase, not lowercase.
+    entries = [
+        CrosswalkEntry(
+            denomination="ABC - Agence Beta Centrale",
+            status=CrosswalkStatus.auto,
+            siren="111111118",
+        )
+    ]
+    gaz = build_gazetteer(entries, [])
+    # Lowercase prose word "abc" must NOT resolve via the acronym surface.
+    lower = link_entities("on parle ici d'abc en minuscule", gaz, report=_report(b""))
+    assert lower == []
+    # The uppercase acronym DOES match.
+    upper = link_entities("le rapport vise l'ABC sans détour", gaz, report=_report(b""))
+    assert [c.entity_siren for c in upper] == ["111111118"]
+
+
 def test_build_candidates_reports_coverage_and_match_rate(load_fixture) -> None:  # type: ignore[no-untyped-def]
     pdf = load_fixture("ccomptes_sample.pdf")
     result = build_candidates(

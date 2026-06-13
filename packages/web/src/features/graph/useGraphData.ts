@@ -33,7 +33,9 @@ export function useGraphData(): GraphState {
           .select("source_siren,target_siren,type,amount_eur,exercice")
           .limit(20000),
         supabase.from("budget_facts").select("entity_siren,exercice,amount_cp_eur,executed"),
-        supabase.from("mentions").select("entity_siren"),
+        // Explicit bound: without it PostgREST applies its ~1k default, which could silently drop
+        // mention rows and leave flagged entities un-badged as the table grows.
+        supabase.from("mentions").select("entity_siren").limit(50000),
       ]);
       if (cancelled) return;
 

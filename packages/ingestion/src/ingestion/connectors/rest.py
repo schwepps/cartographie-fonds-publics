@@ -44,8 +44,10 @@ PISTE_SCOPE = "openid"
 LEGIFRANCE_API_BASE = "https://api.piste.gouv.fr/dila/legifrance/lf-engine-app"
 LODA_SEARCH_PATH = "/search"
 LODA_CONSULT_PATH = "/consult/lawDecree"
-# Public Légifrance permalink base for a LODA text (the human-citable source_url on each candidate).
+# Public Légifrance permalink bases (the human-citable source_url on each candidate). A JORF text id
+# (JORFTEXT…) resolves under /jorf/id/; a consolidated LODA id (LEGITEXT…) under /loda/id/.
 LEGIFRANCE_LODA_BASE = "https://www.legifrance.gouv.fr/loda/id"
+LEGIFRANCE_JORF_BASE = "https://www.legifrance.gouv.fr/jorf/id"
 
 DEFAULT_DECREE_QUERY = "décret d'attribution"
 DEFAULT_LICENSE = "Licence Ouverte 2.0"
@@ -259,10 +261,16 @@ def _parse_search_results(payload: dict[str, Any]) -> list[dict[str, Any]]:
                 "cid": cid,
                 "title": str(head.get("title") or "").strip(),
                 "date": head.get("datePubli") or head.get("dateSignature"),
-                "url": f"{LEGIFRANCE_LODA_BASE}/{cid}",
+                "url": _permalink(cid),
             }
         )
     return texts
+
+
+def _permalink(cid: str) -> str:
+    """Public Légifrance permalink for a text id: /jorf/id/ for JORF texts, else /loda/id/."""
+    base = LEGIFRANCE_JORF_BASE if cid.upper().startswith("JORF") else LEGIFRANCE_LODA_BASE
+    return f"{base}/{cid}"
 
 
 def _flatten_text(consult: dict[str, Any]) -> str:
