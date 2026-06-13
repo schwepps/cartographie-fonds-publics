@@ -17,8 +17,8 @@ candidates:
     du Gouvernement dans les domaines du travail, de l'emploi, de l'insertion professionnelle,
     de l'apprentissage, de la formation professionnelle, du dialogue social et de
     la solidarité.
-  license: Licence Ouverte 2.0
   provenance: legifrance_attributions
+  license: Licence Ouverte 2.0
 - legal_ref: Décret n° 2025-1016 du 29 octobre 2025 relatif aux attributions du ministre
     de la culture
   source_url: https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000052457068
@@ -29,8 +29,8 @@ candidates:
   match_ratio: 0.6957
   txt: Le ministre de la culture conduit la politique de sauvegarde, de protection
     et de mise en valeur du patrimoine.
-  license: Licence Ouverte 2.0
   provenance: legifrance_attributions
+  license: Licence Ouverte 2.0
 - legal_ref: Décret n° 2025-1021 du 29 octobre 2025 relatif aux attributions du ministre
     de l'enseignement supérieur, de la recherche et de l'espace
   source_url: https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000052457282
@@ -42,5 +42,5 @@ candidates:
   txt: Le ministre prépare et met en œuvre la politique du Gouvernement en matière
     d'enseignement supérieur, de vie étudiante, de recherche, de technologie et d'espace
     civil.
-  license: Licence Ouverte 2.0
   provenance: legifrance_attributions
+  license: Licence Ouverte 2.0

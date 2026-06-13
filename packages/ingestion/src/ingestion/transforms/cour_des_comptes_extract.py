@@ -39,6 +39,12 @@ MIN_SURFACE_TOKENS = 2
 MIN_ACRONYM_LEN = 3
 _EXCERPT_RADIUS = 120
 
+# Decompression-bomb guards: a small compressed PDF can expand to a huge page count / text volume,
+# over which every gazetteer term's regex would then run. Bound both and fail loud (no silent cap).
+# Cour des comptes reports are well under these; the caps only trip on pathological/hostile inputs.
+MAX_PDF_PAGES = 2000
+MAX_TEXT_CHARS = 20_000_000
+
 # All-caps token of >= MIN_ACRONYM_LEN (3) chars: one leading cap + at least two more.
 _ACRONYM_RE = re.compile(r"[A-ZÉÈÀÂÎÔÛÇ][A-ZÉÈÀÂÎÔÛÇ0-9&]{2,}")
 _SEGMENT_RE = re.compile(r"\s[-–—/]\s")
@@ -114,7 +120,22 @@ def extract_text(pdf_bytes: bytes) -> str:
         raise ValueError(f"unreadable PDF ({len(pdf_bytes)} bytes): {exc}") from exc
     if reader.is_encrypted:
         raise ValueError("encrypted PDF — cannot extract text (never guess)")
-    text = "\n".join((page.extract_text() or "") for page in reader.pages).strip()
+    pages = reader.pages
+    if len(pages) > MAX_PDF_PAGES:
+        raise ValueError(
+            f"PDF has {len(pages)} pages (> {MAX_PDF_PAGES} cap) — refusing (bomb guard)"
+        )
+    parts: list[str] = []
+    total = 0
+    for page in pages:
+        chunk = page.extract_text() or ""
+        total += len(chunk)
+        if total > MAX_TEXT_CHARS:
+            raise ValueError(
+                f"extracted text exceeded {MAX_TEXT_CHARS} chars — refusing (bomb guard)"
+            )
+        parts.append(chunk)
+    text = "\n".join(parts).strip()
     if not text:
         raise ValueError(
             "PDF yielded no extractable text (scanned/image PDF?) — fail loud, no OCR guessing"

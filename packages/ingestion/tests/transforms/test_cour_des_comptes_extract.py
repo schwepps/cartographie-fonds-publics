@@ -7,6 +7,7 @@ word-boundary scan, resolve-vs-backlog routing (never guessed), and the coverage
 
 from __future__ import annotations
 
+from io import BytesIO
 from pathlib import Path
 
 import pytest
@@ -59,6 +60,29 @@ def test_extract_text_reads_the_fixture_pdf(load_fixture) -> None:  # type: igno
 def test_extract_text_fails_loud_on_non_pdf() -> None:
     with pytest.raises(ValueError, match="unreadable PDF"):
         extract_text(b"this is not a pdf")
+
+
+def _make_pdf(*, encrypted: bool) -> bytes:
+    from pypdf import PdfWriter
+
+    writer = PdfWriter()
+    writer.add_blank_page(width=200, height=200)  # a page with no text content
+    if encrypted:
+        writer.encrypt("secret")
+    buf = BytesIO()
+    writer.write(buf)
+    return buf.getvalue()
+
+
+def test_extract_text_fails_loud_on_encrypted_pdf() -> None:
+    with pytest.raises(ValueError, match="encrypted"):
+        extract_text(_make_pdf(encrypted=True))
+
+
+def test_extract_text_fails_loud_on_text_empty_pdf() -> None:
+    # Scanned/image PDFs extract to empty text — must fail loud, never silently emit no candidates.
+    with pytest.raises(ValueError, match="no extractable text"):
+        extract_text(_make_pdf(encrypted=False))
 
 
 def test_build_gazetteer_precision_guard_and_status_filter() -> None:
@@ -116,9 +140,15 @@ def test_candidate_backlog_round_trips(load_fixture, tmp_path: Path) -> None:  #
     )
     out = tmp_path / "candidates.yaml"
     write_candidates(result, out)
+    original = {c.entity_denomination: c for c in result.candidates}
     loaded = {c.entity_denomination: c for c in load_candidates(out)}
     assert loaded["Agence Alpha"].entity_siren == "111111118"
     assert loaded["Agence Pending"].entity_siren is None
+    # The precision signal + reviewer evidence must survive the write→read (falsy-drop guard).
+    alpha = loaded["Agence Alpha"]
+    assert alpha.match_count == original["Agence Alpha"].match_count >= 1
+    assert alpha.note == original["Agence Alpha"].note != ""
+    assert alpha.report_date == "2025-03-25"
 
 
 def test_candidate_backlog_is_never_the_published_path() -> None:

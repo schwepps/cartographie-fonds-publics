@@ -23,12 +23,12 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-import yaml
 from core.crosswalk import CrosswalkEntry
 from core.resolve import normalize_name
 
+from ..candidate_backlog import read_backlog, row_from_fields, write_backlog
+
 SOURCE_ID = "legifrance_attributions"
-SCHEMA_VERSION = 1
 DEFAULT_LICENSE = "Licence Ouverte 2.0"
 
 # Backlog file: generated candidates awaiting human review. Same default-path + CFP_* env-override
@@ -211,20 +211,9 @@ _CANDIDATE_FIELDS = (
     "candidate_sirens",
     "match_ratio",
     "txt",
-    "license",
     "provenance",
+    "license",
 )
-
-
-def _candidate_to_row(candidate: AttributionCandidate) -> dict[str, Any]:
-    """Serialize a candidate to a YAML row, dropping genuinely-absent optionals for a clean diff."""
-    row: dict[str, Any] = {}
-    for fname in _CANDIDATE_FIELDS:
-        value = getattr(candidate, fname)
-        if value is None or (isinstance(value, list) and not value) or value == "":
-            continue
-        row[fname] = value
-    return row
 
 
 def write_candidates(
@@ -232,32 +221,15 @@ def write_candidates(
 ) -> None:
     """Write the candidate backlog as YAML (stable order), with a 'do not auto-load' header."""
     ordered = sorted(result.candidates, key=lambda c: (c.status, c.legal_ref))
-    doc: dict[str, Any] = {
-        "schema_version": SCHEMA_VERSION,
-        "candidates": [_candidate_to_row(c) for c in ordered],
-    }
-    Path(path).parent.mkdir(parents=True, exist_ok=True)
-    with open(path, "w", encoding="utf-8") as fh:
-        fh.write(_HEADER)
-        yaml.safe_dump(doc, fh, allow_unicode=True, sort_keys=False, default_flow_style=False)
+    write_backlog(
+        path, header=_HEADER, rows=[row_from_fields(c, _CANDIDATE_FIELDS) for c in ordered]
+    )
 
 
 def load_candidates(path: Path | str = CANDIDATES_PATH) -> list[AttributionCandidate]:
     """Parse a candidate backlog YAML back into candidates (round-trips ``write_candidates``)."""
-    with open(path, encoding="utf-8") as fh:
-        data = yaml.safe_load(fh) or {}
-    if not isinstance(data, dict):
-        raise ValueError(f"{path}: top-level YAML must be a mapping, got {type(data).__name__}")
-    if data.get("schema_version") != SCHEMA_VERSION:
-        raise ValueError(
-            f"{path}: unsupported schema_version {data.get('schema_version')!r}, "
-            f"expected {SCHEMA_VERSION}"
-        )
-    rows = data.get("candidates", [])
-    if not isinstance(rows, list):
-        raise ValueError(f"{path}: 'candidates' must be a list, got {type(rows).__name__}")
     out: list[AttributionCandidate] = []
-    for row in rows:
+    for row in read_backlog(path):
         out.append(
             AttributionCandidate(
                 legal_ref=str(row.get("legal_ref") or ""),

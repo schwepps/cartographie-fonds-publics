@@ -97,10 +97,13 @@ def test_backlog_round_trips_and_preserves_null_siren(tmp_path: Path) -> None:
     result = extract_attribution_candidates(decrees, ministries=_ministries())
     out = tmp_path / "candidates.yaml"
     write_candidates(result, out)
-    loaded = load_candidates(out)
-    by_status = {c.status: c for c in loaded}
+    original = {c.status: c for c in result.candidates}
+    by_status = {c.status: c for c in load_candidates(out)}
     assert by_status["matched"].entity_siren == "900000017"
     assert by_status["unresolved"].entity_siren is None
+    # Reviewer hints must survive the write→read.
+    assert by_status["matched"].matched_tutelle == "AA"
+    assert by_status["matched"].match_ratio == original["matched"].match_ratio
 
 
 def test_candidate_backlog_is_never_the_published_path() -> None:

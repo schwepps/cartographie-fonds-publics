@@ -18,7 +18,6 @@ from core.models import Entity, Level
 from core.resolution import resolve_entities
 
 from .connectors import Connector, UnknownPlatformError, get_connector
-from .connectors.cour_des_comptes_pdf import fetch_pdf
 from .connectors.rest import RestConnector
 from .crosswalk_io import (
     CROSSWALK_PATH,
@@ -36,6 +35,7 @@ from .load import LOAD_SQL_PATH, emit_load_sql, load_summary
 from .mentions_candidates_io import CANDIDATES_PATH as MENTION_CANDIDATES_PATH
 from .mentions_candidates_io import write_candidates as write_mention_candidates
 from .registry import Source, get_source, sources
+from .report_fetch import fetch_pdf
 from .seed import SEED_SQL_PATH, emit_seed_sql
 from .snapshot import SNAPSHOT_ROOT
 from .tabular import parse_csv_bytes
@@ -391,6 +391,10 @@ def attributions_candidates(
         f"[attributions-candidates] {result.report['matched']}/{result.report['total']} décrets "
         f"linked (match rate {rate_str}); {result.report['unresolved']} -> backlog {out}"
     )
+    # A zero-candidate run (rate is None) must fail loud — a degraded extraction is never a pass.
+    if result.report["total"] == 0:
+        typer.echo("[attributions-candidates] no décrets discovered — nothing to link", err=True)
+        raise typer.Exit(code=1)
     if rate is not None and rate < min_match_rate:
         typer.echo(
             f"[attributions-candidates] match rate {rate:.0%} < {min_match_rate:.0%} floor",
@@ -455,6 +459,12 @@ def extract_mentions(
         f"{result.report['reports_with_candidates']}/{result.report['reports_total']} reports "
         f"with a hit -> backlog {out}"
     )
+    # A zero-candidate run (rate is None) must fail loud — a degraded extraction is never a pass.
+    if result.report["candidates_total"] == 0:
+        typer.echo(
+            "[extract-mentions] no candidates extracted — nothing matched the gazetteer", err=True
+        )
+        raise typer.Exit(code=1)
     if rate is not None and rate < min_match_rate:
         typer.echo(
             f"[extract-mentions] match rate {rate:.0%} < {min_match_rate:.0%} floor", err=True

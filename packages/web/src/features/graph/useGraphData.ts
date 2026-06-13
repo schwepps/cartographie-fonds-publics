@@ -37,15 +37,20 @@ export function useGraphData(): GraphState {
       ]);
       if (cancelled) return;
 
-      if (entityRes.error || edgeRes.error || budgetRes.error || mentionRes.error) {
+      // entities/edges/budget are load-bearing — a failure there blanks the graph. The mentions
+      // badge is a secondary signal (and the most likely to fail post-deploy, e.g. RLS): treat it
+      // as best-effort so a mentions error degrades to "graph without badges", not "no graph".
+      if (entityRes.error || edgeRes.error || budgetRes.error) {
         console.error("Graph load failed", {
           entity: entityRes.error,
           edge: edgeRes.error,
           budget: budgetRes.error,
-          mention: mentionRes.error,
         });
         setState({ status: "error" });
         return;
+      }
+      if (mentionRes.error) {
+        console.error("Graph mentions load failed (badges disabled)", mentionRes.error);
       }
 
       const entities = (entityRes.data as EntityRow[] | null) ?? [];

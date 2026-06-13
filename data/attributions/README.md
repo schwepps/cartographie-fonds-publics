@@ -41,7 +41,7 @@ The backlog is **never auto-loaded**. To publish a candidate:
 
 1. Open `candidates/ministres_candidates.yaml`. For a `matched` row, open its `source_url` on
    Légifrance and confirm the décret is real, current, and targets the named ministry.
-2. Copy a `MentionEntry`-shaped row into `ministres.yaml` using only `tutelle`, `legal_ref`,
+2. Copy an `AttributionEntry`-shaped row into `ministres.yaml` using only `tutelle`, `legal_ref`,
    `source_url`, and `txt` — **drop the `entity_siren`** (it is re-resolved at build time via
    `ministeres.yaml`, golden rule #1/#5).
 3. For an `unresolved` row, first add the missing ministry to the reviewed `ministeres.yaml`
