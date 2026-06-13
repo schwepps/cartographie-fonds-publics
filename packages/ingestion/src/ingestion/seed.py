@@ -34,17 +34,31 @@ from pathlib import Path
 
 from core.contracts import DECP_PROVENANCE, aggregate_delegates_edges
 from core.crosswalk import Crosswalk
-from core.models import BudgetFact, Contract, Edge, EdgeType, Entity, Level, Nature
+from core.models import (
+    Attribution,
+    BudgetFact,
+    Contract,
+    Edge,
+    EdgeType,
+    Entity,
+    Level,
+    Mention,
+    Nature,
+)
 from core.resolve import normalize_name
 
 from .crosswalk_io import load_crosswalk
 from .sql_render import (
+    ATTRIBUTION_COLUMNS,
     BUDGET_COLUMNS,
     CONTRACT_COLUMNS,
     EDGE_COLUMNS,
     ENTITY_COLUMNS,
+    MENTION_COLUMNS,
     render_insert,
 )
+from .transforms import cour_des_comptes as cour_des_comptes_transform
+from .transforms import legifrance_attributions as legifrance_attributions_transform
 from .transforms.operateurs_etat import MINISTRY_CATEGORY, MinistryIndex
 
 # Registry source id stamped on every seeded entity and tutelle edge. The État-central skeleton
@@ -153,6 +167,8 @@ class SeedBundle:
     edges: list[Edge] = field(default_factory=list)
     budget_facts: list[BudgetFact] = field(default_factory=list)
     contracts: list[Contract] = field(default_factory=list)
+    attributions: list[Attribution] = field(default_factory=list)
+    mentions: list[Mention] = field(default_factory=list)
 
 
 def build_seed(
@@ -236,11 +252,43 @@ def build_seed(
     # Deterministic order: ministries (graph roots) first, then operators — both by SIREN.
     ministry_entities = sorted(ministries_by_siren.values(), key=lambda e: e.siren or "")
     operator_entities = sorted(operators, key=lambda e: e.siren or "")
+
+    # Editorial "why"/oversight layers (FSC-27/FSC-62): build the full editorial sets through the
+    # production transforms (single source of truth — same resolution, same provenance), then keep
+    # only the rows that hang off a *seeded* entity so the seed stays referentially closed (a
+    # mention/attribution on a non-seeded SIREN would orphan). The editorial files cover MESR/MC/
+    # MTPEI (the seeded operators' tutelles) and CNRS/France Travail (seeded operators).
+    seeded_sirens = {e.siren for e in ministry_entities + operator_entities if e.siren}
+    attributions = sorted(
+        (
+            a
+            for a in legifrance_attributions_transform.build(
+                legifrance_attributions_transform.load_attribution_entries(), ministries=ministries
+            ).attributions
+            if a.entity_siren in seeded_sirens
+        ),
+        key=lambda a: (a.entity_siren or "", a.legal_ref or ""),
+    )
+    mentions = sorted(
+        (
+            m
+            for m in cour_des_comptes_transform.build(
+                cour_des_comptes_transform.load_mention_entries(),
+                crosswalk=crosswalk,
+                ministries=ministries,
+            ).mentions
+            if m.entity_siren in seeded_sirens
+        ),
+        key=lambda m: (m.entity_siren or "", m.report_date or "", m.report_ref or ""),
+    )
+
     return SeedBundle(
         entities=ministry_entities + operator_entities,
         edges=sorted(all_edges, key=lambda e: (e.type.value, e.source_siren, e.target_siren)),
         budget_facts=_seed_budget_facts(budget_owner.siren),
         contracts=contracts,
+        attributions=attributions,
+        mentions=mentions,
     )
 
 
@@ -265,6 +313,10 @@ _SQL_HEADER = """\
 --     (https://www.senat.fr/rap/l24-144-324/l24-144-324_mono.html) + budget.gouv.fr PAP.
 --   * Contracts — DECP consolidées (DAJ/Etalab), data.gouv.fr resource
 --     22847056-61df-452d-837d-8b8ceadbfc52 (extrait 2026-06-09).
+--   * Attributions — décrets d'attribution (Légifrance/JORF, DILA); resolved to the ministry
+--     SIREN via data/crosswalk/ministeres.yaml. Source: data/attributions/ministres.yaml (FSC-27).
+--   * Mentions — Cour des comptes publications (ccomptes.fr), linked to the entity SIREN via the
+--     reviewed mapping data/mentions/cour_des_comptes.yaml (FSC-62).
 """
 
 
@@ -284,6 +336,10 @@ def render_sql(bundle: SeedBundle) -> str:
         render_insert("budget_facts", BUDGET_COLUMNS, list(bundle.budget_facts)),
         "-- Contracts: real DECP marchés (CNRS acheteur).",
         render_insert("contracts", CONTRACT_COLUMNS, list(bundle.contracts)),
+        "-- Attributions: real décrets d'attribution on seeded ministries (FSC-27).",
+        render_insert("attributions", ATTRIBUTION_COLUMNS, list(bundle.attributions)),
+        "-- Mentions: real Cour des comptes publications on seeded entities (FSC-62).",
+        render_insert("mentions", MENTION_COLUMNS, list(bundle.mentions)),
         "\ncommit;\n",
     ]
     return "\n".join(sections)

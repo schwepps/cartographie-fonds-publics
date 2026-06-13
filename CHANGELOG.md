@@ -6,6 +6,28 @@ Commits follow [Conventional Commits](https://www.conventionalcommits.org/).
 
 ## [Unreleased]
 ### Added
+- Ministerial attributions + Cour des comptes oversight layers (FSC-27 / FSC-62), manual/metadata-first.
+  The `Attribution`/`Mention` domain models gain the business columns the "why" + "contrôle" layers
+  need (attribution: `source_url` + `provenance`; mention: `report_date`, `mention_type`
+  rapport|recommandation, `url`, `provenance`, per-row `license`), with two append-only migrations
+  (`0007`/`0008`) enriching the tables (RLS public-read inherited). Both layers flow through the
+  curated pipeline: `TransformResult`/`LoadBundle`/`render_load_sql`/`SeedBundle` now carry
+  attributions + mentions (provenance-scoped delete-then-insert, like edges), exposed as the opt-in
+  `EDITORIAL_SOURCE_IDS` load set (kept out of the default État-central / whole-perimeter sets).
+  **FSC-27** is editorial: real décrets d'attribution for MESR/Culture/Travail
+  (`data/attributions/ministres.yaml`) → `legifrance_attributions` transform, resolved to a ministry
+  SIREN via the reviewed reference; a registered `rest` connector reads the PISTE OAuth2 secret and
+  documents the live extraction (text→entity) as the scaling path (FSC-66), not run in CI.
+  **FSC-62** is metadata-first: real Cour des comptes publications on CNRS/France Travail
+  (`data/mentions/cour_des_comptes.yaml`) → `cour_des_comptes` transform reusing the `datagouv_api`
+  connector for discovery (its resource selection now falls back to a non-CSV resource for the
+  PDF/txt corpus); the report→entity link is the reviewed editorial mapping (no structured entity
+  field exists upstream), with full-text NLP deferred (FSC-67). The entity fiche gains an
+  « Attributions / mandat légal » section (state entities) and a « Contrôle / Cour des comptes »
+  section (any entity), both with provenance badges and RGAA-correct external links (visually-hidden
+  « nouvelle fenêtre »; `http(s)`-only URL guard so a `javascript:` URL can never reach an `href`).
+  The committed dev/preview seed renders a real subset of both layers. The graph "épinglé par la
+  Cour" badge is deferred (FSC-65).
 - RGAA accessibility pass on the graph + Sankey (FSC-59): automated `vitest-axe` `toHaveNoViolations`
   assertions now cover the Graphe (page chrome **and** the table fallback), Recherche and Flux/Sankey
   screens too (joining Accueil, Fiche, Sources, Périmètre and the shell), so the key screens gate on

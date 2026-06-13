@@ -35,15 +35,17 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from core.models import BudgetFact, Contract, Edge, Entity
+from core.models import Attribution, BudgetFact, Contract, Edge, Entity, Mention
 
 from .errors import LoadError
 from .snapshot import SNAPSHOT_ROOT, read_snapshot_rows
 from .sql_render import (
+    ATTRIBUTION_COLUMNS,
     BUDGET_COLUMNS,
     CONTRACT_COLUMNS,
     EDGE_COLUMNS,
     ENTITY_COLUMNS,
+    MENTION_COLUMNS,
     render_insert,
     sql_literal,
 )
@@ -76,6 +78,17 @@ ALL_SOURCE_IDS: tuple[str, ...] = (
     "budget_execution_mensuelle",
     "decp_commande_publique",
     "epl_sem_spl",
+)
+
+# The editorial "why"/oversight layers (FSC-27 attributions, FSC-62 Cour des comptes mentions).
+# These are *opt-in*, kept out of the default État-central / whole-perimeter sets above: they emit
+# only attributions/mentions (no entities/edges), are curated from committed editorial files rather
+# than discovered millésimes, and are non-blocking enrichment. Load them explicitly, e.g.
+# `emit_load_sql(source_ids=EDITORIAL_SOURCE_IDS)`. (Keeping them out of ALL_SOURCE_IDS also avoids
+# coupling them to the connector-fixture parity guard in tests/conftest.py.)
+EDITORIAL_SOURCE_IDS: tuple[str, ...] = (
+    "legifrance_attributions",
+    "cour_des_comptes",
 )
 
 # Emit path for the rendered load SQL (gitignored `out/`, like the other CLI reports). Env-override
@@ -113,6 +126,8 @@ class LoadBundle:
     edges: list[Edge]  # deduped by (source, target, type, exercice, provenance)
     budget_facts: list[BudgetFact]  # as emitted (entity_siren may be None — a LOLF-level fact)
     contracts: list[Contract]  # as emitted (acheteur/titulaire may be None — an unresolved party)
+    attributions: list[Attribution]  # deduped by (entity_siren, legal_ref, provenance)
+    mentions: list[Mention]  # deduped by (entity_siren, report_ref, mention_type, provenance)
     provenances: tuple[str, ...]  # provenance scopes this load rebuilds (the source_ids)
     skipped_unresolved: int  # entities dropped for siren=None (reported, never silent)
     reports: dict[str, dict[str, Any]]  # per source_id transform report (for the summary)
@@ -145,6 +160,12 @@ def build_bundle(
     edges_by_key: dict[tuple[str, str, str, int | None, str | None], Edge] = {}
     budget_facts: list[BudgetFact] = []
     contracts: list[Contract] = []
+    # Editorial layers. A transform only emits *resolved* attributions/mentions into its slice
+    # (SIREN-less ones go to its report, golden rule #5), so we dedup but never drop here.
+    attributions_by_key: dict[tuple[str | None, str | None, str | None], Attribution] = {}
+    mentions_by_key: dict[
+        tuple[str | None, str | None, str | None, str | None, str | None], Mention
+    ] = {}
     reports: dict[str, dict[str, Any]] = {}
     skipped_unresolved = 0
 
@@ -153,7 +174,14 @@ def build_bundle(
         result: TransformResult = get_transform(source_id)(headers, rows)
         reports[source_id] = result.report
         if (
-            not (result.entities or result.edges or result.budget_facts or result.contracts)
+            not (
+                result.entities
+                or result.edges
+                or result.budget_facts
+                or result.contracts
+                or result.attributions
+                or result.mentions
+            )
             and not allow_empty
         ):
             raise LoadError(
@@ -179,6 +207,25 @@ def build_bundle(
             )
         budget_facts.extend(result.budget_facts)
         contracts.extend(result.contracts)
+        for attribution in result.attributions:
+            attributions_by_key.setdefault(
+                (attribution.entity_siren, attribution.legal_ref, attribution.provenance),
+                attribution,
+            )
+        for mention in result.mentions:
+            # Identity includes report_date: a recurring publication (same title+type+entity) for a
+            # different year is a distinct mention and must not collapse (golden rule #5). Matches
+            # the bundle sort key and the fiche row key — one identity tuple, three sites.
+            mentions_by_key.setdefault(
+                (
+                    mention.entity_siren,
+                    mention.report_ref,
+                    mention.report_date,
+                    mention.mention_type.value if mention.mention_type is not None else None,
+                    mention.provenance,
+                ),
+                mention,
+            )
 
     return LoadBundle(
         entities=sorted(entities_by_siren.values(), key=lambda e: e.siren or ""),
@@ -206,6 +253,20 @@ def build_bundle(
                 c.montant_eur or 0.0,
             ),
         ),
+        attributions=sorted(
+            attributions_by_key.values(),
+            key=lambda a: (a.entity_siren or "", a.legal_ref or "", a.provenance or ""),
+        ),
+        mentions=sorted(
+            mentions_by_key.values(),
+            key=lambda m: (
+                m.entity_siren or "",
+                m.report_date or "",
+                m.report_ref or "",
+                m.mention_type.value if m.mention_type is not None else "",
+                m.provenance or "",
+            ),
+        ),
         provenances=tuple(source_ids),
         skipped_unresolved=skipped_unresolved,
         reports=reports,
@@ -223,7 +284,9 @@ _SQL_HEADER = """\
 """
 
 
-def _delete_by_provenance(table: str, rows: Sequence[Edge | BudgetFact | Contract]) -> str:
+def _delete_by_provenance(
+    table: str, rows: Sequence[Edge | BudgetFact | Contract | Attribution | Mention]
+) -> str:
     """Render a DELETE scoped to exactly the provenances present in ``rows`` (or a no-op comment).
 
     Scope is derived from the rows produced *this run*, never the full input source set. The
@@ -272,6 +335,12 @@ def render_load_sql(bundle: LoadBundle) -> str:
         "-- above are the aggregated graph view; these are the per-contract rows (with nature).",
         _delete_by_provenance("contracts", bundle.contracts),
         render_insert("contracts", CONTRACT_COLUMNS, bundle.contracts),
+        "-- Attributions: legal mandates (FSC-27); provenance-scoped rebuild like edges.",
+        _delete_by_provenance("attributions", bundle.attributions),
+        render_insert("attributions", ATTRIBUTION_COLUMNS, bundle.attributions),
+        "-- Mentions: Cour des comptes oversight (FSC-62); provenance-scoped rebuild.",
+        _delete_by_provenance("mentions", bundle.mentions),
+        render_insert("mentions", MENTION_COLUMNS, bundle.mentions),
         "\ncommit;\n",
     ]
     return "\n".join(sections)
@@ -306,6 +375,10 @@ def load_summary(bundle: LoadBundle) -> str:
         f"  budget_facts: {len(bundle.budget_facts)} ({voted} voted, {executed} executed)",
         f"  contracts: {len(bundle.contracts)}",
     ]
+    if bundle.attributions:
+        lines.append(f"  attributions: {len(bundle.attributions)}")
+    if bundle.mentions:
+        lines.append(f"  mentions: {len(bundle.mentions)}")
     if rate is not None:
         lines.append(f"  operator SIREN resolution rate: {float(rate):.0%}")
     decp_rate = bundle.reports.get("decp_commande_publique", {}).get("resolution_rate")

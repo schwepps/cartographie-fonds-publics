@@ -256,10 +256,15 @@ sources:
     platform: rest
     endpoint_hint: "API Légifrance via https://piste.gouv.fr"
     discovery:
+      # Phase 1 = ÉDITORIAL : les attributions viennent d'un YAML revu
+      # (data/attributions/ministres.yaml), transformé par ingestion.transforms.legifrance_attributions
+      # et résolu au SIREN via ministeres.yaml. Le connecteur `rest` enregistre la plateforme et lit
+      # la clé PISTE, mais l'extraction live (PISTE OAuth2 -> recherche LODA -> lien texte->entité) est
+      # le palier de montée en charge (FSC-66). Voir data/attributions/README.md.
       strategy: "Recherche par texte (décret d'attribution) ; rattachement éditorial/NLP à l'entité"
     format: [json, xml]
     schema: legi
-    join_keys: [entite_cible]         # à reconstruire (texte -> entité)
+    join_keys: [entite_cible]         # éditorial en Phase 1 ; texte -> entité = FSC-66
     cadence: continuous
     license: "Licence Ouverte 2.0"
     auth: "clé API PISTE (compte gratuit) — à provisionner AVANT cette couche"
@@ -321,10 +326,15 @@ sources:
     description: "Rapports publiés, recommandations ; CRTC pour le local. Texte intégral ouvert depuis 2016."
     platform: datagouv_api
     discovery:
-      strategy: "organizations/<cour-des-comptes>/datasets ; datasets 'rapports publiés' / 'recommandations'"
+      # Découverte par recherche catalogue (org Cour des comptes = `cour-des-comptes`), jamais un slug
+      # gelé (golden rule #2). Le connecteur datagouv résout le jeu + sa ressource (le corpus est
+      # surtout du PDF/txt -> ressource non-CSV acceptée). Le lien rapport->entité vient de la table
+      # éditoriale revue (data/mentions/cour_des_comptes.yaml) car les métadonnées ne portent pas
+      # d'entité ; le NLP plein-texte est le palier de montée en charge (FSC-67, hors périmètre ici).
+      strategy: "search_datasets(query='recommandations publiées par la Cour des comptes')"
     format: [csv_metadata, pdf]
     schema: none
-    join_keys: [entite_mentionnee]    # extraction à faire
+    join_keys: [entite_mentionnee]    # via mapping éditorial revu (FSC-62) ; NLP = FSC-67
     cadence: continuous
     license: "Licence Ouverte 2.0"
     volatility:

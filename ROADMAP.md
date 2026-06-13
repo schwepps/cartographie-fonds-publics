@@ -6,8 +6,9 @@ next. Rationale in the feasibility & maintainability briefs and [ADRs](docs/adr/
 
 > **Status:** Phases 0–4 are **delivered locally** — the product is feature-complete end-to-end
 > (ingest → resolve → load → read) on the full four-layer perimeter with anti-double-counting
-> proven. Remaining before a public launch: ministerial **attributions** ([FSC-27]), a **Cour des
-> comptes oversight** layer, and **deployment**. See "Remaining before launch" below.
+> proven. Ministerial **attributions** ([FSC-27]) and the **Cour des comptes oversight** layer
+> ([FSC-62]) are now delivered (manual/metadata-first). Remaining before a public launch:
+> **deployment**. See "Remaining before launch" below.
 
 ## Phase 0 — Validation spike  ·  *delivered*
 
@@ -20,14 +21,15 @@ Prove the data join on real data before committing to the build.
 - [x] Measure the **SIREN match rate** across operators ↔ budget ↔ DECP — **CONDITIONAL GO**
       ([docs/phase0-siren-match-results.md](docs/phase0-siren-match-results.md))
 
-## Phase 1 — État-central MVP  ·  *delivered (attributions deferred)*
+## Phase 1 — État-central MVP  ·  *delivered*
 
 The graph that proves the concept.
 
 - [x] `Entity` + `Edge` model in Postgres (raw SQL migrations in `supabase/migrations`)
 - [x] Connectors: jaune opérateurs, PLF/LFI, execution (situation mensuelle)
 - [x] Graph: ministries → operators (tutelle), budget facts attached to entities
-- [ ] Attributions: decrees (Légifrance/PISTE) + LOLF nomenclature — **deferred** ([FSC-27])
+- [x] Attributions: décrets d'attribution (Légifrance/PISTE) — editorial/manual-first; live
+      text→entity extraction deferred ([FSC-27]; scaling path [FSC-66])
 - [x] Reads: PostgREST tables + the `graph_neighbors` RPC under RLS (no bespoke API server)
 - [x] Web: institutional graph (custom 2D-canvas force layout, superseding Sigma v1) + entity
       sheet (budget · mission · tutelle)
@@ -54,9 +56,13 @@ First "public money → private operator" view.
 
 ## Remaining before launch
 
-- [ ] **Attributions** — ministerial decrees (Légifrance/PISTE) + LOLF nomenclature ([FSC-27])
-- [ ] **Cour des comptes / CRTC oversight** layer (audit findings linked to entities)
+- [x] **Attributions** — ministerial décrets (Légifrance/PISTE), editorial/manual-first ([FSC-27])
+- [x] **Cour des comptes / CRTC oversight** layer — audit findings as mentions on entities,
+      metadata-first ([FSC-62])
 - [ ] **Deployment** — production Supabase + Vercel per [DEPLOYMENT.md](DEPLOYMENT.md)
+
+Editorial-layer follow-ups (non-blocking): live PISTE text→entity extraction ([FSC-66]), Cour des
+comptes full-text NLP linking ([FSC-67]), and the graph "épinglé par la Cour" badge ([FSC-65]).
 
 ## Cross-cutting (ongoing)
 
@@ -66,3 +72,7 @@ First "public money → private operator" view.
 - [ ] Entity crosswalk governance (quarterly review of unresolved links)
 
 [FSC-27]: https://linear.app/fscconsulting/issue/FSC-27
+[FSC-62]: https://linear.app/fscconsulting/issue/FSC-62
+[FSC-65]: https://linear.app/fscconsulting/issue/FSC-65
+[FSC-66]: https://linear.app/fscconsulting/issue/FSC-66
+[FSC-67]: https://linear.app/fscconsulting/issue/FSC-67

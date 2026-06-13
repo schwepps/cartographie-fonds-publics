@@ -14,6 +14,7 @@ import ingestion.connectors.datagouv_api as mod
 import pytest
 from ingestion.connectors import get_connector
 from ingestion.connectors.datagouv_api import DEFAULT_API_BASE, DatagouvApiConnector
+from ingestion.errors import SnapshotError
 from ingestion.registry import get_source
 
 DATASETS_URL = f"{DEFAULT_API_BASE}/datasets/"
@@ -64,6 +65,46 @@ def test_snapshot_writes_provenance_parquet(load_fixture, tmp_path, monkeypatch)
     path = connector.snapshot(load_fixture("operateurs_sample.csv"), "operateurs_etat")
     assert path.endswith(".parquet")
     assert (tmp_path / "operateurs_etat" / "latest.json").is_file()
+
+
+def test_select_resource_prefers_csv_then_falls_back_to_non_csv() -> None:
+    # CSV present → the largest CSV wins (existing CSV sources unaffected by the FSC-62 relaxation).
+    dataset = {
+        "title": "X",
+        "resources": [
+            {"format": "csv", "url": "csv-small", "filesize": 10},
+            {"format": "csv", "url": "csv-big", "filesize": 99},
+            {"format": "pdf", "url": "pdf-huge", "filesize": 1000},
+        ],
+    }
+    assert DatagouvApiConnector._select_resource(dataset)["url"] == "csv-big"
+    # No CSV (the Cour des comptes corpus is PDF/txt) → fall back to the largest resource of any
+    # format, so discovery still resolves a snapshot-able resource (FSC-62).
+    txt_only = {
+        "title": "Recommandations publiées par la Cour des comptes",
+        "resources": [
+            {"format": "txt", "url": "txt", "filesize": 5},
+            {"format": "pdf", "url": "pdf", "filesize": 50},
+        ],
+    }
+    assert DatagouvApiConnector._select_resource(txt_only)["url"] == "pdf"
+
+
+def test_select_resource_fails_loud_on_empty_dataset() -> None:
+    with pytest.raises(ValueError, match="No resource"):
+        DatagouvApiConnector._select_resource({"title": "Empty", "resources": []})
+
+
+def test_snapshot_fmt_maps_tabular_and_fails_loud_on_non_tabular() -> None:
+    # CSV (and unknown/blank — the historic default for the tabular sources) → csv; json → json.
+    assert DatagouvApiConnector._snapshot_fmt("csv") == "csv"
+    assert DatagouvApiConnector._snapshot_fmt(None) == "csv"
+    assert DatagouvApiConnector._snapshot_fmt("") == "csv"
+    assert DatagouvApiConnector._snapshot_fmt("json") == "json"
+    assert DatagouvApiConnector._snapshot_fmt("geojson") == "json"
+    # A non-tabular resource (the Cour des comptes PDF corpus) must fail loud, never parse as CSV.
+    with pytest.raises(SnapshotError, match="cannot snapshot"):
+        DatagouvApiConnector._snapshot_fmt("pdf")
 
 
 def test_stage_defers_to_fsc35() -> None:

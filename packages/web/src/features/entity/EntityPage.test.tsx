@@ -116,6 +116,56 @@ vi.mock("../../lib/supabase", () => {
       exercice: 2026,
     },
   ];
+  // Attributions keyed by entity_siren (FSC-27): only the ESR ministry has a mandate here.
+  const attribBySiren: Record<string, Record<string, unknown>[]> = {
+    "110044013": [
+      {
+        entity_siren: "110044013",
+        legal_ref: "Décret n° 2025-1021 du 29 octobre 2025",
+        txt: "Compétence enseignement supérieur et recherche.",
+        source_url: "https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000052457282",
+        provenance: "legifrance_attributions",
+      },
+    ],
+  };
+  // Mentions keyed by entity_siren (FSC-62): CNRS has a safe-url rapport + an UNSAFE-url référé.
+  const mentionsBySiren: Record<string, Record<string, unknown>[]> = {
+    "180089013": [
+      {
+        entity_siren: "180089013",
+        report_ref: "Rapport CNRS 2025",
+        report_date: "2025-03-25",
+        mention_type: "rapport",
+        url: "https://www.ccomptes.fr/fr/publications/cnrs-2025",
+        note: "Trésorerie pléthorique.",
+        provenance: "cour_des_comptes",
+        license: "Licence Ouverte 2.0",
+      },
+      {
+        entity_siren: "180089013",
+        report_ref: "Référé CNRS SHS",
+        report_date: "2021-04-27",
+        mention_type: "recommandation",
+        url: "javascript:alert(1)", // unsafe — must render as text, never a link
+        note: "Pilotage des SHS.",
+        provenance: "cour_des_comptes",
+        license: "Licence Ouverte 2.0",
+      },
+    ],
+    // A legacy/NULL mention_type must not be mislabeled as "Rapport".
+    "180035024": [
+      {
+        entity_siren: "180035024",
+        report_ref: "Sécurité sociale 2024",
+        report_date: "2024-09-01",
+        mention_type: null,
+        url: "https://www.ccomptes.fr/fr/publications/securite-sociale-2024",
+        note: "RALFSS.",
+        provenance: "cour_des_comptes",
+        license: "Licence Ouverte 2.0",
+      },
+    ],
+  };
 
   const from = (table: string) => {
     const filter: { col?: string; val?: unknown; inVals?: string[] } = {};
@@ -123,6 +173,8 @@ vi.mock("../../lib/supabase", () => {
       if (table === "edges") return edges;
       if (table === "budget_facts") return budgetBySiren[String(filter.val)] ?? [];
       if (table === "contracts") return contracts;
+      if (table === "attributions") return attribBySiren[String(filter.val)] ?? [];
+      if (table === "mentions") return mentionsBySiren[String(filter.val)] ?? [];
       if (table === "entities") {
         if (filter.inVals) return filter.inVals.map((s) => entityRows[s]).filter(Boolean);
         if (filter.col === "parent_siren") {
@@ -139,6 +191,7 @@ vi.mock("../../lib/supabase", () => {
         return builder;
       },
       or: () => builder,
+      order: () => builder,
       in: (_col: string, vals: string[]) => {
         filter.inVals = vals;
         return builder;
@@ -215,6 +268,63 @@ describe("EntityPage (fiche)", () => {
     await screen.findByRole("heading", { level: 1 });
     const table = await screen.findByRole("table", { name: /Contrats \(DECP\)/ });
     expect(within(table).getByText(/329200521/)).toBeInTheDocument();
+  });
+
+  it("renders attributions with a Légifrance external link (FSC-27, state entity)", async () => {
+    renderSheet(MESR);
+    await screen.findByRole("heading", { name: /Attributions \/ mandat légal/ });
+    const link = screen.getByRole("link", { name: /Décret n° 2025-1021/ });
+    expect(link).toHaveAttribute(
+      "href",
+      "https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000052457282",
+    );
+    expect(link).toHaveAttribute("target", "_blank");
+    expect(link).toHaveAttribute("rel", expect.stringContaining("noopener"));
+    // RGAA: a screen-reader warning that the link opens a new window.
+    expect(within(link).getByText(/\(nouvelle fenêtre\)/)).toBeInTheDocument();
+  });
+
+  it("shows the attributions empty-state for a state entity with none", async () => {
+    renderSheet("180089013"); // CNRS: state, no attributions seeded here
+    await screen.findByRole("heading", { name: /Attributions \/ mandat légal/ });
+    expect(screen.getByText(/Aucune attribution légale renseignée/)).toBeInTheDocument();
+  });
+
+  it("hides the attributions section for a non-state entity", async () => {
+    renderSheet("200053781"); // Métropole de Lyon (local)
+    await screen.findByRole("heading", { level: 1, name: /Métropole de Lyon/ });
+    expect(
+      screen.queryByRole("heading", { name: /Attributions \/ mandat légal/ }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("renders Cour des comptes mentions with type tags and only http(s) links (FSC-62)", async () => {
+    renderSheet("180089013"); // CNRS has two mentions
+    const table = await screen.findByRole("table", { name: /Mentions Cour des comptes/ });
+    // Both types render as tags.
+    expect(within(table).getByText("Rapport")).toBeInTheDocument();
+    expect(within(table).getByText("Recommandation")).toBeInTheDocument();
+    // Safe https report renders as an external link…
+    const safe = within(table).getByRole("link", { name: /Rapport CNRS 2025/ });
+    expect(safe).toHaveAttribute("href", "https://www.ccomptes.fr/fr/publications/cnrs-2025");
+    expect(safe).toHaveAttribute("target", "_blank");
+    // …but the javascript: url is NEVER an href — the ref renders as plain text.
+    expect(within(table).queryByRole("link", { name: /Référé CNRS SHS/ })).not.toBeInTheDocument();
+    expect(within(table).getByText("Référé CNRS SHS")).toBeInTheDocument();
+  });
+
+  it("shows the Cour des comptes empty-state when there are no mentions", async () => {
+    renderSheet(MESR); // no mentions seeded for MESR
+    await screen.findByRole("heading", { name: /Cour des comptes/ });
+    expect(screen.getByText(/Aucune mention de la Cour des comptes recensée/)).toBeInTheDocument();
+  });
+
+  it("does not mislabel a NULL mention_type as Rapport (FSC-62)", async () => {
+    renderSheet("180035024"); // its single mention has mention_type: null
+    const table = await screen.findByRole("table", { name: /Mentions Cour des comptes/ });
+    expect(within(table).queryByText("Rapport")).not.toBeInTheDocument();
+    expect(within(table).queryByText("Recommandation")).not.toBeInTheDocument();
+    expect(within(table).getByText("—")).toBeInTheDocument(); // neutral placeholder for the type
   });
 
   it("has no accessibility violations", async () => {

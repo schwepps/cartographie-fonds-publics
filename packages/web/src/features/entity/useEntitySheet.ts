@@ -1,7 +1,15 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
 import { isSiren } from "../../lib/siren";
-import type { BudgetFactRow, ContractRow, EdgeRow, EntityRow, RelatedEntity } from "./types";
+import type {
+  AttributionRow,
+  BudgetFactRow,
+  ContractRow,
+  EdgeRow,
+  EntityRow,
+  MentionRow,
+  RelatedEntity,
+} from "./types";
 
 export type EntitySheetState =
   | { status: "loading" }
@@ -15,6 +23,10 @@ export type EntitySheetState =
       children: RelatedEntity[];
       /** DECP contracts where this entity is the acheteur. */
       contracts: ContractRow[];
+      /** Legal mandates attached to this entity (FSC-27). */
+      attributions: AttributionRow[];
+      /** Cour des comptes / CRTC oversight mentions of this entity (FSC-62). */
+      mentions: MentionRow[];
       /** SIREN → linked entity (tutelle + relationship counterparts) for readable labels + shapes. */
       related: Map<string, RelatedEntity>;
     };
@@ -26,6 +38,8 @@ const EMPTY_READY: EntitySheetState = {
   budgetFacts: [],
   children: [],
   contracts: [],
+  attributions: [],
+  mentions: [],
   related: new Map(),
 };
 
@@ -53,26 +67,36 @@ export function useEntitySheet(siren: string): EntitySheetState {
         return;
       }
       setState({ status: "loading" });
-      const [entityRes, edgesRes, budgetRes, childrenRes, contractsRes] = await Promise.all([
-        supabase
-          .from("entities")
-          .select("siren,name,level,category,parent_siren,provenance")
-          .eq("siren", siren)
-          .maybeSingle(),
-        supabase
-          .from("edges")
-          .select("source_siren,target_siren,type,amount_eur,exercice,provenance")
-          .or(`source_siren.eq.${siren},target_siren.eq.${siren}`),
-        supabase
-          .from("budget_facts")
-          .select("exercice,mission,programme,amount_ae_eur,amount_cp_eur,executed")
-          .eq("entity_siren", siren),
-        supabase.from("entities").select("siren,name,level,category").eq("parent_siren", siren),
-        supabase
-          .from("contracts")
-          .select("acheteur_siren,titulaire_siren,montant_eur,nature,exercice")
-          .eq("acheteur_siren", siren),
-      ]);
+      const [entityRes, edgesRes, budgetRes, childrenRes, contractsRes, attribRes, mentionRes] =
+        await Promise.all([
+          supabase
+            .from("entities")
+            .select("siren,name,level,category,parent_siren,provenance")
+            .eq("siren", siren)
+            .maybeSingle(),
+          supabase
+            .from("edges")
+            .select("source_siren,target_siren,type,amount_eur,exercice,provenance")
+            .or(`source_siren.eq.${siren},target_siren.eq.${siren}`),
+          supabase
+            .from("budget_facts")
+            .select("exercice,mission,programme,amount_ae_eur,amount_cp_eur,executed")
+            .eq("entity_siren", siren),
+          supabase.from("entities").select("siren,name,level,category").eq("parent_siren", siren),
+          supabase
+            .from("contracts")
+            .select("acheteur_siren,titulaire_siren,montant_eur,nature,exercice")
+            .eq("acheteur_siren", siren),
+          supabase
+            .from("attributions")
+            .select("entity_siren,legal_ref,txt,source_url,provenance")
+            .eq("entity_siren", siren),
+          supabase
+            .from("mentions")
+            .select("entity_siren,report_ref,report_date,mention_type,url,note,provenance,license")
+            .eq("entity_siren", siren)
+            .order("report_date", { ascending: false }),
+        ]);
 
       if (cancelled) return;
       if (
@@ -80,7 +104,9 @@ export function useEntitySheet(siren: string): EntitySheetState {
         edgesRes.error ||
         budgetRes.error ||
         childrenRes.error ||
-        contractsRes.error
+        contractsRes.error ||
+        attribRes.error ||
+        mentionRes.error
       ) {
         console.error(
           "Entity sheet load failed",
@@ -88,7 +114,9 @@ export function useEntitySheet(siren: string): EntitySheetState {
             edgesRes.error ??
             budgetRes.error ??
             childrenRes.error ??
-            contractsRes.error,
+            contractsRes.error ??
+            attribRes.error ??
+            mentionRes.error,
         );
         setState({ status: "error" });
         return;
@@ -99,6 +127,8 @@ export function useEntitySheet(siren: string): EntitySheetState {
       const budgetFacts = (budgetRes.data as BudgetFactRow[] | null) ?? [];
       const children = (childrenRes.data as RelatedEntity[] | null) ?? [];
       const contracts = (contractsRes.data as ContractRow[] | null) ?? [];
+      const attributions = (attribRes.data as AttributionRow[] | null) ?? [];
+      const mentions = (mentionRes.data as MentionRow[] | null) ?? [];
 
       // Resolve name + level for every SIREN the sheet links to (tutelle parent + edge counterparts).
       // Children are already full rows; contract titulaires are external suppliers (kept as SIRENs).
@@ -124,7 +154,17 @@ export function useEntitySheet(siren: string): EntitySheetState {
         }
       }
 
-      setState({ status: "ready", entity, edges, budgetFacts, children, contracts, related });
+      setState({
+        status: "ready",
+        entity,
+        edges,
+        budgetFacts,
+        children,
+        contracts,
+        attributions,
+        mentions,
+        related,
+      });
     }
 
     void load();

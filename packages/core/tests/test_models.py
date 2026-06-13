@@ -8,6 +8,7 @@ from core.models import (
     Entity,
     Level,
     Mention,
+    MentionType,
     Nature,
 )
 from core.resolve import match_rate, normalize_name, normalize_siren
@@ -86,12 +87,60 @@ def test_attribution_and_mention_construct():
     assert Mention(report_ref="CdC-2025", note="cited").note == "cited"
 
 
+def test_attribution_carries_enriched_fields():
+    # FSC-27: a mandate links to a real legal reference + a registry provenance.
+    a = Attribution(
+        entity_siren="110044013",
+        legal_ref="Décret n° 2025-1021 du 29 octobre 2025",
+        txt="Compétence ESR",
+        source_url="https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000052457282",
+        provenance="legifrance_attributions",
+    )
+    assert a.entity_siren == "110044013"
+    assert a.source_url.startswith("https://")
+    assert a.provenance == "legifrance_attributions"
+
+
+def test_mention_carries_enriched_fields_and_type_enum():
+    # FSC-62: an oversight mention carries date/type/url/provenance/licence; type is a StrEnum.
+    m = Mention(
+        entity_siren="180089013",
+        report_ref="Le CNRS",
+        report_date="2025-03-25",
+        mention_type=MentionType.rapport,
+        url="https://www.ccomptes.fr/fr/publications/le-cnrs",
+        note="Trésorerie pléthorique",
+        provenance="cour_des_comptes",
+        license="Licence Ouverte 2.0",
+    )
+    assert m.mention_type == "rapport"  # StrEnum round-trips to the SQL CHECK value
+    assert m.url.startswith("https://")
+    assert m.license == "Licence Ouverte 2.0"
+    assert Mention().mention_type is None  # nullable
+
+
+def test_mention_rejects_invalid_type():
+    with pytest.raises(ValidationError):
+        Mention(report_ref="X", mention_type="avis")
+
+
+def test_source_urls_must_be_http_s_at_the_model_boundary():
+    # Golden rule #10: curated links are http(s) or absent (no javascript:/data:).
+    assert Attribution(source_url=None).source_url is None
+    assert Mention(url="").url is None  # empty normalises to None
+    with pytest.raises(ValidationError):
+        Attribution(source_url="javascript:alert(1)")
+    with pytest.raises(ValidationError):
+        Mention(url="data:text/html,x")
+
+
 def test_enum_vocabulary_matches_sql_check_constraints():
     # Pins the frozen contract: these value sets must equal the CHECK constraints in
-    # supabase/migrations/0001_init.sql. A typo here (or there) fails loud.
+    # supabase/migrations/0001_init.sql (mention_type: 0008). A typo here or there fails loud.
     assert {n.value for n in Level} == {"state", "local", "social", "delegated"}
     assert {t.value for t in EdgeType} == {"tutelle", "participation", "funds", "delegates"}
     assert {n.value for n in Nature} == {"marche", "concession"}
+    assert {m.value for m in MentionType} == {"rapport", "recommandation"}
 
 
 def test_contract_nature_enum():

@@ -43,6 +43,26 @@ OptionalSiren = Annotated[str | None, BeforeValidator(_validate_siren)]
 RequiredSiren = Annotated[str, BeforeValidator(_validate_siren)]
 
 
+def _validate_http_url(value: str | None) -> str | None:
+    """Accept None/empty or an http(s) URL; reject any other scheme.
+
+    Centralises the invariant the editorial loaders + the web fiche each enforce separately: a
+    curated source link must be http(s) (golden rule #10 — verifiable provenance), so a
+    ``javascript:``/``data:`` URL can never reach a stored row even from a future non-editorial
+    producer (the FSC-66/67 scaling paths). Validates at the frozen-model boundary, the one contract
+    every producer shares.
+    """
+    if value is None or value == "":
+        return None
+    if not isinstance(value, str) or not value.lower().startswith(("http://", "https://")):
+        raise ValueError(f"URL must be http(s): {value!r}")
+    return value
+
+
+# A source/reference URL: None/empty, or an http(s) URL (other schemes fail loud).
+HttpUrlStr = Annotated[str | None, BeforeValidator(_validate_http_url)]
+
+
 class Level(StrEnum):
     state = "state"
     local = "local"
@@ -70,6 +90,17 @@ class Nomenclature(StrEnum):
     m57 = "m57"  # local authorities (current accounting framework) — OFGL agrégats, cash basis
     m14 = "m14"  # local authorities (legacy framework, smaller communes)
     social = "social"  # social-security accounts (LFSS) — separate perimeter
+
+
+class MentionType(StrEnum):
+    """What kind of Cour des comptes / CRTC publication an entity is mentioned in (FSC-62).
+
+    Metadata-first oversight signal: a *rapport* (public/thematic report, observations
+    définitives) vs a *recommandation* (a specific recommendation issued to the body). Mirrors the
+    ``mentions.mention_type`` SQL ``CHECK``."""
+
+    rapport = "rapport"  # public/thematic report, observations
+    recommandation = "recommandation"  # a recommendation issued to the controlled body
 
 
 class FrozenModel(BaseModel):
@@ -123,16 +154,31 @@ class Contract(FrozenModel):
 
 
 class Attribution(FrozenModel):
-    """Legal mandate / competence attributed to an entity (table: attributions)."""
+    """Legal mandate / competence attributed to an entity (table: attributions, FSC-27).
+
+    The "why" layer: a décret d'attribution (or LOLF text) that mandates an entity. ``legal_ref`` is
+    the human reference (e.g. the JORF décret number) and ``source_url`` the real Légifrance link
+    that backs it (golden rule #10 — every mandate links to a verifiable source)."""
 
     entity_siren: OptionalSiren = None
-    legal_ref: str | None = None
-    txt: str | None = None
+    legal_ref: str | None = None  # human legal reference (e.g. "Décret n° 2024-… du …")
+    txt: str | None = None  # the competence / mandate text
+    source_url: HttpUrlStr = None  # Légifrance/JORF URL backing the legal_ref (http(s) only)
+    provenance: str | None = None  # source id from the registry (mirrors Entity/Edge.provenance)
 
 
 class Mention(FrozenModel):
-    """Free-text mention of an entity in a report or document (table: mentions)."""
+    """An entity mentioned in a Cour des comptes / CRTC publication (table: mentions, FSC-62).
+
+    Metadata-first oversight signal (« épinglé par la Cour »): which report, when, what kind, the
+    link, and a short note/excerpt. ``license`` is per-row because the audit corpus is not uniformly
+    licensed (e.g. the published-recommendations dataset is ODbL, not the registry's default)."""
 
     entity_siren: OptionalSiren = None
-    report_ref: str | None = None
-    note: str | None = None
+    report_ref: str | None = None  # report title / reference
+    report_date: str | None = None  # ISO date string (carried as text, like other dates)
+    mention_type: MentionType | None = None
+    url: HttpUrlStr = None  # source report URL (http(s) only)
+    note: str | None = None  # short note / excerpt
+    provenance: str | None = None  # source id from the registry (mirrors Entity/Edge.provenance)
+    license: str | None = None  # per-row licence (audit corpus is not uniformly licensed)
