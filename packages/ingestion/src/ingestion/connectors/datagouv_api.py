@@ -20,6 +20,7 @@ from typing import Any
 
 import httpx
 
+from ..errors import SnapshotError
 from ..snapshot import write_snapshot
 from ..validation import validate_extract
 from . import Connector, register
@@ -45,6 +46,7 @@ class DatagouvApiConnector(Connector):
         self._license: str | None = None
         self._schema_ref: str | None = None
         self._resource_url: str | None = None
+        self._resource_format: str | None = None  # data.gouv format of the selected resource
         self._cell_warnings: int = 0
 
     # -- discover ----------------------------------------------------------- #
@@ -60,6 +62,7 @@ class DatagouvApiConnector(Connector):
         schema = source.get("schema")
         self._schema_ref = schema.get("ref") if isinstance(schema, dict) else None
         self._resource_url = resource["url"]
+        self._resource_format = str(resource.get("format") or "").strip().lower() or None
         return {
             "dataset_id": dataset.get("id"),
             "title": dataset.get("title"),
@@ -86,7 +89,13 @@ class DatagouvApiConnector(Connector):
 
     # -- snapshot ----------------------------------------------------------- #
     def snapshot(self, raw: bytes, source_id: str) -> str:
-        """Persist the raw extract as a provenance-tagged Parquet snapshot; return its path."""
+        """Persist the raw extract as a provenance-tagged Parquet snapshot; return its path.
+
+        The snapshot format is derived from the *selected resource's* declared format — never
+        assumed CSV. ``write_snapshot`` tabularises csv/json only, so a non-tabular resource (e.g.
+        the Cour des comptes PDF/txt corpus surfaced by ``_select_resource``'s fallback) fails loud
+        here rather than being silently parsed as CSV.
+        """
         path = write_snapshot(
             raw,
             source_id=source_id,
@@ -95,8 +104,30 @@ class DatagouvApiConnector(Connector):
             license=self._license,
             schema_ref=self._schema_ref,
             cell_warnings=self._cell_warnings,
+            fmt=self._snapshot_fmt(self._resource_format),
         )
         return str(path)
+
+    @staticmethod
+    def _snapshot_fmt(resource_format: str | None) -> str:
+        """Map a data.gouv resource format to a snapshot format; fail loud on non-tabular.
+
+        ``write_snapshot`` only tabularises ``csv``/``json``. CSV (and an unknown/blank format —
+        the historic default for the tabular sources) snapshots as csv; json/geojson as json; any
+        explicitly non-tabular format (pdf, txt, xlsx, zip…) raises, since parsing it as CSV would
+        corrupt the snapshot. Such sources are curated editorially (their transform reads a reviewed
+        file, not the snapshot); a dedicated non-tabular snapshot path is future work (FSC-38).
+        """
+        fmt = (resource_format or "").strip().lower()
+        if fmt in ("", "csv"):
+            return "csv"
+        if fmt in ("json", "geojson"):
+            return "json"
+        raise SnapshotError(
+            f"datagouv_api cannot snapshot a {fmt!r} resource — write_snapshot tabularises "
+            "csv/json only. Non-tabular sources (e.g. the Cour des comptes PDF corpus) are curated "
+            "editorially via their transform; a dedicated non-tabular snapshot path is FSC-38."
+        )
 
     # -- stage -------------------------------------------------------------- #
     def stage(self, snapshot_uri: str, source_id: str) -> None:

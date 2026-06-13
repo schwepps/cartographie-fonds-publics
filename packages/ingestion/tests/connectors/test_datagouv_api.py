@@ -14,6 +14,7 @@ import ingestion.connectors.datagouv_api as mod
 import pytest
 from ingestion.connectors import get_connector
 from ingestion.connectors.datagouv_api import DEFAULT_API_BASE, DatagouvApiConnector
+from ingestion.errors import SnapshotError
 from ingestion.registry import get_source
 
 DATASETS_URL = f"{DEFAULT_API_BASE}/datasets/"
@@ -92,6 +93,18 @@ def test_select_resource_prefers_csv_then_falls_back_to_non_csv() -> None:
 def test_select_resource_fails_loud_on_empty_dataset() -> None:
     with pytest.raises(ValueError, match="No resource"):
         DatagouvApiConnector._select_resource({"title": "Empty", "resources": []})
+
+
+def test_snapshot_fmt_maps_tabular_and_fails_loud_on_non_tabular() -> None:
+    # CSV (and unknown/blank — the historic default for the tabular sources) → csv; json → json.
+    assert DatagouvApiConnector._snapshot_fmt("csv") == "csv"
+    assert DatagouvApiConnector._snapshot_fmt(None) == "csv"
+    assert DatagouvApiConnector._snapshot_fmt("") == "csv"
+    assert DatagouvApiConnector._snapshot_fmt("json") == "json"
+    assert DatagouvApiConnector._snapshot_fmt("geojson") == "json"
+    # A non-tabular resource (the Cour des comptes PDF corpus) must fail loud, never parse as CSV.
+    with pytest.raises(SnapshotError, match="cannot snapshot"):
+        DatagouvApiConnector._snapshot_fmt("pdf")
 
 
 def test_stage_defers_to_fsc35() -> None:
