@@ -12,11 +12,13 @@ from typing import Annotated
 
 import httpx
 import typer
+import yaml
 from core.crosswalk import CrosswalkStatus
 from core.models import Entity, Level
 from core.resolution import resolve_entities
 
 from .connectors import Connector, UnknownPlatformError, get_connector
+from .connectors.cour_des_comptes_pdf import fetch_pdf
 from .connectors.rest import RestConnector
 from .crosswalk_io import (
     CROSSWALK_PATH,
@@ -31,11 +33,15 @@ from .crosswalk_io import (
 from .curate_operators import SearchFn, curate
 from .demo_seed import DEMO_SQL_PATH, emit_demo_sql
 from .load import LOAD_SQL_PATH, emit_load_sql, load_summary
+from .mentions_candidates_io import CANDIDATES_PATH as MENTION_CANDIDATES_PATH
+from .mentions_candidates_io import write_candidates as write_mention_candidates
 from .registry import Source, get_source, sources
 from .seed import SEED_SQL_PATH, emit_seed_sql
 from .snapshot import SNAPSHOT_ROOT
 from .tabular import parse_csv_bytes
 from .transforms import get_transform
+from .transforms.cour_des_comptes_extract import ReportInput
+from .transforms.cour_des_comptes_extract import build_candidates as build_mention_candidates
 from .transforms.legifrance_candidates import (
     CANDIDATES_PATH as ATTRIBUTION_CANDIDATES_PATH,
 )
@@ -59,6 +65,9 @@ COVERAGE_RATE_MIN = 0.66
 # Match-rate floor for `attributions-candidates` (FSC-66): below this, the décret→ministry linker is
 # under-resolving and the run fails loud so a degraded extraction is never silently accepted.
 ATTRIBUTION_MATCH_RATE_MIN = 0.5
+
+# Match-rate floor for `extract-mentions` (FSC-67): same intent for the report→entity linker.
+MENTION_MATCH_RATE_MIN = 0.5
 
 # recherche-entreprises politeness (curation): the published limit is ~7 req/s. Same values the
 # spike names (RATE_LIMIT_SLEEP / SEARCH_PAGE_SIZE) — kept here so the CLI is self-contained.
@@ -386,6 +395,69 @@ def attributions_candidates(
         typer.echo(
             f"[attributions-candidates] match rate {rate:.0%} < {min_match_rate:.0%} floor",
             err=True,
+        )
+        raise typer.Exit(code=1)
+
+
+def _load_report_specs(path: Path) -> list[dict[str, str]]:
+    """Read a YAML list of report specs (url/report_ref/report_date/mention_type[/license])."""
+    with open(path, encoding="utf-8") as fh:
+        data = yaml.safe_load(fh) or {}
+    specs = data.get("reports") if isinstance(data, dict) else None
+    if not isinstance(specs, list) or not specs:
+        raise typer.BadParameter(f"{path}: expected a non-empty 'reports' list")
+    return specs
+
+
+@app.command(name="extract-mentions")
+def extract_mentions(
+    reports: Annotated[
+        Path, typer.Option(help="YAML of report specs (url/report_ref/report_date/mention_type).")
+    ],
+    out: Annotated[
+        Path, typer.Option(help="Candidate backlog YAML to write.")
+    ] = MENTION_CANDIDATES_PATH,
+    crosswalk: Annotated[Path, typer.Option(help="Crosswalk YAML path.")] = CROSSWALK_PATH,
+    min_match_rate: Annotated[
+        float, typer.Option(help="Exit nonzero below this report→entity match rate.")
+    ] = MENTION_MATCH_RATE_MIN,
+) -> None:
+    """Parse Cour des comptes report PDFs → entity mention candidates → review backlog (FSC-67).
+
+    Downloads each report PDF directly (not the snapshot layer — PDFs are non-tabular, FSC-38),
+    extracts text, links named entities to a SIREN via the reviewed crosswalk + ministry reference,
+    and writes the candidates to a human-review backlog — **never auto-published**. Promotion into
+    ``data/mentions/cour_des_comptes.yaml`` is manual. Exits nonzero below the match-rate floor.
+    """
+    specs = _load_report_specs(reports)
+    inputs = [
+        ReportInput(
+            url=str(spec["url"]),
+            report_ref=str(spec.get("report_ref") or ""),
+            report_date=spec.get("report_date"),
+            mention_type=str(spec.get("mention_type") or "rapport"),
+            pdf_bytes=fetch_pdf(str(spec["url"])),
+            license=spec.get("license"),
+        )
+        for spec in specs
+    ]
+    result = build_mention_candidates(
+        inputs,
+        crosswalk_entries=load_entries(crosswalk),
+        ministry_entries=load_ministries(),
+    )
+    write_mention_candidates(result, out)
+    rate = result.report["match_rate"]
+    rate_str = f"{rate:.0%}" if rate is not None else "n/a"
+    typer.echo(
+        f"[extract-mentions] {result.report['candidates_resolved']}/"
+        f"{result.report['candidates_total']} candidates resolved (match rate {rate_str}); "
+        f"{result.report['reports_with_candidates']}/{result.report['reports_total']} reports "
+        f"with a hit -> backlog {out}"
+    )
+    if rate is not None and rate < min_match_rate:
+        typer.echo(
+            f"[extract-mentions] match rate {rate:.0%} < {min_match_rate:.0%} floor", err=True
         )
         raise typer.Exit(code=1)
 

@@ -61,6 +61,9 @@ coverage: ## Report operator->SIREN coverage over the committed crosswalk (FSC-5
 attributions-candidates: ## Discover décrets d'attribution via PISTE/Légifrance -> review backlog (needs PISTE secret, FSC-66)
 	uv run python -m ingestion.cli attributions-candidates
 
+extract-mentions: ## Parse Cour des comptes report PDFs -> entity mention review backlog (FSC-67); REPORTS=path/to/reports.yaml
+	uv run python -m ingestion.cli extract-mentions --reports $(REPORTS)
+
 curate: ## Promote pending operators to reviewed via recherche-entreprises (dry-run; --apply to write, FSC-56)
 	uv run python -m ingestion.cli curate-operators
 
