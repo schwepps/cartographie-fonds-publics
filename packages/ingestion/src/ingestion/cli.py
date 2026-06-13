@@ -17,12 +17,14 @@ from core.models import Entity, Level
 from core.resolution import resolve_entities
 
 from .connectors import Connector, UnknownPlatformError, get_connector
+from .connectors.rest import RestConnector
 from .crosswalk_io import (
     CROSSWALK_PATH,
     CURATED_STATUSES,
     dump_entries,
     load_crosswalk,
     load_entries,
+    load_ministries,
     load_seed_csv,
     merge_seed,
 )
@@ -34,6 +36,16 @@ from .seed import SEED_SQL_PATH, emit_seed_sql
 from .snapshot import SNAPSHOT_ROOT
 from .tabular import parse_csv_bytes
 from .transforms import get_transform
+from .transforms.legifrance_candidates import (
+    CANDIDATES_PATH as ATTRIBUTION_CANDIDATES_PATH,
+)
+from .transforms.legifrance_candidates import (
+    SOURCE_ID as LEGIFRANCE_SOURCE_ID,
+)
+from .transforms.legifrance_candidates import (
+    extract_attribution_candidates,
+    write_candidates,
+)
 
 app = typer.Typer(help="Registry-driven ingestion pipeline.")
 
@@ -43,6 +55,10 @@ RESOLVE_RATE_MIN = 0.5
 # Coverage floor for `make coverage` (FSC-56). The acceptance target is ≥90% (incremental curation);
 # this floor guards against a regression below the 66% machine-seeded `auto` baseline.
 COVERAGE_RATE_MIN = 0.66
+
+# Match-rate floor for `attributions-candidates` (FSC-66): below this, the décret→ministry linker is
+# under-resolving and the run fails loud so a degraded extraction is never silently accepted.
+ATTRIBUTION_MATCH_RATE_MIN = 0.5
 
 # recherche-entreprises politeness (curation): the published limit is ~7 req/s. Same values the
 # spike names (RATE_LIMIT_SLEEP / SEARCH_PAGE_SIZE) — kept here so the CLI is self-contained.
@@ -328,6 +344,50 @@ def load(
     written, bundle = emit_load_sql(out, snapshot_root=root, allow_empty=allow_empty)
     typer.echo(load_summary(bundle))
     typer.echo(f"[load] wrote {written}")
+
+
+@app.command(name="attributions-candidates")
+def attributions_candidates(
+    out: Annotated[
+        Path, typer.Option(help="Candidate backlog YAML to write.")
+    ] = ATTRIBUTION_CANDIDATES_PATH,
+    min_match_rate: Annotated[
+        float, typer.Option(help="Exit nonzero below this décret→ministry match rate.")
+    ] = ATTRIBUTION_MATCH_RATE_MIN,
+) -> None:
+    """Discover décrets d'attribution via PISTE/Légifrance and write a review backlog (FSC-66).
+
+    Runs the live discover→extract loop (needs the operator-provisioned PISTE OAuth2 secret), links
+    each décret to a ministry by deterministic title-token matching, and writes the candidates to a
+    human-review backlog — **never auto-published**. Promotion into the reviewed
+    ``data/attributions/ministres.yaml`` is a manual step (see data/attributions/README.md). Exits
+    nonzero below the match-rate floor.
+    """
+    connector = RestConnector()
+    if not connector.has_credentials:
+        raise typer.BadParameter(
+            "PISTE credentials absent — set PISTE_CLIENT_ID / PISTE_CLIENT_SECRET (a free, "
+            "operator-provisioned account) to run the live extraction. Phase-1 attributions still "
+            "render from the reviewed editorial YAML in the meantime."
+        )
+    source = get_source(LEGIFRANCE_SOURCE_ID).raw
+    resolved = connector.discover(source)
+    raw = connector.extract(resolved)
+    decrees = json.loads(raw).get("texts", [])
+    result = extract_attribution_candidates(decrees, ministries=load_ministries())
+    write_candidates(result, out)
+    rate = result.report["match_rate"]
+    rate_str = f"{rate:.0%}" if rate is not None else "n/a"
+    typer.echo(
+        f"[attributions-candidates] {result.report['matched']}/{result.report['total']} décrets "
+        f"linked (match rate {rate_str}); {result.report['unresolved']} -> backlog {out}"
+    )
+    if rate is not None and rate < min_match_rate:
+        typer.echo(
+            f"[attributions-candidates] match rate {rate:.0%} < {min_match_rate:.0%} floor",
+            err=True,
+        )
+        raise typer.Exit(code=1)
 
 
 @app.command()

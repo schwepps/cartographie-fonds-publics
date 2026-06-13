@@ -1,24 +1,33 @@
-"""Connector for ``platform: rest`` sources — the PISTE/Légifrance API (FSC-27, manual-first).
+"""Connector for ``platform: rest`` sources — the PISTE/Légifrance API (FSC-27 → FSC-66).
 
 The registry source ``legifrance_attributions`` is ``platform: rest`` with ``auth: clé API PISTE``.
-This connector registers that platform with the factory and reads the PISTE OAuth2 credentials, but
-**Phase-1 attributions are editorial**: the curated mandates come from a committed YAML transformed
-by ``ingestion.transforms.legifrance_attributions`` (the offline source of truth). Live discovery
-(PISTE OAuth2 token → Légifrance LODA search for « décret d'attribution » → text→entity linking) is
-the documented **scaling path**, tracked in **FSC-66** — so ``discover``/``extract`` fail loud with
-an actionable message rather than silently doing nothing. This keeps the lowest-priority Phase-1
-connector lean while honouring the registry's ``platform: rest`` (today ``get_connector`` would
-otherwise raise ``UnknownPlatformError``) and reading the secret from the env (never committed).
+This connector performs the live discovery loop: a PISTE OAuth2 *client-credentials* token mint, a
+Légifrance **LODA** search for « décret d'attribution » (discovery by query — never a frozen text
+id, golden rule #2), and a per-text *consult* to fetch the full text. ``extract`` returns the
+décrets as JSON for the deterministic, editorial-assisted text→entity linker
+(:mod:`ingestion.transforms.legifrance_candidates`), which routes each décret to a ministry SIREN
+candidate or the human-review backlog — **never auto-published** (golden rule #5).
 
-``validate``/``snapshot`` delegate to the shared helpers so the class is concrete and ready for the
-FSC-66 live path; ``stage`` defers to the cross-source loader (FSC-35), like the other connectors.
+The PISTE credentials are read from the environment (server/CI only, never committed, never the
+browser). ``discover``/``extract`` fail loud with an actionable message when they are absent, so the
+live path is opt-in behind the operator-provisioned secret. ``validate``/``snapshot`` delegate to
+the shared helpers; ``stage`` defers to the cross-source loader (FSC-35), like the other connectors.
+
+The published « pourquoi » layer stays the reviewed editorial YAML
+(``ingestion.transforms.legifrance_attributions`` → ``data/attributions/ministres.yaml``): this
+connector + the candidate linker are the (semi-)automated *discovery* that feeds the review backlog,
+not a replacement for human validation.
 """
 
 from __future__ import annotations
 
+import json
 import os
+import re
 from datetime import UTC, datetime
 from typing import Any
+
+import httpx
 
 from ..snapshot import write_snapshot
 from ..validation import validate_extract
@@ -29,22 +38,41 @@ from . import Connector, register
 PISTE_CLIENT_ID_ENV = "PISTE_CLIENT_ID"
 PISTE_CLIENT_SECRET_ENV = "PISTE_CLIENT_SECRET"
 
-# PISTE / Légifrance API hosts (platform infrastructure, not a document id). Documented for FSC-66.
+# PISTE / Légifrance API hosts (platform infrastructure, not a document id).
 PISTE_TOKEN_URL = "https://oauth.piste.gouv.fr/api/oauth/token"
+PISTE_SCOPE = "openid"
 LEGIFRANCE_API_BASE = "https://api.piste.gouv.fr/dila/legifrance/lf-engine-app"
+LODA_SEARCH_PATH = "/search"
+LODA_CONSULT_PATH = "/consult/lawDecree"
+# Public Légifrance permalink base for a LODA text (the human-citable source_url on each candidate).
+LEGIFRANCE_LODA_BASE = "https://www.legifrance.gouv.fr/loda/id"
 
-_SCALING_MSG = (
-    "Live PISTE/Légifrance extraction is not implemented yet — it is the documented scaling path "
-    "(FSC-66): PISTE OAuth2 token -> Légifrance LODA search for « décret d'attribution » -> "
-    "text->entity linking, human-reviewed. Phase-1 ministerial attributions are EDITORIAL: see "
-    "ingestion.transforms.legifrance_attributions (data/attributions/ministres.yaml). Set "
-    f"{PISTE_CLIENT_ID_ENV}/{PISTE_CLIENT_SECRET_ENV} and implement FSC-66 to enable the live path."
+DEFAULT_DECREE_QUERY = "décret d'attribution"
+DEFAULT_LICENSE = "Licence Ouverte 2.0"
+# Envelope key wrapping the décret records in the extract JSON — shared by extract() (writer) and
+# snapshot() (record_path, so write_snapshot tabularises the array, not the wrapping object).
+EXTRACT_ENVELOPE_KEY = "texts"
+SEARCH_PAGE_SIZE = 50
+HTTP_TIMEOUT = 30.0
+USER_AGENT = "cartographie-fonds-publics/ingestion (+https://cartographie-fonds-publics.fr)"
+
+_MISSING_CREDS_MSG = (
+    "Live PISTE/Légifrance extraction needs the OAuth2 credentials "
+    f"{PISTE_CLIENT_ID_ENV}/{PISTE_CLIENT_SECRET_ENV} (a free PISTE account, provisioned by an "
+    "operator — it cannot be minted from code). Set them in the environment (CI secret / .env, "
+    "never committed) to run discover/extract. Phase-1 attributions render from the reviewed "
+    "editorial YAML in the meantime (ingestion.transforms.legifrance_attributions)."
 )
+
+# A query phrase named in the registry discovery.strategy, e.g. "...(décret d'attribution)...".
+_PAREN_RE = re.compile(r"\(([^)]+)\)")
+_HTML_TAG_RE = re.compile(r"<[^>]+>")
+_WS_RE = re.compile(r"\s+")
 
 
 @register("rest")
 class RestConnector(Connector):
-    """PISTE/Légifrance connector scaffold. Registers the platform + reads OAuth2 credentials."""
+    """PISTE/Légifrance connector: OAuth2 token → LODA search → consult (FSC-66)."""
 
     def __init__(self) -> None:
         # Empty string env vars (the .env.example placeholders) count as absent.
@@ -53,6 +81,7 @@ class RestConnector(Connector):
         self._source_id: str = "legifrance_attributions"
         self._license: str | None = None
         self._source_ref: str | None = None
+        self._token: str | None = None
 
     @property
     def has_credentials(self) -> bool:
@@ -60,17 +89,50 @@ class RestConnector(Connector):
         return bool(self._client_id and self._client_secret)
 
     # -- discover ----------------------------------------------------------- #
-    def discover(self, _source: dict[str, Any]) -> dict[str, Any]:
-        """Defer to the editorial transform — live PISTE discovery is FSC-66 (fails loud).
+    def discover(self, source: dict[str, Any]) -> dict[str, Any]:
+        """Mint a PISTE token, run the LODA search for décrets d'attribution, return the hits.
 
-        Provenance (source id, licence, resource ref) is captured at its real point of use when
-        FSC-66 implements the live discover→extract→snapshot loop, not here where it would be dead.
+        Discovery is by **query** (derived from the registry ``discovery.strategy`` or the default
+        « décret d'attribution »), never a frozen text id — the ids come back from the API payload
+        (golden rule #2). Provenance (source id, licence, search endpoint) is captured for snapshot.
         """
-        raise NotImplementedError(_SCALING_MSG)
+        self._source_id = str(source.get("id") or self._source_id)
+        self._license = source.get("license") or DEFAULT_LICENSE
+        query = _decree_query(source)
+        with httpx.Client(headers={"User-Agent": USER_AGENT}, timeout=HTTP_TIMEOUT) as client:
+            token = self._mint_token(client)
+            payload = self._loda_search(client, token, query)
+        texts = _parse_search_results(payload)
+        self._source_ref = f"{LEGIFRANCE_API_BASE}{LODA_SEARCH_PATH}"
+        return {
+            "source_id": self._source_id,
+            "license": self._license,
+            "source_ref": self._source_ref,
+            "query": query,
+            "texts": texts,
+        }
 
     # -- extract ------------------------------------------------------------ #
     def extract(self, resolved: dict[str, Any]) -> bytes:
-        raise NotImplementedError(_SCALING_MSG)
+        """Consult the full text of each discovered décret; return them as JSON bytes.
+
+        The output (``{"texts": [{id, cid, title, url, date, content}, …]}``) is the input to the
+        deterministic text→entity candidate linker; it is also what ``snapshot`` persists for
+        provenance/reproducibility.
+        """
+        texts = resolved.get("texts") or []
+        if not texts:
+            raise ValueError(
+                "no LODA texts to extract — discover() returned an empty result set "
+                f"(query {resolved.get('query')!r}). Refusing to snapshot an empty extract."
+            )
+        out: list[dict[str, Any]] = []
+        with httpx.Client(headers={"User-Agent": USER_AGENT}, timeout=HTTP_TIMEOUT) as client:
+            token = self._mint_token(client)
+            for text in texts:
+                consult = self._loda_consult(client, token, text["cid"], text.get("date"))
+                out.append({**text, "content": _flatten_text(consult)})
+        return json.dumps({EXTRACT_ENVELOPE_KEY: out}, ensure_ascii=False).encode("utf-8")
 
     # -- validate ----------------------------------------------------------- #
     def validate(self, raw: bytes, schema_ref: str | None) -> None:
@@ -88,6 +150,7 @@ class RestConnector(Connector):
             license=self._license,
             schema_ref=None,
             fmt="json",
+            record_path=EXTRACT_ENVELOPE_KEY,
         )
         return str(path)
 
@@ -97,3 +160,127 @@ class RestConnector(Connector):
             "Curated loading is a cross-source, provenance-scoped rebuild done after snapshots "
             "exist — see `ingestion.load` / `make load` (FSC-35), not a per-source stage()."
         )
+
+    # -- internals ---------------------------------------------------------- #
+    def _mint_token(self, client: httpx.Client) -> str:
+        """OAuth2 client-credentials grant → cached bearer token. Fail loud without credentials."""
+        if self._token:
+            return self._token
+        if not self.has_credentials:
+            raise RuntimeError(_MISSING_CREDS_MSG)
+        resp = client.post(
+            PISTE_TOKEN_URL,
+            data={
+                "grant_type": "client_credentials",
+                "client_id": self._client_id,
+                "client_secret": self._client_secret,
+                "scope": PISTE_SCOPE,
+            },
+        )
+        resp.raise_for_status()
+        token = resp.json().get("access_token")
+        if not token:
+            raise RuntimeError("PISTE token response carried no access_token")
+        self._token = str(token)
+        return self._token
+
+    @staticmethod
+    def _loda_search(client: httpx.Client, token: str, query: str) -> dict[str, Any]:
+        """POST the LODA search for décrets (NATURE=DECRET), newest first. Authenticated."""
+        body = {
+            "recherche": {
+                "champs": [
+                    {
+                        "typeChamp": "TITLE",
+                        "criteres": [
+                            {
+                                "typeRecherche": "TOUS_LES_MOTS_DANS_UN_CHAMP",
+                                "valeur": query,
+                                "operateur": "ET",
+                            }
+                        ],
+                        "operateur": "ET",
+                    }
+                ],
+                "filtres": [{"facette": "NATURE", "valeurs": ["DECRET"]}],
+                "pageNumber": 1,
+                "pageSize": SEARCH_PAGE_SIZE,
+                "sort": "SIGNATURE_DATE_DESC",
+                "typePagination": "DEFAUT",
+            },
+            "fond": "LODA_DATE",
+        }
+        resp = client.post(
+            f"{LEGIFRANCE_API_BASE}{LODA_SEARCH_PATH}",
+            json=body,
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        resp.raise_for_status()
+        return resp.json()
+
+    @staticmethod
+    def _loda_consult(
+        client: httpx.Client, token: str, cid: str, date: str | None
+    ) -> dict[str, Any]:
+        """Consult a LODA text by its chronical id at a given (or current) version date."""
+        body = {"textId": cid, "date": date or datetime.now(tz=UTC).date().isoformat()}
+        resp = client.post(
+            f"{LEGIFRANCE_API_BASE}{LODA_CONSULT_PATH}",
+            json=body,
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        resp.raise_for_status()
+        return resp.json()
+
+
+def _decree_query(source: dict[str, Any]) -> str:
+    """Derive the search query from the registry ``discovery.strategy``, else the default phrase."""
+    strategy = str((source.get("discovery") or {}).get("strategy", ""))
+    match = _PAREN_RE.search(strategy)
+    if match and "décret" in match.group(1).lower():
+        return match.group(1).strip()
+    return DEFAULT_DECREE_QUERY
+
+
+def _parse_search_results(payload: dict[str, Any]) -> list[dict[str, Any]]:
+    """Map a LODA payload to ``[{id, cid, title, url, date}]`` — ids from the API, never frozen."""
+    texts: list[dict[str, Any]] = []
+    for result in payload.get("results", []) or []:
+        titles = result.get("titles") or []
+        if not titles:
+            continue
+        head = titles[0]
+        cid = head.get("cid") or head.get("id")
+        if not cid:
+            continue
+        texts.append(
+            {
+                "id": head.get("id") or cid,
+                "cid": cid,
+                "title": str(head.get("title") or "").strip(),
+                "date": head.get("datePubli") or head.get("dateSignature"),
+                "url": f"{LEGIFRANCE_LODA_BASE}/{cid}",
+            }
+        )
+    return texts
+
+
+def _flatten_text(consult: dict[str, Any]) -> str:
+    """Flatten a LODA consult response to plain text (title + article bodies, HTML stripped)."""
+    parts: list[str] = []
+    title = consult.get("title")
+    if title:
+        parts.append(str(title))
+    for article in consult.get("articles", []) or []:
+        content = article.get("content") or article.get("texte") or ""
+        if content:
+            parts.append(_strip_html(str(content)))
+    body = consult.get("text") or consult.get("texteHtml")
+    if body:
+        parts.append(_strip_html(str(body)))
+    return "\n".join(parts).strip()
+
+
+def _strip_html(value: str) -> str:
+    """Drop HTML tags and collapse whitespace — Légifrance article bodies are HTML fragments."""
+    return _WS_RE.sub(" ", _HTML_TAG_RE.sub(" ", value)).strip()
