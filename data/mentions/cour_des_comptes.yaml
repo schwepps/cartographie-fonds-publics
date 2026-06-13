@@ -38,3 +38,15 @@ entries:
     mention_type: rapport
     url: "https://www.ccomptes.fr/fr/publications/la-gestion-de-pole-emploi-dix-ans-apres-sa-creation"
     note: "Bilan dix ans après la fusion ANPE/Assédic : croissance continue des moyens, objectifs atteints mais peu ambitieux, interrogations sur certaines rémunérations dirigeantes."
+  - entity_denomination: France Travail
+    report_ref: "Pôle emploi à l'épreuve du chômage de masse"
+    report_date: "2015-07-02"
+    mention_type: rapport
+    url: "https://www.ccomptes.fr/fr/publications/pole-emploi-lepreuve-du-chomage-de-masse"
+    note: "Entre 2009 et 2015 les demandeurs d'emploi inscrits passent de 3,9 à 6,2 millions (+58 %) ; réorganisation engagée en 2012 mais difficultés opérationnelles persistantes face au chômage de masse."
+  - entity_denomination: Ministère du Travail et des Solidarités
+    report_ref: "Préserver l'emploi : le ministère du travail face à la crise sanitaire"
+    report_date: "2021-07-12"
+    mention_type: rapport
+    url: "https://www.ccomptes.fr/fr/publications/preserver-lemploi-le-ministere-du-travail-face-la-crise-sanitaire"
+    note: "Réponse d'urgence du ministère du travail à la crise sanitaire : l'activité partielle a évité des destructions massives d'emplois, mais les contrôles ont été insuffisants et les coûts supérieurs aux prévisions."
