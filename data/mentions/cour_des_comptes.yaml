@@ -50,3 +50,24 @@ entries:
     mention_type: rapport
     url: "https://www.ccomptes.fr/fr/publications/preserver-lemploi-le-ministere-du-travail-face-la-crise-sanitaire"
     note: "Réponse d'urgence du ministère du travail à la crise sanitaire : l'activité partielle a évité des destructions massives d'emplois, mais les contrôles ont été insuffisants et les coûts supérieurs aux prévisions."
+  # FSC-70: promoted from the live extract-mentions run over the real ccomptes.fr corpus
+  # (data/mentions/cour_des_comptes_reports.yaml → candidates/), vetted by hand. Notes describe each
+  # report's scope re: the entity (factual, not invented findings).
+  - entity_denomination: OFII - Office français de l'immigration et de l'intégration
+    report_ref: "Les mécanismes de répartition des migrants sur le territoire : l'orientation régionale des demandeurs d'asile et les SAS régionaux"
+    report_date: "2026-06-12"
+    mention_type: rapport
+    url: "https://www.ccomptes.fr/fr/publications/les-mecanismes-de-repartition-des-migrants-sur-le-territoire-lorientation-regionale"
+    note: "La Cour examine le dispositif d'orientation régionale des demandeurs d'asile et les SAS régionaux : l'OFII en est l'acteur central (orientation directive, hébergement, allocation pour demandeur d'asile), aux côtés de l'OFPRA, de la DIHAL et des préfectures de région."
+  - entity_denomination: OFPRA - Office français de protection des réfugiés et apatrides
+    report_ref: "Les mécanismes de répartition des migrants sur le territoire : l'orientation régionale des demandeurs d'asile et les SAS régionaux"
+    report_date: "2026-06-12"
+    mention_type: rapport
+    url: "https://www.ccomptes.fr/fr/publications/les-mecanismes-de-repartition-des-migrants-sur-le-territoire-lorientation-regionale"
+    note: "Rapport sur la répartition territoriale des demandeurs d'asile (orientation régionale, SAS régionaux) ; l'OFPRA intervient au titre de l'instruction des demandes de protection, en lien avec l'OFII et les préfectures."
+  - entity_denomination: Ministère des Armées et des Anciens combattants
+    report_ref: "La fonction anticipation stratégique et prospective au ministère des armées"
+    report_date: "2026-06-01"
+    mention_type: rapport
+    url: "https://www.ccomptes.fr/fr/publications/la-fonction-anticipation-strategique-et-prospective-au-ministere-des-armees"
+    note: "La Cour examine la fonction d'anticipation stratégique et prospective du ministère des armées — l'une de ses missions principales (anticiper les conflits futurs, éviter les surprises stratégiques) — ainsi que son organisation et sa gouvernance."

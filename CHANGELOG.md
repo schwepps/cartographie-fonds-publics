@@ -6,6 +6,13 @@ Commits follow [Conventional Commits](https://www.conventionalcommits.org/).
 
 ## [Unreleased]
 ### Added
+- Cour des comptes « contrôle » layer scaled on the real corpus (FSC-70): the deterministic full-text
+  extractor was run over 10 real ccomptes.fr report PDFs (committed reports list
+  `data/mentions/cour_des_comptes_reports.yaml`; 60 candidates, 78% resolved). Three vetted, primary-
+  subject mentions were promoted into `data/mentions/cour_des_comptes.yaml` — OFII + OFPRA (asylum-
+  seeker regional orientation / SAS) and the Ministère des Armées (strategic-anticipation function) —
+  each linked to its real report. Acronym/name-collision false positives (e.g. "ASP" = the report's
+  own abbreviation) were filtered by review and motivate the precision work tracked in FSC-77.
 - Demo-seed oversight/why rows, gazetteer aliases, favicon, PISTE ops runbook (FSC-69/70/71/72).
   **FSC-71**: the illustrative dev/preview seed (`demo_seed.py` → `supabase/demo_seed.sql`) now carries
   clearly-« Exemple » attributions + Cour des comptes mentions, so the « épinglé par la Cour » graph

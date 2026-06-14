@@ -38,6 +38,9 @@ data/snapshots/*
 .idea/
 .vscode/
 
+# Browser-automation artifacts (Playwright MCP snapshots/console logs)
+.playwright-mcp/
+
 # Generated spike output
 spikes/**/out/
 
