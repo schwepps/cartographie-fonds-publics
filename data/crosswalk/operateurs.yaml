@@ -1404,7 +1404,9 @@ entries:
   reviewed_by: francois.schuers
   reviewed_at: '2026-06-12'
   notes: Conservé pour le seed/fixtures offline (hors liste Jaune PLF 2026) (FSC-56). Alias « Pôle
-    emploi » (ancien nom) pour le rapprochement Cour des comptes (FSC-70).
+    emploi » (ancien nom, renommé France Travail en 2024) pour le rapprochement Cour des comptes
+    (FSC-70). La ligne backlog « Pôle emploi » (pending, spike-backlog) a été retirée car résolue par
+    cette entité — sinon l'alias serait neutralisé comme surface ambiguë dans le gazetteer.
 - denomination: FranceAgriMer
   status: pending
   tutelle: Agriculture, alimentation, forêt et affaires rurales
@@ -2104,11 +2106,6 @@ entries:
   status: pending
   tutelle: Travail et emploi
   top_match_ratio: 0.0
-  source: spike-backlog
-- denomination: Pôle emploi
-  status: pending
-  tutelle: Travail et emploi
-  top_match_ratio: 0.759
   source: spike-backlog
 - denomination: RESEAU NATIONAL DE TELECOMMUNICATION POUR LA TECHNOLOGIE D'ENSEIGNEMENT
     ET LA RECHERCHE

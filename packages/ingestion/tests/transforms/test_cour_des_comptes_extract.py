@@ -12,7 +12,13 @@ from pathlib import Path
 
 import pytest
 from core.crosswalk import CrosswalkEntry, CrosswalkStatus
-from ingestion.crosswalk_io import load_entries, load_ministries
+from core.resolve import normalize_name
+from ingestion.crosswalk_io import (
+    CROSSWALK_PATH,
+    MINISTERES_PATH,
+    load_entries,
+    load_ministries,
+)
 from ingestion.mentions_candidates_io import CANDIDATES_PATH, load_candidates, write_candidates
 from ingestion.transforms.cour_des_comptes import MENTIONS_PATH
 from ingestion.transforms.cour_des_comptes_extract import (
@@ -185,6 +191,21 @@ def test_acronym_alias_is_case_sensitive() -> None:
     assert link_entities("on évoque l'anct en minuscule", gaz, report=_report(b"")) == []
     upper = link_entities("le rapport vise l'ANCT sans détour", gaz, report=_report(b""))
     assert [c.entity_siren for c in upper] == ["111111118"]
+
+
+def test_committed_crosswalk_alias_surfaces_actually_resolve() -> None:
+    """Regression (PR #47 review): curated aliases must survive on the *real* committed crosswalk.
+
+    The isolated-entry tests above can't catch a real-data collision: a SIREN-less « pending »
+    row of the same normalized name silently nullifies an alias (two SIRENs on one surface →
+    dropped as ambiguous). France Travail → « Pôle emploi » is the shipped example, so pin that
+    it resolves over the full crosswalk; if a colliding backlog row reappears, this fails loud.
+    """
+    gaz = build_gazetteer(load_entries(CROSSWALK_PATH), load_ministries(MINISTERES_PATH))
+    pole = [t for t in gaz.terms if t.normalized == normalize_name("Pôle emploi")]
+    assert len(pole) == 1, f"« Pôle emploi » alias surface was dropped/duplicated: {pole}"
+    assert pole[0].siren == "130005481"  # France Travail
+    assert pole[0].canonical == "France Travail"
 
 
 def test_ambiguous_alias_across_two_entities_is_dropped() -> None:
