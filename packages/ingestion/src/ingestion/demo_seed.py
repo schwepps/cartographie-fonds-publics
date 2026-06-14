@@ -26,13 +26,27 @@ import os
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from core.models import BudgetFact, Contract, Edge, EdgeType, Entity, Level, Nature, Nomenclature
+from core.models import (
+    Attribution,
+    BudgetFact,
+    Contract,
+    Edge,
+    EdgeType,
+    Entity,
+    Level,
+    Mention,
+    MentionType,
+    Nature,
+    Nomenclature,
+)
 
 from .sql_render import (
+    ATTRIBUTION_COLUMNS,
     BUDGET_COLUMNS,
     CONTRACT_COLUMNS,
     EDGE_COLUMNS,
     ENTITY_COLUMNS,
+    MENTION_COLUMNS,
     render_insert,
 )
 
@@ -46,6 +60,11 @@ _P_DECP = "decp_commande_publique"
 _P_OFGL = "finances_locales_ofgl"
 _P_SECU = "comptes_sociaux"
 _P_EPL = "epl_sem_spl"
+# Editorial "why" / oversight layers (FSC-27 / FSC-62): real source ids so the provenance UI
+# resolves them, even though the demo *content* below is illustrative (« Exemple », see the
+# honesty note in the SQL header).
+_P_ATTRIB = "legifrance_attributions"
+_P_MENTION = "cour_des_comptes"
 
 _MINISTRY_CATEGORY = "ministère"
 
@@ -302,6 +321,95 @@ _CONTRACTS: tuple[tuple[str, str, float, str, int], ...] = (
     ("180046252", "440048882", 4_200_000, "marche", 2026),
 )
 
+# --------------------------------------------------------------------------- #
+# Editorial "why" (attributions, FSC-27) + "contrôle" (mentions, FSC-62) layers — ILLUSTRATIVE.
+# Without these the « épinglé par la Cour » badge and the fiches « Attributions / mandat légal »
+# and « Contrôle / Cour des comptes » sections never render on the default local/preview stack
+# (FSC-71). The real, verifiable rows live in the curated État-central seed (`make seed`); these are
+# clearly « Exemple » so a preview visitor is never misled into reading them as real findings
+# (golden rules #8/#10). They attach to demo SIRENs directly (the demo never touches the crosswalk),
+# carry the real source ids (provenance UI resolves), and link only to real institutional landing
+# pages — never a fabricated deep link.
+# --------------------------------------------------------------------------- #
+_ATTRIB_LANDING = "https://www.legifrance.gouv.fr"
+_MENTION_LANDING = "https://www.ccomptes.fr/fr/publications"
+_DEMO_LICENSE = "Licence Ouverte 2.0"
+
+# (ministry_siren, legal_ref, txt) — the demo's three ministries get a « mandat légal » example.
+_ATTRIBUTIONS: tuple[tuple[str, str, str], ...] = (
+    (
+        "110046018",
+        "Exemple — décret d'attribution (jeu de démonstration)",
+        "Exemple illustratif (fictif) : mandat légal de démonstration montrant la section "
+        "« Attributions / mandat légal » (politique du patrimoine, de la création et de "
+        "l'accès à la culture). Les attributions réelles sont chargées par `make seed`.",
+    ),
+    (
+        "110044013",
+        "Exemple — décret d'attribution (jeu de démonstration)",
+        "Exemple illustratif (fictif) : mandat légal de démonstration (enseignement supérieur, "
+        "recherche et espace). Données réelles via `make seed`.",
+    ),
+    (
+        "110000072",
+        "Exemple — décret d'attribution (jeu de démonstration)",
+        "Exemple illustratif (fictif) : mandat légal de démonstration (travail, emploi et "
+        "solidarités). Données réelles via `make seed`.",
+    ),
+)
+
+# (entity_siren, report_ref, report_date, mention_type, note) — « épinglé par la Cour » examples
+# across several levels + both mention types, so the badge shows on multiple nodes (FSC-65/71).
+_MENTIONS: tuple[tuple[str, str, str, str, str], ...] = (
+    (
+        "180089013",  # CNRS
+        "Exemple — rapport thématique (jeu de démonstration)",
+        "2025-03-25",
+        "rapport",
+        "Exemple illustratif (fictif) : cette mention « épinglé par la Cour » illustre la section "
+        "« Contrôle / Cour des comptes » et le badge du graphe. Les mentions réelles via "
+        "`make seed`.",
+    ),
+    (
+        "130005481",  # France Travail
+        "Exemple — recommandation (jeu de démonstration)",
+        "2024-07-16",
+        "recommandation",
+        "Exemple illustratif (fictif) : recommandation de démonstration. Données réelles via "
+        "`make seed`.",
+    ),
+    (
+        "180043016",  # Musée du Louvre
+        "Exemple — rapport (jeu de démonstration)",
+        "2024-11-04",
+        "rapport",
+        "Exemple illustratif (fictif) : rapport de démonstration. Données réelles via `make seed`.",
+    ),
+    (
+        "197517177",  # Université Paris-Saclay
+        "Exemple — rapport (jeu de démonstration)",
+        "2023-09-14",
+        "rapport",
+        "Exemple illustratif (fictif) : rapport de démonstration. Données réelles via `make seed`.",
+    ),
+    (
+        "237500139",  # Région Île-de-France (local)
+        "Exemple — rapport de chambre régionale (jeu de démonstration)",
+        "2024-05-20",
+        "rapport",
+        "Exemple illustratif (fictif) : observations de démonstration (type CRC/CRTC). Données "
+        "réelles via `make seed`.",
+    ),
+    (
+        "110000072",  # Ministère du Travail et des Solidarités
+        "Exemple — recommandation (jeu de démonstration)",
+        "2025-01-30",
+        "recommandation",
+        "Exemple illustratif (fictif) : recommandation de démonstration. Données réelles via "
+        "`make seed`.",
+    ),
+)
+
 
 @dataclass(frozen=True)
 class DemoBundle:
@@ -311,6 +419,8 @@ class DemoBundle:
     edges: list[Edge] = field(default_factory=list)
     budget_facts: list[BudgetFact] = field(default_factory=list)
     contracts: list[Contract] = field(default_factory=list)
+    attributions: list[Attribution] = field(default_factory=list)
+    mentions: list[Mention] = field(default_factory=list)
 
 
 def build_demo() -> DemoBundle:
@@ -448,13 +558,49 @@ def build_demo() -> DemoBundle:
         )
         for acheteur, titulaire, montant, nature, exercice in _CONTRACTS
     ]
+    # Illustrative editorial "why"/"contrôle" rows (FSC-71). Sorted deterministically (mirroring
+    # seed.py) for a stable golden file.
+    attributions = sorted(
+        (
+            Attribution(
+                entity_siren=siren,
+                legal_ref=legal_ref,
+                txt=txt,
+                source_url=_ATTRIB_LANDING,
+                provenance=_P_ATTRIB,
+            )
+            for siren, legal_ref, txt in _ATTRIBUTIONS
+        ),
+        key=lambda a: (a.entity_siren or "", a.legal_ref or ""),
+    )
+    mentions = sorted(
+        (
+            Mention(
+                entity_siren=siren,
+                report_ref=report_ref,
+                report_date=report_date,
+                mention_type=MentionType(mention_type),
+                url=_MENTION_LANDING,
+                note=note,
+                provenance=_P_MENTION,
+                license=_DEMO_LICENSE,
+            )
+            for siren, report_ref, report_date, mention_type, note in _MENTIONS
+        ),
+        key=lambda m: (m.entity_siren or "", m.report_date or "", m.report_ref or ""),
+    )
 
     # Deterministic order for a stable golden file: entities by (level, siren); edges by
-    # (source, target, type); budget/contracts as authored.
+    # (source, target, type); budget/contracts/attributions/mentions as built above.
     entities.sort(key=lambda e: (e.level.value, e.siren or ""))
     edges.sort(key=lambda e: (e.source_siren, e.target_siren, e.type.value))
     return DemoBundle(
-        entities=entities, edges=edges, budget_facts=budget_facts, contracts=contracts
+        entities=entities,
+        edges=edges,
+        budget_facts=budget_facts,
+        contracts=contracts,
+        attributions=attributions,
+        mentions=mentions,
     )
 
 
@@ -469,6 +615,10 @@ _SQL_HEADER = """\
 -- Euro amounts are ILLUSTRATIVE (« exemple ») unless published: the MESR/MIRES budget rows are the
 -- real PLF 2025 voté totals. Two DECP titulaires are referenced by edges/contracts with no entity
 -- row, so the UI shows them as « SIREN non résolu ». Licence Ouverte / Etalab 2.0 where attributed.
+--
+-- The attributions (« mandat légal ») + mentions (« épinglé par la Cour ») rows are ILLUSTRATIVE,
+-- clearly « Exemple », so the « why »/oversight fiche sections + the graph badge render here too
+-- (FSC-71). The real, verifiable oversight/why rows live in the curated seed (`make seed`).
 """
 
 
@@ -488,6 +638,10 @@ def render_sql(bundle: DemoBundle) -> str:
         render_insert("budget_facts", BUDGET_COLUMNS, list(bundle.budget_facts)),
         "-- Contracts (illustrative DECP marchés / concessions).",
         render_insert("contracts", CONTRACT_COLUMNS, list(bundle.contracts)),
+        "-- Attributions: illustrative « mandat légal » on the demo ministries (« Exemple »).",
+        render_insert("attributions", ATTRIBUTION_COLUMNS, list(bundle.attributions)),
+        "-- Mentions: illustrative « épinglé par la Cour » oversight signals (« Exemple »).",
+        render_insert("mentions", MENTION_COLUMNS, list(bundle.mentions)),
         "\ncommit;\n",
     ]
     return "\n".join(sections)

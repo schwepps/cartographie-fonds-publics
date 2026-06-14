@@ -64,6 +64,7 @@ _ENTRY_FIELDS = (
     "siren",
     "tutelle",
     "candidate_sirens",
+    "aliases",
     "top_match_ratio",
     "source",
     "reviewed_by",
@@ -260,6 +261,15 @@ def merge_seed(seed: list[CrosswalkEntry], existing: list[CrosswalkEntry]) -> li
     over a seed row for the same key; otherwise the seed (auto/pending) replaces it.
     """
     curated = {e.normalized_name: e for e in existing if e.status in CURATED_STATUSES}
-    merged: dict[str, CrosswalkEntry] = {e.normalized_name: e for e in seed}
+    # Curated `aliases` are hand-added review metadata (FSC-70); carry them forward onto a
+    # regenerated (auto/pending) row of the same key so a re-seed never silently drops them
+    # (golden rule #5). Reviewed/category rows keep their aliases anyway (kept wholesale below).
+    existing_aliases = {e.normalized_name: e.aliases for e in existing if e.aliases}
+    merged: dict[str, CrosswalkEntry] = {}
+    for entry in seed:
+        carried = existing_aliases.get(entry.normalized_name)
+        merged[entry.normalized_name] = (
+            entry.model_copy(update={"aliases": carried}) if carried else entry
+        )
     merged.update(curated)  # curated rows take precedence
     return sorted(merged.values(), key=lambda e: e.normalized_name)

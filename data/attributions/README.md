@@ -48,3 +48,24 @@ The backlog is **never auto-loaded**. To publish a candidate:
    (with its `tutelle` code + verified SIREN), then promote as above.
 
 Only after promotion does an attribution render on the fiche (« Attributions / mandat légal »).
+
+## Operator runbook (FSC-69)
+
+The code path above (discover → link → backlog) is shipped and offline-tested; the **live run is
+operator-gated** because it needs a PISTE secret that cannot live in the repo. To execute it:
+
+1. **Provision a free PISTE account** at <https://piste.gouv.fr> and register an application with the
+   Légifrance (LODA) API to obtain an OAuth2 **client id + secret**.
+2. **Store the secret, server/CI only** — set `PISTE_CLIENT_ID` / `PISTE_CLIENT_SECRET` as GitHub
+   Actions secrets (the same way as `SUPABASE_SERVICE_ROLE_KEY`; see `.env.example` and
+   `DEPLOYMENT.md`). **Never** the frontend, never committed.
+3. **Run** `make attributions-candidates`. It mints the token, runs the LODA search, and writes the
+   review backlog to `candidates/ministres_candidates.yaml`, printing coverage + match rate (it exits
+   nonzero below the match-rate floor). Confirm the numbers look sane.
+4. **Review + promote** vetted candidates into `ministres.yaml` per the **Promotion** section above —
+   never auto-publish (the « pourquoi » layer is a public-trust signal).
+5. **Regenerate the seed / run the load** (`make seed` for dev/preview, or `make load` for prod) so the
+   promoted attributions render on fiches.
+
+Steps 1–2 (account + secret) and the live run in step 3 are the parts that cannot be performed from
+the codebase alone — they are the deliverable of FSC-69.

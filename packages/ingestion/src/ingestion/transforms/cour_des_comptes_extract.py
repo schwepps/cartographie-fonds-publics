@@ -165,29 +165,35 @@ def build_gazetteer(
 
     Includes accepted operators (resolve to their SIREN), ``pending`` operators (siren=None → a
     backlog candidate) and ministries. ``category`` grouping labels are excluded (not real
-    entities). A surface that normalizes to two different SIRENs is dropped — never guess.
+    entities). Each entry contributes surfaces from its ``denomination`` **and** its curated
+    ``aliases`` (former names / common acronyms, FSC-70) — both run through the same precision
+    guards, so an alias is just another exact-match surface, never a fuzzy match. A surface that
+    normalizes to two different SIRENs is dropped — never guess.
     """
     # value None marks a surface dropped as ambiguous (seen with two different SIRENs).
     by_norm: dict[str, GazetteerTerm | None] = {}
 
     def _add(entry: CrosswalkEntry) -> None:
-        for surface, kind in _surfaces(entry.denomination):
-            normalized = normalize_name(surface)
-            if not normalized:
-                continue
-            if normalized not in by_norm:
-                by_norm[normalized] = GazetteerTerm(
-                    surface=surface,
-                    normalized=normalized,
-                    siren=entry.siren,
-                    canonical=entry.denomination,
-                    kind=kind,
-                )
-                continue
-            existing = by_norm[normalized]
-            if existing is not None and existing.siren != entry.siren:
-                # Same surface, two different entities → ambiguous; drop it (never guess).
-                by_norm[normalized] = None
+        # Scan the denomination plus every curated alias; the canonical identity stays the
+        # denomination so dedup + the candidate's entity name are unchanged by an alias hit.
+        for source_name in (entry.denomination, *entry.aliases):
+            for surface, kind in _surfaces(source_name):
+                normalized = normalize_name(surface)
+                if not normalized:
+                    continue
+                if normalized not in by_norm:
+                    by_norm[normalized] = GazetteerTerm(
+                        surface=surface,
+                        normalized=normalized,
+                        siren=entry.siren,
+                        canonical=entry.denomination,
+                        kind=kind,
+                    )
+                    continue
+                existing = by_norm[normalized]
+                if existing is not None and existing.siren != entry.siren:
+                    # Same surface, two different entities → ambiguous; drop it (never guess).
+                    by_norm[normalized] = None
 
     for entry in crosswalk_entries:
         if entry.status is CrosswalkStatus.category:

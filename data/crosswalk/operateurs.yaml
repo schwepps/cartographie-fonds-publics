@@ -1398,10 +1398,13 @@ entries:
   status: reviewed
   siren: '130005481'
   tutelle: MTPEI
+  aliases:
+  - Pôle emploi
   source: manual
   reviewed_by: francois.schuers
   reviewed_at: '2026-06-12'
-  notes: Conservé pour le seed/fixtures offline (hors liste Jaune PLF 2026) (FSC-56).
+  notes: Conservé pour le seed/fixtures offline (hors liste Jaune PLF 2026) (FSC-56). Alias « Pôle
+    emploi » (ancien nom) pour le rapprochement Cour des comptes (FSC-70).
 - denomination: FranceAgriMer
   status: pending
   tutelle: Agriculture, alimentation, forêt et affaires rurales

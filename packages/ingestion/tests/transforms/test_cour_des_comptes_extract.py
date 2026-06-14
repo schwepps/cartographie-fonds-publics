@@ -137,6 +137,82 @@ def test_acronym_match_is_case_sensitive() -> None:
     assert [c.entity_siren for c in upper] == ["111111118"]
 
 
+def test_gazetteer_includes_curated_alias_surfaces() -> None:
+    # A curated alias (former name) becomes one more exact-match surface (FSC-70).
+    entries = [
+        CrosswalkEntry(
+            denomination="France Travail",
+            status=CrosswalkStatus.reviewed,
+            siren="130005481",
+            aliases=["Pôle emploi"],
+        )
+    ]
+    surfaces = {t.surface for t in build_gazetteer(entries, []).terms}
+    assert "France Travail" in surfaces  # the denomination
+    assert "Pôle emploi" in surfaces  # the alias surface
+
+
+def test_alias_resolves_to_entry_siren_under_canonical_denomination() -> None:
+    entries = [
+        CrosswalkEntry(
+            denomination="France Travail",
+            status=CrosswalkStatus.reviewed,
+            siren="130005481",
+            aliases=["Pôle emploi"],
+        )
+    ]
+    gaz = build_gazetteer(entries, [])
+    cands = link_entities(
+        "La gestion de Pôle emploi, dix ans après sa création.", gaz, report=_report(b"")
+    )
+    # An alias hit resolves to the entry's SIREN, but the candidate keeps the canonical name.
+    assert [(c.entity_denomination, c.entity_siren, c.resolution_status) for c in cands] == [
+        ("France Travail", "130005481", "resolved")
+    ]
+
+
+def test_acronym_alias_is_case_sensitive() -> None:
+    # An acronym alias inherits the acronym precision guard (uppercase only).
+    entries = [
+        CrosswalkEntry(
+            denomination="Agence nationale de la cohésion des territoires",
+            status=CrosswalkStatus.auto,
+            siren="111111118",
+            aliases=["ANCT"],
+        )
+    ]
+    gaz = build_gazetteer(entries, [])
+    assert link_entities("on évoque l'anct en minuscule", gaz, report=_report(b"")) == []
+    upper = link_entities("le rapport vise l'ANCT sans détour", gaz, report=_report(b""))
+    assert [c.entity_siren for c in upper] == ["111111118"]
+
+
+def test_ambiguous_alias_across_two_entities_is_dropped() -> None:
+    # The same alias on two different SIRENs is dropped — never guessed (golden rule #5).
+    entries = [
+        CrosswalkEntry(
+            denomination="Office Alpha",
+            status=CrosswalkStatus.auto,
+            siren="111111118",
+            aliases=["Bureau Commun"],
+        ),
+        CrosswalkEntry(
+            denomination="Office Beta",
+            status=CrosswalkStatus.auto,
+            siren="222222226",
+            aliases=["Bureau Commun"],
+        ),
+    ]
+    surfaces = {t.surface for t in build_gazetteer(entries, []).terms}
+    assert "Bureau Commun" not in surfaces
+    assert (
+        link_entities(
+            "au sujet du Bureau Commun", build_gazetteer(entries, []), report=_report(b"")
+        )
+        == []
+    )
+
+
 def test_build_candidates_reports_coverage_and_match_rate(load_fixture) -> None:  # type: ignore[no-untyped-def]
     pdf = load_fixture("ccomptes_sample.pdf")
     result = build_candidates(

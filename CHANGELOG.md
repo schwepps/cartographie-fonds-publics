@@ -6,6 +6,19 @@ Commits follow [Conventional Commits](https://www.conventionalcommits.org/).
 
 ## [Unreleased]
 ### Added
+- Demo-seed oversight/why rows, gazetteer aliases, favicon, PISTE ops runbook (FSC-69/70/71/72).
+  **FSC-71**: the illustrative dev/preview seed (`demo_seed.py` → `supabase/demo_seed.sql`) now carries
+  clearly-« Exemple » attributions + Cour des comptes mentions, so the « épinglé par la Cour » graph
+  badge and the fiche « Attributions / mandat légal » + « Contrôle / Cour des comptes » sections render
+  out-of-the-box on the default local/preview stack (real source ids so the provenance UI resolves;
+  links to real institutional landing pages; never a fabricated finding). **FSC-70**: `CrosswalkEntry`
+  gains an optional `aliases` list of curated alternate surfaces (former names / acronyms, e.g. France
+  Travail → « Pôle emploi ») fed to the deterministic Cour des comptes gazetteer as extra exact-match
+  surfaces (same precision guards, never fuzzy); preserved across `make resolve-seed`. **FSC-72**: a
+  DSFR-blue SVG favicon (`packages/web/public/favicon.svg`) referenced in `index.html`, removing the
+  only console 404. **FSC-69**: an operator runbook for provisioning the PISTE secret + running the
+  live attribution extraction (`data/attributions/README.md`); the live run itself stays operator-gated
+  (OCR + fuzzy matching + the real-corpus mention run are deferred to their own PRs).
 - Ministerial attributions + Cour des comptes oversight layers (FSC-27 / FSC-62), manual/metadata-first.
   The `Attribution`/`Mention` domain models gain the business columns the "why" + "contrôle" layers
   need (attribution: `source_url` + `provenance`; mention: `report_date`, `mention_type`

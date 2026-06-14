@@ -48,6 +48,8 @@ class CrosswalkEntry(FrozenModel):
     normalized_name: str = ""  # derived from denomination on validation; never trusted as input
     tutelle: str | None = None
     candidate_sirens: list[str] = Field(default_factory=list)  # reviewer hints, SIREN-validated
+    aliases: list[str] = Field(default_factory=list)  # curated alternate surfaces (former names /
+    # common acronyms) fed to the Cour des comptes gazetteer (FSC-70) as extra exact-match surfaces
     top_match_ratio: float | None = None  # difflib hint for the backlog (descriptive only)
     source: str | None = None  # provenance: "spike-auto", "manual", ...
     reviewed_by: str | None = None
@@ -82,6 +84,9 @@ class CrosswalkEntry(FrozenModel):
                 )
             normalized_candidates.append(normalized)
         self.candidate_sirens = normalized_candidates
+        # Aliases are literal surfaces, not keys: trim and drop empties so a blank alias never
+        # reaches the gazetteer (the matcher's precision guards reject the rest, never guessing).
+        self.aliases = [alias.strip() for alias in self.aliases if alias and alias.strip()]
         return self
 
 

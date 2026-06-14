@@ -55,6 +55,40 @@ def test_round_trip_preserves_zero_top_match_ratio(tmp_path: Path) -> None:
     assert loaded.top_match_ratio == 0.0
 
 
+def test_round_trip_preserves_aliases(tmp_path: Path) -> None:
+    # Curated matching aliases (FSC-70) must survive the dump→load round-trip.
+    entry = CrosswalkEntry(
+        denomination="France Travail",
+        status=CrosswalkStatus.reviewed,
+        siren="130005481",
+        aliases=["Pôle emploi"],
+    )
+    path = tmp_path / "operateurs.yaml"
+    dump_entries([entry], path)
+    [loaded] = load_entries(path)
+    assert loaded.aliases == ["Pôle emploi"]
+
+
+def test_merge_carries_curated_aliases_onto_regenerated_row() -> None:
+    # An operator hand-added an alias; a re-seed (which regenerates auto/pending rows) must not
+    # silently drop it — even when the regenerated row carries no aliases of its own.
+    existing = [
+        CrosswalkEntry(
+            denomination="France Travail",
+            status=CrosswalkStatus.auto,
+            siren="130005481",
+            aliases=["Pôle emploi"],
+        )
+    ]
+    seed = [
+        CrosswalkEntry(
+            denomination="France Travail", status=CrosswalkStatus.auto, siren="130005481"
+        )
+    ]
+    [merged] = merge_seed(seed, existing)
+    assert merged.aliases == ["Pôle emploi"]
+
+
 def test_load_fails_loud_on_non_mapping_yaml(tmp_path: Path) -> None:
     path = tmp_path / "c.yaml"
     path.write_text("just a string\n", encoding="utf-8")
