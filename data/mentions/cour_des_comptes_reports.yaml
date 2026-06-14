@@ -1,0 +1,46 @@
+# Cour des comptes reports list — INPUT to `make extract-mentions` (FSC-70 live run).
+# Each `url` is the direct, %PDF--verified report PDF on ccomptes.fr (resolved from the publication
+# page, which is JS-rendered). `report_date` derived from the filename's YYYYMMDD prefix. The
+# extractor scans these and writes a review backlog; promotion into cour_des_comptes.yaml is manual.
+# Curated set: ~recent Cour (not CRTC) reports about État-central bodies + a 2025 CNRS report.
+reports:
+  - url: "https://www.ccomptes.fr/sites/default/files/2026-06/20260612-S2026-0252-Orientation-directive-demandeurs-asile-SAS-regionaux.pdf"
+    report_ref: "Les mécanismes de répartition des migrants sur le territoire : l'orientation régionale des demandeurs d'asile et les SAS régionaux"
+    report_date: "2026-06-12"
+    mention_type: rapport
+  - url: "https://www.ccomptes.fr/sites/default/files/2026-06/20260610-Prime-d-activite.pdf"
+    report_ref: "La prime d'activité"
+    report_date: "2026-06-10"
+    mention_type: rapport
+  - url: "https://www.ccomptes.fr/sites/default/files/2026-06/20260609-S2026-0514-Niche-Cope.pdf"
+    report_ref: "La fiscalité des plus-values de long terme sur les cessions de titres de participation (« la niche Copé »)"
+    report_date: "2026-06-09"
+    mention_type: rapport
+  - url: "https://www.ccomptes.fr/sites/default/files/2026-06/20260608-S2026-0534-Reconnaissance-de-l-etat-de-catastrophe-naturelle.pdf"
+    report_ref: "La reconnaissance de l'état de catastrophe naturelle"
+    report_date: "2026-06-08"
+    mention_type: rapport
+  - url: "https://www.ccomptes.fr/sites/default/files/2023-11/20231109-loi-transformation-fonction-publique.pdf"
+    report_ref: "La montée en puissance des agents contractuels : une fonction publique en mutation"
+    report_date: "2023-11-09"
+    mention_type: rapport
+  - url: "https://www.ccomptes.fr/sites/default/files/2026-06/20260604-CNIL.pdf"
+    report_ref: "La Commission nationale de l'informatique et des libertés (CNIL)"
+    report_date: "2026-06-04"
+    mention_type: rapport
+  - url: "https://www.ccomptes.fr/sites/default/files/2026-05/20260601-S2026-0476-Fonction-anticipation-strategique-et-prospective-au-MINARM.pdf"
+    report_ref: "La fonction anticipation stratégique et prospective au ministère des armées"
+    report_date: "2026-06-01"
+    mention_type: rapport
+  - url: "https://www.ccomptes.fr/sites/default/files/2026-05/20260528-S2026-0544-Prise-de-controle-a-100-pourcent-d-EDF-par-l-Etat.pdf"
+    report_ref: "La prise de contrôle à 100 % d'EDF par l'État"
+    report_date: "2026-05-28"
+    mention_type: rapport
+  - url: "https://www.ccomptes.fr/sites/default/files/2026-05/20260527-RALFSS-2026_0.pdf"
+    report_ref: "Sécurité sociale 2026 (RALFSS)"
+    report_date: "2026-05-27"
+    mention_type: rapport
+  - url: "https://www.ccomptes.fr/sites/default/files/2025-03/20250325-S2025-0193-CNRS.pdf"
+    report_ref: "Le Centre national de la recherche scientifique (CNRS)"
+    report_date: "2025-03-25"
+    mention_type: rapport

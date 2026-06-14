@@ -24,6 +24,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import time
 from datetime import UTC, datetime
 from typing import Any
 
@@ -55,8 +56,17 @@ DEFAULT_LICENSE = "Licence Ouverte 2.0"
 # snapshot() (record_path, so write_snapshot tabularises the array, not the wrapping object).
 EXTRACT_ENVELOPE_KEY = "texts"
 SEARCH_PAGE_SIZE = 50
-HTTP_TIMEOUT = 30.0
+HTTP_TIMEOUT = 60.0  # generous read timeout — PISTE/Légifrance consults can be slow (FSC-69)
 USER_AGENT = "cartographie-fonds-publics/ingestion (+https://cartographie-fonds-publics.fr)"
+
+# Live PISTE free-tier resilience (FSC-69): the API rate-limits (429) and is occasionally slow, so a
+# multi-décret run must retry transient failures instead of aborting on the first one. Honor
+# Retry-After on 429, back off (capped exponential) on 429-without-header and on read/connect
+# timeouts, and pace consults to avoid bursting the quota. Tests patch `_pause` (no real wait).
+PISTE_MAX_RETRIES = 4
+PISTE_BACKOFF_BASE = 2.0
+PISTE_BACKOFF_CAP = 30.0
+PISTE_CONSULT_THROTTLE = 0.5
 
 _MISSING_CREDS_MSG = (
     "Live PISTE/Légifrance extraction needs the OAuth2 credentials "
@@ -70,6 +80,61 @@ _MISSING_CREDS_MSG = (
 _PAREN_RE = re.compile(r"\(([^)]+)\)")
 _HTML_TAG_RE = re.compile(r"<[^>]+>")
 _WS_RE = re.compile(r"\s+")
+
+
+def _pause(seconds: float) -> None:
+    """Sleep wrapper — patched to a no-op in offline tests so retry/throttle add no real delay."""
+    if seconds > 0:
+        time.sleep(seconds)
+
+
+def _retry_after_seconds(resp: httpx.Response) -> float | None:
+    """Parse a ``Retry-After`` delta-seconds header to a float (uncapped), else None."""
+    raw = resp.headers.get("Retry-After")
+    if not raw:
+        return None
+    try:
+        return float(raw)
+    except ValueError:
+        return None
+
+
+def _request_with_retry(
+    client: httpx.Client, method: str, url: str, **kwargs: Any
+) -> httpx.Response:
+    """Issue a request, retrying transient failures; fail loud on anything else.
+
+    PISTE's free tier rate-limits (429) and is occasionally slow, so a single 429 or read timeout
+    must not abort a multi-décret run. Retries on 429 (honoring ``Retry-After``) and on
+    read/connect timeouts with capped exponential backoff; other HTTP errors still raise via
+    ``raise_for_status``.
+    """
+    timeouts = (httpx.ReadTimeout, httpx.ConnectTimeout, httpx.PoolTimeout)
+    for attempt in range(PISTE_MAX_RETRIES + 1):
+        final = attempt == PISTE_MAX_RETRIES
+        backoff = min(PISTE_BACKOFF_BASE * 2**attempt, PISTE_BACKOFF_CAP)
+        try:
+            resp = client.request(method, url, **kwargs)
+        except timeouts:
+            if final:
+                raise
+            _pause(backoff)
+            continue
+        if resp.status_code == 429 and not final:
+            retry_after = _retry_after_seconds(resp)
+            if retry_after is not None and retry_after > PISTE_BACKOFF_CAP:
+                # The server asks us to wait far longer than we'll block mid-run (the PISTE
+                # free-tier daily quota does this — a Retry-After of hours). Fail loud with the
+                # reset time so the operator reruns later, not burning bounded retries for nothing.
+                raise RuntimeError(
+                    f"PISTE rate limit: Retry-After={int(retry_after)}s "
+                    f"(~{retry_after / 3600:.1f}h) — free-tier quota exhausted; rerun after reset."
+                )
+            _pause(backoff if retry_after is None else retry_after)  # honor Retry-After: 0
+            continue
+        resp.raise_for_status()
+        return resp
+    raise AssertionError("unreachable")  # the loop returns or raises on the final attempt
 
 
 @register("rest")
@@ -131,7 +196,9 @@ class RestConnector(Connector):
         out: list[dict[str, Any]] = []
         with httpx.Client(headers={"User-Agent": USER_AGENT}, timeout=HTTP_TIMEOUT) as client:
             token = self._mint_token(client)
-            for text in texts:
+            for index, text in enumerate(texts):
+                if index:
+                    _pause(PISTE_CONSULT_THROTTLE)  # pace consults under the free-tier rate limit
                 consult = self._loda_consult(client, token, text["cid"], text.get("date"))
                 out.append({**text, "content": _flatten_text(consult)})
         return json.dumps({EXTRACT_ENVELOPE_KEY: out}, ensure_ascii=False).encode("utf-8")
@@ -170,7 +237,9 @@ class RestConnector(Connector):
             return self._token
         if not self.has_credentials:
             raise RuntimeError(_MISSING_CREDS_MSG)
-        resp = client.post(
+        resp = _request_with_retry(
+            client,
+            "POST",
             PISTE_TOKEN_URL,
             data={
                 "grant_type": "client_credentials",
@@ -179,7 +248,6 @@ class RestConnector(Connector):
                 "scope": PISTE_SCOPE,
             },
         )
-        resp.raise_for_status()
         token = resp.json().get("access_token")
         if not token:
             raise RuntimeError("PISTE token response carried no access_token")
@@ -212,12 +280,13 @@ class RestConnector(Connector):
             },
             "fond": "LODA_DATE",
         }
-        resp = client.post(
+        resp = _request_with_retry(
+            client,
+            "POST",
             f"{LEGIFRANCE_API_BASE}{LODA_SEARCH_PATH}",
             json=body,
             headers={"Authorization": f"Bearer {token}"},
         )
-        resp.raise_for_status()
         return resp.json()
 
     @staticmethod
@@ -226,12 +295,13 @@ class RestConnector(Connector):
     ) -> dict[str, Any]:
         """Consult a LODA text by its chronical id at a given (or current) version date."""
         body = {"textId": cid, "date": date or datetime.now(tz=UTC).date().isoformat()}
-        resp = client.post(
+        resp = _request_with_retry(
+            client,
+            "POST",
             f"{LEGIFRANCE_API_BASE}{LODA_CONSULT_PATH}",
             json=body,
             headers={"Authorization": f"Bearer {token}"},
         )
-        resp.raise_for_status()
         return resp.json()
 
 

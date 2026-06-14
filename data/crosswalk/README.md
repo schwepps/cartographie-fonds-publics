@@ -25,6 +25,7 @@ never dropped.
 | `siren` | 9-digit SIREN. **Required** for `auto`/`reviewed`; **must be absent** for `pending`/`category`. |
 | `tutelle` | Supervising-ministry code (a reviewer disambiguator). |
 | `candidate_sirens` | Candidate SIRENs for an ambiguous row — reviewer hints, never auto-accepted. |
+| `aliases` | Curated alternate **surfaces** (former names, common acronyms) for the Cour des comptes gazetteer (FSC-70). Optional; hand-maintained on `reviewed` rows. See below. |
 | `top_match_ratio` | difflib similarity hint for the backlog (descriptive only). |
 | `source` | Provenance: `spike-auto`, `spike-backlog`, `manual`, … |
 | `reviewed_by` / `reviewed_at` | Who confirmed a `reviewed` row, and when (ISO date). |
@@ -63,6 +64,22 @@ row **by hand**:
 3. Commit as a Conventional Commit (golden rule #9), one logical change per commit.
 
 If a `category` row is the right call instead, set `status: category` (and leave `siren` empty).
+
+### `aliases` — curated matching surfaces (FSC-70)
+
+`aliases` is an optional list of **alternate surfaces** for a row — a former name or a common acronym
+the entity is referred to by in prose (e.g. `France Travail` → `Pôle emploi`). It does **not** change
+the row's resolution key (`denomination` stays the source of truth) or its SIREN; it only widens what
+the **Cour des comptes full-text gazetteer** (`ingestion.transforms.cour_des_comptes_extract`, the
+FSC-67/70 « contrôle » scaling path) can recognise.
+
+- Still **exact-match, never fuzzy**: each alias runs through the same precision guards as the
+  denomination (a denomination-shaped surface needs ≥ 2 distinctive tokens; an acronym must be
+  all-caps and ≥ 3 chars; matches are word-boundary anchored; a surface mapping to two SIRENs is
+  dropped). Adding an alias scales recall over an entity we already track; it can never fabricate one.
+- **Governance:** hand-maintained on `reviewed` rows (like the SIREN itself). It is **preserved across
+  `make resolve-seed`** — both on the `reviewed` rows kept wholesale and, defensively, carried forward
+  onto a regenerated `auto`/`pending` row of the same key — so curation is never silently dropped.
 
 ## Versioning & regeneration
 

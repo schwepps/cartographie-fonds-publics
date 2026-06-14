@@ -1,0 +1,827 @@
+# DO NOT auto-load. Generated report→entity mention CANDIDATES for human review (FSC-67).
+# Verify a `resolved` candidate against its url (does the report really épingle it?), then
+# copy entity_denomination/report_ref/report_date/mention_type/url/note into
+# data/mentions/cour_des_comptes.yaml. `unresolved` rows need the entity resolved in the
+# crosswalk first. See data/mentions/candidates/README.md for the promotion process.
+schema_version: 1
+candidates:
+- entity_denomination: France Travail
+  entity_siren: '130005481'
+  report_ref: La Commission nationale de l'informatique et des libertés (CNIL)
+  report_date: '2026-06-04'
+  mention_type: rapport
+  url: https://www.ccomptes.fr/sites/default/files/2026-06/20260604-CNIL.pdf
+  note: …35 Parmi les grandes institutions manquantes, on compte les ministères de
+    l’agriculture et des affaires étrangères, France Travail, la région Hauts-de-France,
+    six départements dont le Jura et le Puy-de-Dôme. 36 Début septembre 2025, la CNIL
+    indique…
+  match_count: 1
+  resolution_status: resolved
+  provenance: cour_des_comptes
+  license: Licence Ouverte 2.0
+- entity_denomination: Ministère de la Justice
+  entity_siren: '110010014'
+  report_ref: La Commission nationale de l'informatique et des libertés (CNIL)
+  report_date: '2026-06-04'
+  mention_type: rapport
+  url: https://www.ccomptes.fr/sites/default/files/2026-06/20260604-CNIL.pdf
+  note: …ent applicable à l’activité de ces organismes. Des demandes en ce sens ont
+    été plusieurs fois émises par l a CNIL. L e ministère de la justice, qui y est
+    favorable, indique qu’un décret devrait être publié à cet effet dans le courant
+    de l’année 2026. Cette m…
+  match_count: 2
+  resolution_status: resolved
+  provenance: cour_des_comptes
+  license: Licence Ouverte 2.0
+- entity_denomination: Ministère de la Santé
+  entity_siren: '110036019'
+  report_ref: La Commission nationale de l'informatique et des libertés (CNIL)
+  report_date: '2026-06-04'
+  mention_type: rapport
+  url: https://www.ccomptes.fr/sites/default/files/2026-06/20260604-CNIL.pdf
+  note: …de la plateforme des données de santé (PDS) en 2019, la CNIL s’est inquiétée23
+    des conséquences du choix opéré par le ministère de la santé de confier la solution
+    technologique de la PDS à la filiale européenne d’une entreprise américaine, en
+    raison de l’ex…
+  match_count: 1
+  resolution_status: resolved
+  provenance: cour_des_comptes
+  license: Licence Ouverte 2.0
+- entity_denomination: Services du Premier ministre
+  entity_siren: '110001013'
+  report_ref: La Commission nationale de l'informatique et des libertés (CNIL)
+  report_date: '2026-06-04'
+  mention_type: rapport
+  url: https://www.ccomptes.fr/sites/default/files/2026-06/20260604-CNIL.pdf
+  note: …..................................................................... 64
+    B - Une gestion de plus en plus intégrée aux services du Premier ministre ...........................................................
+    65 La Commission nationale de l'informatique et des l…
+  match_count: 21
+  resolution_status: resolved
+  provenance: cour_des_comptes
+  license: Licence Ouverte 2.0
+- entity_denomination: ASP - Agence de services et de paiement
+  entity_siren: '130006372'
+  report_ref: La fonction anticipation stratégique et prospective au ministère des
+    armées
+  report_date: '2026-06-01'
+  mention_type: rapport
+  url: https://www.ccomptes.fr/sites/default/files/2026-05/20260601-S2026-0476-Fonction-anticipation-strategique-et-prospective-au-MINARM.pdf
+  note: …sent largement sur des horizons temporels .....................................................
+    16 1.2 Une démarche d’ASP qui s’appuie sur une organisation rénovée et une comitologie
+    redynamisée .............................................…
+  match_count: 175
+  resolution_status: resolved
+  provenance: cour_des_comptes
+  license: Licence Ouverte 2.0
+- entity_denomination: CEA - Commissariat à l'énergie atomique et aux énergies alternatives
+  entity_siren: '775685019'
+  report_ref: La fonction anticipation stratégique et prospective au ministère des
+    armées
+  report_date: '2026-06-01'
+  mention_type: rapport
+  url: https://www.ccomptes.fr/sites/default/files/2026-05/20260601-S2026-0476-Fonction-anticipation-strategique-et-prospective-au-MINARM.pdf
+  note: …d’anticipation pluridisciplinaire sur les grandes questions stratégiques
+    du moment, avec deux grands partenaires, le CEA DAM et la direction de la recherche
+    et des études techniques de la DGA (DRET). Aujourd’hui encore, la FRS qui compte…
+  match_count: 1
+  resolution_status: resolved
+  provenance: cour_des_comptes
+  license: Licence Ouverte 2.0
+- entity_denomination: CND - Centre national de la danse
+  entity_siren: '417822632'
+  report_ref: La fonction anticipation stratégique et prospective au ministère des
+    armées
+  report_date: '2026-06-01'
+  mention_type: rapport
+  url: https://www.ccomptes.fr/sites/default/files/2026-05/20260601-S2026-0476-Fonction-anticipation-strategique-et-prospective-au-MINARM.pdf
+  note: '…au sein du ministère : l’agence du numérique de défense, reversée depuis
+    dans le commissariat au numérique de défense (CND) et l’agence ministérielle pour
+    l’intelligence artificielle de défense (Amiad). Pour autant, cette méthodologie
+    plus s…'
+  match_count: 1
+  resolution_status: resolved
+  provenance: cour_des_comptes
+  license: Licence Ouverte 2.0
+- entity_denomination: CNRS - Centre national de la recherche scientifique
+  entity_siren: '180089013'
+  report_ref: La fonction anticipation stratégique et prospective au ministère des
+    armées
+  report_date: '2026-06-01'
+  mention_type: rapport
+  url: https://www.ccomptes.fr/sites/default/files/2026-05/20260601-S2026-0476-Fonction-anticipation-strategique-et-prospective-au-MINARM.pdf
+  note: …clé de de la structuration de la recherche initiée en 2015, a pris la forme
+    d’un accord de coopération signé avec le CNRS et la conférence des présidents
+    d’université. Cet accord qui visait à développer « un champ disciplinaire reconnu
+    et…
+  match_count: 1
+  resolution_status: resolved
+  provenance: cour_des_comptes
+  license: Licence Ouverte 2.0
+- entity_denomination: IHEDN - Institut des hautes études de Défense nationale
+  entity_siren: '197546864'
+  report_ref: La fonction anticipation stratégique et prospective au ministère des
+    armées
+  report_date: '2026-06-01'
+  mention_type: rapport
+  url: https://www.ccomptes.fr/sites/default/files/2026-05/20260601-S2026-0476-Fonction-anticipation-strategique-et-prospective-au-MINARM.pdf
+  note: …u productions demandés aux élèves du centre des hautes études militaires
+    (CHEM) et à ceux de la session nationale de l’IHEDN. Elle recense 60 enseignants
+    chercheurs dans les différentes écoles, dont une quarantaine au sein de l’IRSEM.
+    L’IRSE…
+  match_count: 2
+  resolution_status: resolved
+  provenance: cour_des_comptes
+  license: Licence Ouverte 2.0
+- entity_denomination: Ministère des Armées et des Anciens combattants
+  entity_siren: '110090016'
+  report_ref: La fonction anticipation stratégique et prospective au ministère des
+    armées
+  report_date: '2026-06-01'
+  mention_type: rapport
+  url: https://www.ccomptes.fr/sites/default/files/2026-05/20260601-S2026-0476-Fonction-anticipation-strategique-et-prospective-au-MINARM.pdf
+  note: …CIPATION STRATÉGIQUE ET PROSPECTIVE AU MINISTERE DES ARMEES Page 7 sur 81
+    SYNTHESE L’une des missions principales du ministère des armées et des anciens
+    combattants est de se préparer aux guerres de demain afin d’éviter des surprises
+    stratégiques susceptibles de mettre en péril l’e…
+  match_count: 7
+  resolution_status: resolved
+  provenance: cour_des_comptes
+  license: Licence Ouverte 2.0
+- entity_denomination: France Travail
+  entity_siren: '130005481'
+  report_ref: 'La montée en puissance des agents contractuels : une fonction publique
+    en mutation'
+  report_date: '2023-11-09'
+  mention_type: rapport
+  url: https://www.ccomptes.fr/sites/default/files/2023-11/20231109-loi-transformation-fonction-publique.pdf
+  note: …le site de la PEP , rebaptisé en mai 2023 « Choisir le service public ».
+    Des partenariats ont aussi été noués avec Pôle emploi et l’Association pour l’emploi
+    des cadres (Apec) pour diffuser sur leurs sites les offres d’emploi pertinentes
+    de la…
+  match_count: 1
+  resolution_status: resolved
+  provenance: cour_des_comptes
+  license: Licence Ouverte 2.0
+- entity_denomination: Ministère de l'Intérieur
+  entity_siren: '110014016'
+  report_ref: 'La montée en puissance des agents contractuels : une fonction publique
+    en mutation'
+  report_date: '2023-11-09'
+  mention_type: rapport
+  url: https://www.ccomptes.fr/sites/default/files/2023-11/20231109-loi-transformation-fonction-publique.pdf
+  note: '…s 0 38 63 101 1,6 % Total 1 343 2 702 2 162 6 207 100 % Source : DGAFP Répartition
+    ministériel 2020 2021 2022 Total Ministère de l''intérieur 1 343 1 220 1 010 3
+    573 57,6 % Ministère de la justice 0 1 196 751 1 947 31,4 % Ministère des armées
+    0 145 254 399 6,…'
+  match_count: 1
+  resolution_status: resolved
+  provenance: cour_des_comptes
+  license: Licence Ouverte 2.0
+- entity_denomination: Ministère de l'Éducation nationale
+  entity_siren: '110043015'
+  report_ref: 'La montée en puissance des agents contractuels : une fonction publique
+    en mutation'
+  report_date: '2023-11-09'
+  mention_type: rapport
+  url: https://www.ccomptes.fr/sites/default/files/2023-11/20231109-loi-transformation-fonction-publique.pdf
+  note: …3 1 220 1 010 3 573 57,6 % Ministère de la justice 0 1 196 751 1 947 31,4
+    % Ministère des armées 0 145 254 399 6,4 % Ministère de l'éducation nationale,
+    de la jeunesse et des sports 0 74 108 182 2,9 % Caisse des dépôts 0 19 39 58 0,9
+    % Ministère des solidarités et de…
+  match_count: 1
+  resolution_status: resolved
+  provenance: cour_des_comptes
+  license: Licence Ouverte 2.0
+- entity_denomination: Ministère de la Culture
+  entity_siren: '110046018'
+  report_ref: 'La montée en puissance des agents contractuels : une fonction publique
+    en mutation'
+  report_date: '2023-11-09'
+  mention_type: rapport
+  url: https://www.ccomptes.fr/sites/default/files/2023-11/20231109-loi-transformation-fonction-publique.pdf
+  note: …lée, voire de façon très marginale, comme ceux chargés de l’agriculture et
+    d es affaires sociales . Pour sa part, l e ministère de la culture n’a conclu
+    aucun contrat de projet. 28 Corps de directeur d’h…
+  match_count: 2
+  resolution_status: resolved
+  provenance: cour_des_comptes
+  license: Licence Ouverte 2.0
+- entity_denomination: Ministère de la Justice
+  entity_siren: '110010014'
+  report_ref: 'La montée en puissance des agents contractuels : une fonction publique
+    en mutation'
+  report_date: '2023-11-09'
+  mention_type: rapport
+  url: https://www.ccomptes.fr/sites/default/files/2023-11/20231109-loi-transformation-fonction-publique.pdf
+  note: …es comme ceux chargés de l’enseignement supérieur et de la justice en ont
+    fait une utilisation importante en 2021. Le ministère de la justice a ainsi lancé,
+    en juin 2021, un plan de recrutement dans le cadre de la justice de proximité
+    prévoyant l’embauche de…
+  match_count: 4
+  resolution_status: resolved
+  provenance: cour_des_comptes
+  license: Licence Ouverte 2.0
+- entity_denomination: Ministère de la Santé
+  entity_siren: '110036019'
+  report_ref: 'La montée en puissance des agents contractuels : une fonction publique
+    en mutation'
+  report_date: '2023-11-09'
+  mention_type: rapport
+  url: https://www.ccomptes.fr/sites/default/files/2023-11/20231109-loi-transformation-fonction-publique.pdf
+  note: …s d’intérêt s (ministère de la transformation et de la fonction publiques,
+    ministère de l’intérieur et des outre-mer, ministère de la santé et de la prévention).
+    5. Étendre l’obligation de remboursement des sommes perçues au titre de la rupture
+    conventionne…
+  match_count: 2
+  resolution_status: resolved
+  provenance: cour_des_comptes
+  license: Licence Ouverte 2.0
+- entity_denomination: CNRS - Centre national de la recherche scientifique
+  entity_siren: '180089013'
+  report_ref: La prime d'activité
+  report_date: '2026-06-10'
+  mention_type: rapport
+  url: https://www.ccomptes.fr/sites/default/files/2026-06/20260610-Prime-d-activite.pdf
+  note: '…e n° 1 : liste des membres du comité d’accompagnement - Axelle BRODIEZ-DOLINO,
+    historienne, directrice de recherche au CNRS ; - Pierre CAHUC, économiste, professeur
+    d’économie à l’ENSAE et à Polytechnique, chercheur au Crest ; - Jean-Benoît…'
+  match_count: 1
+  resolution_status: resolved
+  provenance: cour_des_comptes
+  license: Licence Ouverte 2.0
+- entity_denomination: France Travail
+  entity_siren: '130005481'
+  report_ref: La prime d'activité
+  report_date: '2026-06-10'
+  mention_type: rapport
+  url: https://www.ccomptes.fr/sites/default/files/2026-06/20260610-Prime-d-activite.pdf
+  note: …armi lesquelles la prime à la naissance, le complément de libre choix du
+    mode de garde, l’allocation décès servie par France Travail. L’analyse de la base
+    ressources de la prime d’activité appelle deux types de critiques. D’une part
+    , cette base ress…
+  match_count: 8
+  resolution_status: resolved
+  provenance: cour_des_comptes
+  license: Licence Ouverte 2.0
+- entity_denomination: Ministère du Travail et des Solidarités
+  entity_siren: '110000072'
+  report_ref: La prime d'activité
+  report_date: '2026-06-10'
+  mention_type: rapport
+  url: https://www.ccomptes.fr/sites/default/files/2026-06/20260610-Prime-d-activite.pdf
+  note: '…e fin à l’éligibilité à la prime d’activité des apprentis et des retraités
+    en cumul emploi-retraite ; échéance : 2026 (ministère du travail et des solidarités).
+    2 Harmoniser le traitement des pensions alimentaires et de l’allocation de soutien
+    familial pour le calcul de la p…'
+  match_count: 6
+  resolution_status: resolved
+  provenance: cour_des_comptes
+  license: Licence Ouverte 2.0
+- entity_denomination: ADEME - Agence de l'environnement et de la maîtrise de l'énergie
+  entity_siren: '385290309'
+  report_ref: La reconnaissance de l'état de catastrophe naturelle
+  report_date: '2026-06-08'
+  mention_type: rapport
+  url: https://www.ccomptes.fr/sites/default/files/2026-06/20260608-S2026-0534-Reconnaissance-de-l-etat-de-catastrophe-naturelle.pdf
+  note: …emédiation des désordres bâtimentaires dus au phénomène de retrait et gonflement
+    des sols argileux (RGA) » lancé par l’ADEME en 2023. 39 A cette fin, Météo France
+    a créé sur son site internet une page explicative sur son rôle dans le dispositi…
+  match_count: 1
+  resolution_status: resolved
+  provenance: cour_des_comptes
+  license: Licence Ouverte 2.0
+- entity_denomination: CEREMA - Centre d'études et d'expertise sur les risques, l'environnement,
+    la mobilité et l'aménagement
+  entity_siren: '130018310'
+  report_ref: La reconnaissance de l'état de catastrophe naturelle
+  report_date: '2026-06-08'
+  mention_type: rapport
+  url: https://www.ccomptes.fr/sites/default/files/2026-06/20260608-S2026-0534-Reconnaissance-de-l-etat-de-catastrophe-naturelle.pdf
+  note: …et minières (BRGM), le Centre d'études et d'expertise sur les risques, l'environnement,
+    la mobilité et l'aménagement (CEREMA), la DREAL (notamment les services de prévision
+    des crues) et la DDTM, l’Office National des Forêts ou encore le Serv…
+  match_count: 4
+  resolution_status: resolved
+  provenance: cour_des_comptes
+  license: Licence Ouverte 2.0
+- entity_denomination: Ministère de l'Intérieur
+  entity_siren: '110014016'
+  report_ref: La reconnaissance de l'état de catastrophe naturelle
+  report_date: '2026-06-08'
+  mention_type: rapport
+  url: https://www.ccomptes.fr/sites/default/files/2026-06/20260608-S2026-0534-Reconnaissance-de-l-etat-de-catastrophe-naturelle.pdf
+  note: …té civile et de la gestion des crises a fait l’objet d’un précédent contrôle
+    portant sur les exercices 2013 à 2019 du ministère de l'intérieur, qui retraçait
+    l’activité de la commission interministérielle mais ne formulait pas de recommandation
+    dans ce domaine…
+  match_count: 1
+  resolution_status: resolved
+  provenance: cour_des_comptes
+  license: Licence Ouverte 2.0
+- entity_denomination: Météo-France
+  entity_siren: '180060030'
+  report_ref: La reconnaissance de l'état de catastrophe naturelle
+  report_date: '2026-06-08'
+  mention_type: rapport
+  url: https://www.ccomptes.fr/sites/default/files/2026-06/20260608-S2026-0534-Reconnaissance-de-l-etat-de-catastrophe-naturelle.pdf
+  note: …osant sur l es mesures de terrain et des modélisations réalisées par les
+    services experts de l’Etat et en premier lieu Météo-France. Dans la plupart des
+    cas, une durée de retour supérieure à 10 ans conditionne la reconnaissance , calculé
+    e sur une pé…
+  match_count: 2
+  resolution_status: resolved
+  provenance: cour_des_comptes
+  license: Licence Ouverte 2.0
+- entity_denomination: ONF - Office national des forêts
+  entity_siren: '662043116'
+  report_ref: La reconnaissance de l'état de catastrophe naturelle
+  report_date: '2026-06-08'
+  mention_type: rapport
+  url: https://www.ccomptes.fr/sites/default/files/2026-06/20260608-S2026-0534-Reconnaissance-de-l-etat-de-catastrophe-naturelle.pdf
+  note: …nnement, la mobilité et l'aménagement (CEREMA), la DREAL (notamment les services
+    de prévision des crues) et la DDTM, l’Office National des Forêts ou encore le
+    Service hydrographique et océanographique de la Marine (SHOM). Les communes d’outre-mer
+    peuvent par aill…
+  match_count: 4
+  resolution_status: resolved
+  provenance: cour_des_comptes
+  license: Licence Ouverte 2.0
+- entity_denomination: SHOM - Service hydrographique et océanographique de la marine
+  entity_siren: '130003981'
+  report_ref: La reconnaissance de l'état de catastrophe naturelle
+  report_date: '2026-06-08'
+  mention_type: rapport
+  url: https://www.ccomptes.fr/sites/default/files/2026-06/20260608-S2026-0534-Reconnaissance-de-l-etat-de-catastrophe-naturelle.pdf
+  note: …REMA), la DREAL (notamment les services de prévision des crues) et la DDTM,
+    l’Office National des Forêts ou encore le Service hydrographique et océanographique
+    de la Marine (SHOM). Les communes d’outre-mer peuvent par ailleurs saisir le cabinet
+    de la ministre des outre-mer en cas de difficu…
+  match_count: 3
+  resolution_status: resolved
+  provenance: cour_des_comptes
+  license: Licence Ouverte 2.0
+- entity_denomination: CEA - Commissariat à l'énergie atomique et aux énergies alternatives
+  entity_siren: '775685019'
+  report_ref: Le Centre national de la recherche scientifique (CNRS)
+  report_date: '2025-03-25'
+  mention_type: rapport
+  url: https://www.ccomptes.fr/sites/default/files/2025-03/20250325-S2025-0193-CNRS.pdf
+  note: …le, à l’image de ce qui se fait dans le domaine de l’armement avec les lois
+    de programmation militaire ou au niveau du CEA avec le plan à moyen terme à 10
+    ans, qu’une telle programmation pluriannuelle soit préparée par le CNRS pour le
+    périmè…
+  match_count: 5
+  resolution_status: resolved
+  provenance: cour_des_comptes
+  license: Licence Ouverte 2.0
+- entity_denomination: CNES - Centre national d'études spatiales
+  entity_siren: '775665912'
+  report_ref: Le Centre national de la recherche scientifique (CNRS)
+  report_date: '2025-03-25'
+  mention_type: rapport
+  url: https://www.ccomptes.fr/sites/default/files/2025-03/20250325-S2025-0193-CNRS.pdf
+  note: …de celui d’établissement public industriel et commercial (EPIC) dont disposent
+    le centre national d’études spatiales (CNES) et le c ommissariat à l’énergie atomique
+    et aux énergies alternatives (CEA). Au demeurant, le mode de financement du…
+  match_count: 3
+  resolution_status: resolved
+  provenance: cour_des_comptes
+  license: Licence Ouverte 2.0
+- entity_denomination: CNRS - Centre national de la recherche scientifique
+  entity_siren: '180089013'
+  report_ref: Le Centre national de la recherche scientifique (CNRS)
+  report_date: '2025-03-25'
+  mention_type: rapport
+  url: https://www.ccomptes.fr/sites/default/files/2025-03/20250325-S2025-0193-CNRS.pdf
+  note: …NITIVES (Article R. 143-11 du code des juridictions financières) LE CENTRE
+    NATIONAL DE LA RECHERCHE SCIENTIFIQUE (CNRS) Exercices 2013-2023 Le présent document,
+    qui a fait l’objet d’une contradiction avec les destinataires concernés…
+  match_count: 835
+  resolution_status: resolved
+  provenance: cour_des_comptes
+  license: Licence Ouverte 2.0
+- entity_denomination: Centre national de la recherche scientifique
+  entity_siren: '180089013'
+  report_ref: Le Centre national de la recherche scientifique (CNRS)
+  report_date: '2025-03-25'
+  mention_type: rapport
+  url: https://www.ccomptes.fr/sites/default/files/2025-03/20250325-S2025-0193-CNRS.pdf
+  note: …radiction avec les destinataires concernés, a été délibéré par la Cour des
+    comptes, le 10 février 2025. LE CENTRE NATIONAL DE LA RECHERCHE SCIENTIFIQUE (CNRS)
+    2 TABLE DES MATIÈRES SYNTHÈSE.............................................................................…
+  match_count: 132
+  resolution_status: resolved
+  provenance: cour_des_comptes
+  license: Licence Ouverte 2.0
+- entity_denomination: FEI – France éducation international
+  entity_siren: '180043069'
+  report_ref: Le Centre national de la recherche scientifique (CNRS)
+  report_date: '2025-03-25'
+  mention_type: rapport
+  url: https://www.ccomptes.fr/sites/default/files/2025-03/20250325-S2025-0193-CNRS.pdf
+  note: …q ans. LE CENTRE NATIONAL DE LA RECHERCHE SCIENTIFIQUE (CNRS) 57 l’enveloppe
+    votée au budget 2023 et imputée en FEI s’établit à 7,5 M€, contre 2,5 M€ en 2021
+    et 2022. Afin de disposer d’un ordre de grandeur, si la recommandation du ra…
+  match_count: 1
+  resolution_status: resolved
+  provenance: cour_des_comptes
+  license: Licence Ouverte 2.0
+- entity_denomination: France Travail
+  entity_siren: '130005481'
+  report_ref: Le Centre national de la recherche scientifique (CNRS)
+  report_date: '2025-03-25'
+  mention_type: rapport
+  url: https://www.ccomptes.fr/sites/default/files/2025-03/20250325-S2025-0193-CNRS.pdf
+  note: …34 289 agents et 1 130 unités de recherche en 2023) et le deuxième opérateur
+    de l’État en termes d’effectifs, derrière France Travail . Disposant d’ une réputation
+    d’excellence scientifique solidement établie, il fait preuve d’une maturité dans
+    le doma…
+  match_count: 3
+  resolution_status: resolved
+  provenance: cour_des_comptes
+  license: Licence Ouverte 2.0
+- entity_denomination: INRAE - Institut national pour la recherche en agriculture,
+    alimentation et environnement
+  entity_siren: '180070039'
+  report_ref: Le Centre national de la recherche scientifique (CNRS)
+  report_date: '2025-03-25'
+  mention_type: rapport
+  url: https://www.ccomptes.fr/sites/default/files/2025-03/20250325-S2025-0193-CNRS.pdf
+  note: …e relatif aux rémunérations et carrières dans la recherche, conclu entre
+    le Gouvernement, le CNRS, la CPU, l’INSERM, l’INRAE, l’INRIA et trois syndicats
+    a acté la revalorisation sur sept ans des régimes indemnitaires des personnels
+    de la rec…
+  match_count: 3
+  resolution_status: resolved
+  provenance: cour_des_comptes
+  license: Licence Ouverte 2.0
+- entity_denomination: INRIA - Institut national de recherche en informatique et en
+    automatique
+  entity_siren: '180089047'
+  report_ref: Le Centre national de la recherche scientifique (CNRS)
+  report_date: '2025-03-25'
+  mention_type: rapport
+  url: https://www.ccomptes.fr/sites/default/files/2025-03/20250325-S2025-0193-CNRS.pdf
+  note: …aux rémunérations et carrières dans la recherche, conclu entre le Gouvernement,
+    le CNRS, la CPU, l’INSERM, l’INRAE, l’INRIA et trois syndicats a acté la revalorisation
+    sur sept ans des régimes indemnitaires des personnels de la recherche , c…
+  match_count: 1
+  resolution_status: resolved
+  provenance: cour_des_comptes
+  license: Licence Ouverte 2.0
+- entity_denomination: INSERM - Institut national de la santé et de la recherche médicale
+  entity_siren: '180036048'
+  report_ref: Le Centre national de la recherche scientifique (CNRS)
+  report_date: '2025-03-25'
+  mention_type: rapport
+  url: https://www.ccomptes.fr/sites/default/files/2025-03/20250325-S2025-0193-CNRS.pdf
+  note: …solde de trésorerie, la partie fléchée et la partie libre d’emploi, contrairement
+    à ce que pratique , par exemple, l’institut national de la santé et de la recherche
+    médicale ( INSERM)7. On sait toutefois que toutes les ressources propres (1 133
+    M€ en 2023 ) ne sont pas des recettes fléchée…
+  match_count: 13
+  resolution_status: resolved
+  provenance: cour_des_comptes
+  license: Licence Ouverte 2.0
+- entity_denomination: INSTITUT D'ETUDES POLITIQUES - AIX EN PROVENCE
+  entity_siren: '191333467'
+  report_ref: Le Centre national de la recherche scientifique (CNRS)
+  report_date: '2025-03-25'
+  mention_type: rapport
+  url: https://www.ccomptes.fr/sites/default/files/2025-03/20250325-S2025-0193-CNRS.pdf
+  note: …matiques de Jussieu (IMJ) et Cent re européen de recherche et d’enseignement
+    géoscience de l’environnement (CEREGE) d’Aix en Provence. Cf. annexe 6. LE CENTRE
+    NATIONAL DE LA RECHERCHE SCIENTIFIQUE (CNRS) 14 - la question du « fardeau administratif…
+  match_count: 1
+  resolution_status: resolved
+  provenance: cour_des_comptes
+  license: Licence Ouverte 2.0
+- entity_denomination: BPI - Bibliothèque publique d'information
+  entity_siren: '180043093'
+  report_ref: 'Les mécanismes de répartition des migrants sur le territoire : l''orientation
+    régionale des demandeurs d''asile et les SAS régionaux'
+  report_date: '2026-06-12'
+  mention_type: rapport
+  url: https://www.ccomptes.fr/sites/default/files/2026-06/20260612-S2026-0252-Orientation-directive-demandeurs-asile-SAS-regionaux.pdf
+  note: …as été proposé d’orientation régionale. 29,14% 17,86%36% 4,10% 8% 4,90% DA
+    éligibles aux CMA DA non éligibles aux CMA BPI titulaire d'un titre de séjour
+    hors BPI séjour irrégulier Autres (MNA, etc.) a a LES MECANISMES DE REPARTITION
+    DES MI…
+  match_count: 6
+  resolution_status: resolved
+  provenance: cour_des_comptes
+  license: Licence Ouverte 2.0
+- entity_denomination: OFII - Office français de l'immigration et de l'intégration
+  entity_siren: '180034027'
+  report_ref: 'Les mécanismes de répartition des migrants sur le territoire : l''orientation
+    régionale des demandeurs d''asile et les SAS régionaux'
+  report_date: '2026-06-12'
+  mention_type: rapport
+  url: https://www.ccomptes.fr/sites/default/files/2026-06/20260612-S2026-0252-Orientation-directive-demandeurs-asile-SAS-regionaux.pdf
+  note: …inistérielle à l’hébergement et l’accès au logement ( DIHAL), l’Office français
+    de l’immigration et de l’intégration (OFII), la préfecture de région Ile-de-France,
+    la préfecture de région Nouvelle- Aquitaine, la préfecture de région Pays de l…
+  match_count: 87
+  resolution_status: resolved
+  provenance: cour_des_comptes
+  license: Licence Ouverte 2.0
+- entity_denomination: OFPRA - Office français de protection des réfugiés et apatrides
+  entity_siren: '180006033'
+  report_ref: 'Les mécanismes de répartition des migrants sur le territoire : l''orientation
+    régionale des demandeurs d''asile et les SAS régionaux'
+  report_date: '2026-06-12'
+  mention_type: rapport
+  url: https://www.ccomptes.fr/sites/default/files/2026-06/20260612-S2026-0252-Orientation-directive-demandeurs-asile-SAS-regionaux.pdf
+  note: …ympiques et paralympiques OFII ............... Office français de l’immigration
+    et de l’intégration OFPRA .......... Office français de protection des réfugiés
+    et apatrides OQTF ............ Obligation de quitter le territoire français PASS
+    ............. Permanence d’accès aux soins de san…
+  match_count: 11
+  resolution_status: resolved
+  provenance: cour_des_comptes
+  license: Licence Ouverte 2.0
+- entity_denomination: CNC - Centre national du cinéma et de l'image animée
+  entity_siren: '180046039'
+  report_ref: Sécurité sociale 2026 (RALFSS)
+  report_date: '2026-05-27'
+  mention_type: rapport
+  url: https://www.ccomptes.fr/sites/default/files/2026-05/20260527-RALFSS-2026_0.pdf
+  note: …du FRR aux régimes de retraite alors prévu à partir de 2020 (avis n°2008
+    -10 du conseil national de la comptabilité - CNC -), les versements du FRR à la
+    CADES sont opérés en premier lieu sur les réserves du fonds et, quand celles-ci
+    sont ép…
+  match_count: 2
+  resolution_status: resolved
+  provenance: cour_des_comptes
+  license: Licence Ouverte 2.0
+- entity_denomination: Comédie Française
+  entity_siren: '302977145'
+  report_ref: Sécurité sociale 2026 (RALFSS)
+  report_date: '2026-05-27'
+  mention_type: rapport
+  url: https://www.ccomptes.fr/sites/default/files/2026-05/20260527-RALFSS-2026_0.pdf
+  note: …Paris), RISP, Chemin de Fer Outre- Mer, Chemin de Fer franco-éthiopien, CNMSS,
+    CNBF, Préfecture du Haut -Rhin, CRPCF (Comédie Française), SEITA 8 Certification
+    avec réserve(s) Les branches maladie, AT- MP, vieillesse, famille et autonomie
+    du régi…
+  match_count: 2
+  resolution_status: resolved
+  provenance: cour_des_comptes
+  license: Licence Ouverte 2.0
+- entity_denomination: ENIM - Etablissement national des invalides de la marine
+  entity_siren: '180065021'
+  report_ref: Sécurité sociale 2026 (RALFSS)
+  report_date: '2026-05-27'
+  mention_type: rapport
+  url: https://www.ccomptes.fr/sites/default/files/2026-05/20260527-RALFSS-2026_0.pdf
+  note: …aux comptes de la Mutualité sociale agricole (MSA), du FSV et de l’établissement
+    national des invalides de la marine (ENIM) pour ce même exercice (cf. C- 1 infra)
+    ; 2. les tableaux d’équilibre sont établis en procédant à des contractions d…
+  match_count: 7
+  resolution_status: resolved
+  provenance: cour_des_comptes
+  license: Licence Ouverte 2.0
+- entity_denomination: France Compétences
+  entity_siren: '130024565'
+  report_ref: Sécurité sociale 2026 (RALFSS)
+  report_date: '2026-05-27'
+  mention_type: rapport
+  url: https://www.ccomptes.fr/sites/default/files/2026-05/20260527-RALFSS-2026_0.pdf
+  note: …financement des organismes de prévention (10 M€) et celui des projets de
+    transition professionnelle (40 M€ à travers France compétences). La montée en
+    charge du FIPU n’a permis de consommer que 30 % du budget alloué aux aides aux
+    entreprises en 2024, 18…
+  match_count: 2
+  resolution_status: resolved
+  provenance: cour_des_comptes
+  license: Licence Ouverte 2.0
+- entity_denomination: France Travail
+  entity_siren: '130005481'
+  report_ref: Sécurité sociale 2026 (RALFSS)
+  report_date: '2026-05-27'
+  mention_type: rapport
+  url: https://www.ccomptes.fr/sites/default/files/2026-05/20260527-RALFSS-2026_0.pdf
+  note: '…ivité (bonus individuel, 2019), solidarité à la source (2025), réforme du
+    revenu de solidarité active (rattachement à France Travail, 2025). Dans le champ
+    du logement : réduction du loyer de solidarité (2018), réforme des aides au logement
+    (2021), ge…'
+  match_count: 7
+  resolution_status: resolved
+  provenance: cour_des_comptes
+  license: Licence Ouverte 2.0
+- entity_denomination: INSERM - Institut national de la santé et de la recherche médicale
+  entity_siren: '180036048'
+  report_ref: Sécurité sociale 2026 (RALFSS)
+  report_date: '2026-05-27'
+  mention_type: rapport
+  url: https://www.ccomptes.fr/sites/default/files/2026-05/20260527-RALFSS-2026_0.pdf
+  note: …n générale des finances INSEE .......... Institut national de la statistique
+    et des études économiques INSERM....... Institut national de la santé et de la
+    recherche médicale IP-DMS ........ Indice de performance des durées moyennes de
+    séjour ISA ............... Normes internationales d'audi…
+  match_count: 3
+  resolution_status: resolved
+  provenance: cour_des_comptes
+  license: Licence Ouverte 2.0
+- entity_denomination: Ministère de la Santé
+  entity_siren: '110036019'
+  report_ref: Sécurité sociale 2026 (RALFSS)
+  report_date: '2026-05-27'
+  mention_type: rapport
+  url: https://www.ccomptes.fr/sites/default/files/2026-05/20260527-RALFSS-2026_0.pdf
+  note: …et des économies et, en exécution, en présentant dans les documents publics
+    les mesures et économies mises en œuvre (ministère de la santé, des familles,
+    de l’autonomie et des personnes handicapées, ministère de l’action et des comptes
+    publics). 2. Dans la…
+  match_count: 35
+  resolution_status: resolved
+  provenance: cour_des_comptes
+  license: Licence Ouverte 2.0
+- entity_denomination: Ministère du Travail et des Solidarités
+  entity_siren: '110000072'
+  report_ref: Sécurité sociale 2026 (RALFSS)
+  report_date: '2026-05-27'
+  mention_type: rapport
+  url: https://www.ccomptes.fr/sites/default/files/2026-05/20260527-RALFSS-2026_0.pdf
+  note: …ant des réorganisations conduites ( ministère de la santé, des familles,
+    de l’autonomie et des personnes handicapées, ministère du travail et des solidarités,
+    caisse nationale de l’assurance maladie, caisse nationale de solidarité pour l’autonomie).
+    22. D’ici 2027, mettre en…
+  match_count: 20
+  resolution_status: resolved
+  provenance: cour_des_comptes
+  license: Licence Ouverte 2.0
+- entity_denomination: Opéra national de Paris
+  entity_siren: '784396079'
+  report_ref: Sécurité sociale 2026 (RALFSS)
+  report_date: '2026-05-27'
+  mention_type: rapport
+  url: https://www.ccomptes.fr/sites/default/files/2026-05/20260527-RALFSS-2026_0.pdf
+  note: …......... Caisse de Retraite des Chemins de fer Franco-Ethiopiens CROPERA
+    ... Caisse de retraites des personnels de l'Opéra national de Paris CRRFOM .....
+    Agents des chemins de fer d'outre-mer CSG .............. Contribution sociale
+    généralisée DDETS .....…
+  match_count: 1
+  resolution_status: resolved
+  provenance: cour_des_comptes
+  license: Licence Ouverte 2.0
+- entity_denomination: CENTRE REGIONAL OEUVRES UNIV SCOLAIRES - PARIS
+  report_ref: La fiscalité des plus-values de long terme sur les cessions de titres
+    de participation (« la niche Copé »)
+  report_date: '2026-06-09'
+  mention_type: rapport
+  url: https://www.ccomptes.fr/sites/default/files/2026-06/20260609-S2026-0514-Niche-Cope.pdf
+  note: …13, rue Cambon  75100 PARIS CEDEX 01  T +33 1 42 98 95 00 www.ccomptes.fr
+    PREMIÈRE CHAMBRE PREMIÈRE SECTION S2026-0514 OBSERVATIONS DÉFINITI…
+  match_count: 1
+  resolution_status: unresolved
+  provenance: cour_des_comptes
+  license: Licence Ouverte 2.0
+- entity_denomination: ANR - Agence nationale de la recherche
+  report_ref: La fonction anticipation stratégique et prospective au ministère des
+    armées
+  report_date: '2026-06-01'
+  mention_type: rapport
+  url: https://www.ccomptes.fr/sites/default/files/2026-05/20260601-S2026-0476-Fonction-anticipation-strategique-et-prospective-au-MINARM.pdf
+  note: …odestes. Il serait possible de s’inspirer du préciput prélevé par les universités
+    sur les financements alloués (par l’ANR ou l’UE) aux équipes de recherche sur
+    appels à projet. Ainsi, les universités prélèvent entre 10 et 15 % des budgets…
+  match_count: 1
+  resolution_status: unresolved
+  provenance: cour_des_comptes
+  license: Licence Ouverte 2.0
+- entity_denomination: CENTRE REGIONAL OEUVRES UNIV SCOLAIRES - PARIS
+  report_ref: La fonction anticipation stratégique et prospective au ministère des
+    armées
+  report_date: '2026-06-01'
+  mention_type: rapport
+  url: https://www.ccomptes.fr/sites/default/files/2026-05/20260601-S2026-0476-Fonction-anticipation-strategique-et-prospective-au-MINARM.pdf
+  note: …Cour des comptes 13, rue Cambon ◼ 75100 PARIS CEDEX 01 ◼ T +33 1 42 98 95
+    00 ◼ www.ccomptes.fr…
+  match_count: 1
+  resolution_status: unresolved
+  provenance: cour_des_comptes
+  license: Licence Ouverte 2.0
+- entity_denomination: Institut Français
+  report_ref: La fonction anticipation stratégique et prospective au ministère des
+    armées
+  report_date: '2026-06-01'
+  mention_type: rapport
+  url: https://www.ccomptes.fr/sites/default/files/2026-05/20260601-S2026-0476-Fonction-anticipation-strategique-et-prospective-au-MINARM.pdf
+  note: …2.3.2.1 La Fondation pour la Recherche Stratégique (FRS) ...............................................
+    38 2.3.2.2 L’Institut Français des Relations Internationales (IFRI) ........................................
+    38 2.3.2.3 L’Institut des Relations Inte…
+  match_count: 4
+  resolution_status: unresolved
+  provenance: cour_des_comptes
+  license: Licence Ouverte 2.0
+- entity_denomination: IPP - Institut Polytechnique de Paris
+  report_ref: La prime d'activité
+  report_date: '2026-06-10'
+  mention_type: rapport
+  url: https://www.ccomptes.fr/sites/default/files/2026-06/20260610-Prime-d-activite.pdf
+  note: …té. En effet, de manière complémentaire aux travaux conduits par la juridiction,
+    l’Institut des politiques publiques (IPP) a conduit une évaluation des effets
+    de la réforme de 2019 de la prime d’activité sur les comportements d’emploi, trav…
+  match_count: 13
+  resolution_status: unresolved
+  provenance: cour_des_comptes
+  license: Licence Ouverte 2.0
+- entity_denomination: MNS - Musée national du sport
+  report_ref: La prime d'activité
+  report_date: '2026-06-10'
+  mention_type: rapport
+  url: https://www.ccomptes.fr/sites/default/files/2026-06/20260610-Prime-d-activite.pdf
+  note: …f dit de « solidarité à la source » a été mis en œuvre. Ainsi, depuis le
+    1er février 2024, le « montant net social » (MNS), affiché sur les bulletins de
+    paie et les relevés de prestations sociales doit être obligatoirement déclaré
+    dans les…
+  match_count: 6
+  resolution_status: unresolved
+  provenance: cour_des_comptes
+  license: Licence Ouverte 2.0
+- entity_denomination: CENTRE REGIONAL OEUVRES UNIV SCOLAIRES - PARIS
+  report_ref: La prise de contrôle à 100 % d'EDF par l'État
+  report_date: '2026-05-28'
+  mention_type: rapport
+  url: https://www.ccomptes.fr/sites/default/files/2026-05/20260528-S2026-0544-Prise-de-controle-a-100-pourcent-d-EDF-par-l-Etat.pdf
+  note: …13, rue Cambon  75100 PARIS CEDEX 01  T +33 1 42 98 95 00 www.ccomptes.fr
+    PREMIÈRE CHAMBRE DEUXIÈME SECTION S2026-0544 OBSERVATIONS DÉ…
+  match_count: 1
+  resolution_status: unresolved
+  provenance: cour_des_comptes
+  license: Licence Ouverte 2.0
+- entity_denomination: BRGM - Bureau de recherches géologiques et minières
+  report_ref: La reconnaissance de l'état de catastrophe naturelle
+  report_date: '2026-06-08'
+  mention_type: rapport
+  url: https://www.ccomptes.fr/sites/default/files/2026-06/20260608-S2026-0534-Reconnaissance-de-l-etat-de-catastrophe-naturelle.pdf
+  note: …rte 0 Département 0 50 100km C LA RECONNAISSANCE DE L'ETAT DE CATASTROPHE
+    NATURELLE 16 géologiques et minières (BRGM) a établi entre 1997 et 2010 une carte
+    des zones à risque, actualisée par un arrêté du 9 janvier 2026 et consultable
+    s…
+  match_count: 15
+  resolution_status: unresolved
+  provenance: cour_des_comptes
+  license: Licence Ouverte 2.0
+- entity_denomination: CENTRE REGIONAL OEUVRES UNIV SCOLAIRES - PARIS
+  report_ref: La reconnaissance de l'état de catastrophe naturelle
+  report_date: '2026-06-08'
+  mention_type: rapport
+  url: https://www.ccomptes.fr/sites/default/files/2026-06/20260608-S2026-0534-Reconnaissance-de-l-etat-de-catastrophe-naturelle.pdf
+  note: …Cour des comptes 13, rue Cambon ◼ 75100 PARIS CEDEX 01 ◼ T +33 1 42 98 95
+    00 ◼ www.ccomptes.fr QUATRIEME CHAMBRE S2026-0534 PREMIERE SECTION OBSERVATIONS
+    DÉFI…
+  match_count: 1
+  resolution_status: unresolved
+  provenance: cour_des_comptes
+  license: Licence Ouverte 2.0
+- entity_denomination: ANR - Agence nationale de la recherche
+  report_ref: Le Centre national de la recherche scientifique (CNRS)
+  report_date: '2025-03-25'
+  mention_type: rapport
+  url: https://www.ccomptes.fr/sites/default/files/2025-03/20250325-S2025-0193-CNRS.pdf
+  note: …ance de la part des financements sur appels à projets, que ce soit au niveau
+    national, à travers les financements de l’agence nationale de la recherche (ANR)
+    ou européen , avec les financements du conseil européen de la recherche (ERC).
+    Cette évolution a des impacts im…
+  match_count: 26
+  resolution_status: unresolved
+  provenance: cour_des_comptes
+  license: Licence Ouverte 2.0
+- entity_denomination: CENTRE REGIONAL OEUVRES UNIV SCOLAIRES - PARIS
+  report_ref: Le Centre national de la recherche scientifique (CNRS)
+  report_date: '2025-03-25'
+  mention_type: rapport
+  url: https://www.ccomptes.fr/sites/default/files/2025-03/20250325-S2025-0193-CNRS.pdf
+  note: …13, rue Cambon ◼ 75100 PARIS CEDEX 01 ◼ T +33 1 42 98 95 00 ◼ www.ccomptes.fr
+    S2025-0193 TROISIÈME CHAMBRE PREMIÈRE SECTION OBSERVATIONS…
+  match_count: 1
+  resolution_status: unresolved
+  provenance: cour_des_comptes
+  license: Licence Ouverte 2.0
+- entity_denomination: CENTRE REGIONAL OEUVRES UNIV SCOLAIRES - PARIS
+  report_ref: 'Les mécanismes de répartition des migrants sur le territoire : l''orientation
+    régionale des demandeurs d''asile et les SAS régionaux'
+  report_date: '2026-06-12'
+  mention_type: rapport
+  url: https://www.ccomptes.fr/sites/default/files/2026-06/20260612-S2026-0252-Orientation-directive-demandeurs-asile-SAS-regionaux.pdf
+  note: …Cour des comptes 13, rue Cambon ◼ 75100 PARIS CEDEX 01 ◼ T +33 1 42 98 95
+    00 ◼ www.ccomptes.fr CINQUIEME CHAMBRE S2026-0252 DEUXIEME SECTION OBSERVATION…
+  match_count: 1
+  resolution_status: unresolved
+  provenance: cour_des_comptes
+  license: Licence Ouverte 2.0
+- entity_denomination: ANS - Agence nationale du sport
+  report_ref: Sécurité sociale 2026 (RALFSS)
+  report_date: '2026-05-27'
+  mention_type: rapport
+  url: https://www.ccomptes.fr/sites/default/files/2026-05/20260527-RALFSS-2026_0.pdf
+  note: …itre I du présent rapport. Sécurité sociale 2026 – mai 2026 Cour des comptes
+    - www.ccomptes.fr - @Courdescomptes VINGT ANS DE CERTIFICATION DES COMPTES DE
+    LA SÉCURITÉ SOCIALE UNE EXIGENCE RECONNUE, DES LEVIERS D’AMÉLIORATION À MOBILISER…
+  match_count: 13
+  resolution_status: unresolved
+  provenance: cour_des_comptes
+  license: Licence Ouverte 2.0

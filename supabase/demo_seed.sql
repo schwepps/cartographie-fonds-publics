@@ -8,6 +8,10 @@
 -- Euro amounts are ILLUSTRATIVE (« exemple ») unless published: the MESR/MIRES budget rows are the
 -- real PLF 2025 voté totals. Two DECP titulaires are referenced by edges/contracts with no entity
 -- row, so the UI shows them as « SIREN non résolu ». Licence Ouverte / Etalab 2.0 where attributed.
+--
+-- The attributions (« mandat légal ») + mentions (« épinglé par la Cour ») rows are ILLUSTRATIVE,
+-- clearly « Exemple », so the « why »/oversight fiche sections + the graph badge render here too
+-- (FSC-71). The real, verifiable oversight/why rows live in the curated seed (`make seed`).
 
 
 begin;
@@ -195,6 +199,21 @@ insert into contracts (acheteur_siren, titulaire_siren, montant_eur, nature, exe
   ('784359069', '552100554', 22000000, 'concession', 2026, 'decp_commande_publique'),
   ('775685019', '552032534', 64000000, 'concession', 2026, 'decp_commande_publique'),
   ('180046252', '440048882', 4200000, 'marche', 2026, 'decp_commande_publique');
+
+-- Attributions: illustrative « mandat légal » on the demo ministries (« Exemple »).
+insert into attributions (entity_siren, legal_ref, txt, source_url, provenance) values
+  ('110000072', 'Exemple — décret d''attribution (jeu de démonstration)', 'Exemple illustratif (fictif) : mandat légal de démonstration (travail, emploi et solidarités). Données réelles via `make seed`.', 'https://www.legifrance.gouv.fr', 'legifrance_attributions'),
+  ('110044013', 'Exemple — décret d''attribution (jeu de démonstration)', 'Exemple illustratif (fictif) : mandat légal de démonstration (enseignement supérieur, recherche et espace). Données réelles via `make seed`.', 'https://www.legifrance.gouv.fr', 'legifrance_attributions'),
+  ('110046018', 'Exemple — décret d''attribution (jeu de démonstration)', 'Exemple illustratif (fictif) : mandat légal de démonstration montrant la section « Attributions / mandat légal » (politique du patrimoine, de la création et de l''accès à la culture). Les attributions réelles sont chargées par `make seed`.', 'https://www.legifrance.gouv.fr', 'legifrance_attributions');
+
+-- Mentions: illustrative « épinglé par la Cour » oversight signals (« Exemple »).
+insert into mentions (entity_siren, report_ref, report_date, mention_type, url, note, provenance, license) values
+  ('110000072', 'Exemple — recommandation (jeu de démonstration)', '2025-01-30', 'recommandation', 'https://www.ccomptes.fr/fr/publications', 'Exemple illustratif (fictif) : recommandation de démonstration. Données réelles via `make seed`.', 'cour_des_comptes', 'Licence Ouverte 2.0'),
+  ('130005481', 'Exemple — recommandation (jeu de démonstration)', '2024-07-16', 'recommandation', 'https://www.ccomptes.fr/fr/publications', 'Exemple illustratif (fictif) : recommandation de démonstration. Données réelles via `make seed`.', 'cour_des_comptes', 'Licence Ouverte 2.0'),
+  ('180043016', 'Exemple — rapport (jeu de démonstration)', '2024-11-04', 'rapport', 'https://www.ccomptes.fr/fr/publications', 'Exemple illustratif (fictif) : rapport de démonstration. Données réelles via `make seed`.', 'cour_des_comptes', 'Licence Ouverte 2.0'),
+  ('180089013', 'Exemple — rapport thématique (jeu de démonstration)', '2025-03-25', 'rapport', 'https://www.ccomptes.fr/fr/publications', 'Exemple illustratif (fictif) : cette mention « épinglé par la Cour » illustre la section « Contrôle / Cour des comptes » et le badge du graphe. Les mentions réelles via `make seed`.', 'cour_des_comptes', 'Licence Ouverte 2.0'),
+  ('197517177', 'Exemple — rapport (jeu de démonstration)', '2023-09-14', 'rapport', 'https://www.ccomptes.fr/fr/publications', 'Exemple illustratif (fictif) : rapport de démonstration. Données réelles via `make seed`.', 'cour_des_comptes', 'Licence Ouverte 2.0'),
+  ('237500139', 'Exemple — rapport de chambre régionale (jeu de démonstration)', '2024-05-20', 'rapport', 'https://www.ccomptes.fr/fr/publications', 'Exemple illustratif (fictif) : observations de démonstration (type CRC/CRTC). Données réelles via `make seed`.', 'cour_des_comptes', 'Licence Ouverte 2.0');
 
 
 commit;

@@ -6,6 +6,33 @@ Commits follow [Conventional Commits](https://www.conventionalcommits.org/).
 
 ## [Unreleased]
 ### Added
+- PISTE/Légifrance connector resilience for the live attribution run (FSC-69): the `rest` connector now
+  retries transient failures (429 honoring `Retry-After`, read/connect timeouts with capped exponential
+  backoff) and paces consults, so a multi-décret run survives the rate-limited free tier instead of
+  aborting on the first 429; a multi-hour `Retry-After` (daily-quota exhaustion) fails fast with the
+  reset time rather than burning retries. Offline-tested (respx). The operator runbook
+  (`data/attributions/README.md`) gains the Légifrance-subscription + OAuth-client-vs-API-key + daily-
+  quota notes surfaced while running it live.
+- Cour des comptes « contrôle » layer scaled on the real corpus (FSC-70): the deterministic full-text
+  extractor was run over 10 real ccomptes.fr report PDFs (committed reports list
+  `data/mentions/cour_des_comptes_reports.yaml`; 60 candidates, 78% resolved). Three vetted, primary-
+  subject mentions were promoted into `data/mentions/cour_des_comptes.yaml` — OFII + OFPRA (asylum-
+  seeker regional orientation / SAS) and the Ministère des Armées (strategic-anticipation function) —
+  each linked to its real report. Acronym/name-collision false positives (e.g. "ASP" = the report's
+  own abbreviation) were filtered by review and motivate the precision work tracked in FSC-77.
+- Demo-seed oversight/why rows, gazetteer aliases, favicon, PISTE ops runbook (FSC-69/70/71/72).
+  **FSC-71**: the illustrative dev/preview seed (`demo_seed.py` → `supabase/demo_seed.sql`) now carries
+  clearly-« Exemple » attributions + Cour des comptes mentions, so the « épinglé par la Cour » graph
+  badge and the fiche « Attributions / mandat légal » + « Contrôle / Cour des comptes » sections render
+  out-of-the-box on the default local/preview stack (real source ids so the provenance UI resolves;
+  links to real institutional landing pages; never a fabricated finding). **FSC-70**: `CrosswalkEntry`
+  gains an optional `aliases` list of curated alternate surfaces (former names / acronyms, e.g. France
+  Travail → « Pôle emploi ») fed to the deterministic Cour des comptes gazetteer as extra exact-match
+  surfaces (same precision guards, never fuzzy); preserved across `make resolve-seed`. **FSC-72**: a
+  DSFR-blue SVG favicon (`packages/web/public/favicon.svg`) referenced in `index.html`, removing the
+  only console 404. **FSC-69**: an operator runbook for provisioning the PISTE secret + running the
+  live attribution extraction (`data/attributions/README.md`); the live run itself stays operator-gated
+  (OCR + fuzzy matching + the real-corpus mention run are deferred to their own PRs).
 - Ministerial attributions + Cour des comptes oversight layers (FSC-27 / FSC-62), manual/metadata-first.
   The `Attribution`/`Mention` domain models gain the business columns the "why" + "contrôle" layers
   need (attribution: `source_url` + `provenance`; mention: `report_date`, `mention_type`
