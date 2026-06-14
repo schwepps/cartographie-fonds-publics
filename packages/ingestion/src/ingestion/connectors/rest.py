@@ -130,7 +130,7 @@ def _request_with_retry(
                     f"PISTE rate limit: Retry-After={int(retry_after)}s "
                     f"(~{retry_after / 3600:.1f}h) — free-tier quota exhausted; rerun after reset."
                 )
-            _pause(retry_after or backoff)
+            _pause(backoff if retry_after is None else retry_after)  # honor Retry-After: 0
             continue
         resp.raise_for_status()
         return resp

@@ -210,6 +210,26 @@ def test_long_retry_after_fails_fast_without_retrying(  # type: ignore[no-untype
     assert search.call_count == 1  # no pointless retries
 
 
+def test_retry_after_zero_is_honored_not_treated_as_falsy(  # type: ignore[no-untyped-def]
+    load_fixture, _creds, respx_mock, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # Retry-After: 0 means "retry immediately"; 0 is a valid value, not falsy — it must NOT fall
+    # back to exponential backoff.
+    waits: list[float] = []
+    monkeypatch.setattr(mod, "_pause", waits.append)
+    respx_mock.post(PISTE_TOKEN_URL).mock(
+        return_value=httpx.Response(200, content=load_fixture("piste_token.json"))
+    )
+    respx_mock.post(SEARCH_URL).mock(
+        side_effect=[
+            httpx.Response(429, headers={"Retry-After": "0"}),
+            httpx.Response(200, content=load_fixture("piste_loda_search.json")),
+        ]
+    )
+    RestConnector().discover(_SOURCE)
+    assert waits == [0.0]  # honored the 0, did not back off
+
+
 def test_snapshot_writes_provenance_parquet(_creds, tmp_path, monkeypatch) -> None:  # type: ignore[no-untyped-def]
     # Redirect the snapshot root (import-time bound) so the test never writes to data/.
     monkeypatch.setattr(mod, "write_snapshot", partial(mod.write_snapshot, root=tmp_path))

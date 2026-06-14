@@ -268,8 +268,10 @@ def merge_seed(seed: list[CrosswalkEntry], existing: list[CrosswalkEntry]) -> li
     merged: dict[str, CrosswalkEntry] = {}
     for entry in seed:
         carried = existing_aliases.get(entry.normalized_name)
+        # Copy the list — model_copy does a shallow update, so reusing the instance would share it
+        # with the existing entry (a later in-place mutation would touch both rows).
         merged[entry.normalized_name] = (
-            entry.model_copy(update={"aliases": carried}) if carried else entry
+            entry.model_copy(update={"aliases": list(carried)}) if carried else entry
         )
     merged.update(curated)  # curated rows take precedence
     return sorted(merged.values(), key=lambda e: e.normalized_name)

@@ -66,7 +66,8 @@ graph badge (« épinglé par la Cour », FSC-65).
 
 To scale beyond the demonstrable subset:
 
-1. Assemble a reports list (`reports:` of `{url, report_ref, report_date, mention_type, license}`)
+1. Assemble a reports list (`reports:` of `{url, report_ref, report_date, mention_type, license}` —
+   only `url` is required; `mention_type` defaults to `rapport`, `license` to Licence Ouverte 2.0)
    from the data.gouv `cour-des-comptes` corpus (and CRTC regional reports).
 2. Run `make extract-mentions REPORTS=path/to/reports.yaml`; review coverage + match rate.
 3. Promote vetted candidates into `../cour_des_comptes.yaml` per the flow above (precision over recall).
