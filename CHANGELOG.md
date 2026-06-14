@@ -6,6 +6,13 @@ Commits follow [Conventional Commits](https://www.conventionalcommits.org/).
 
 ## [Unreleased]
 ### Added
+- PISTE/Légifrance connector resilience for the live attribution run (FSC-69): the `rest` connector now
+  retries transient failures (429 honoring `Retry-After`, read/connect timeouts with capped exponential
+  backoff) and paces consults, so a multi-décret run survives the rate-limited free tier instead of
+  aborting on the first 429; a multi-hour `Retry-After` (daily-quota exhaustion) fails fast with the
+  reset time rather than burning retries. Offline-tested (respx). The operator runbook
+  (`data/attributions/README.md`) gains the Légifrance-subscription + OAuth-client-vs-API-key + daily-
+  quota notes surfaced while running it live.
 - Cour des comptes « contrôle » layer scaled on the real corpus (FSC-70): the deterministic full-text
   extractor was run over 10 real ccomptes.fr report PDFs (committed reports list
   `data/mentions/cour_des_comptes_reports.yaml`; 60 candidates, 78% resolved). Three vetted, primary-

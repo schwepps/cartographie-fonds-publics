@@ -8,6 +8,7 @@ set and missing credentials both fail loud, and that the JSON extract snapshots 
 
 from __future__ import annotations
 
+import json
 from functools import partial
 
 import httpx
@@ -116,8 +117,6 @@ def test_extract_consults_each_text(load_fixture, _creds, respx_mock) -> None:  
     raw = RestConnector().extract(resolved)
 
     assert consult_route.called
-    import json
-
     payload = json.loads(raw)
     assert payload["texts"][0]["cid"] == "JORFTEXT000052457068"
     # The HTML article body is flattened to plain text for the linker.
@@ -127,6 +126,88 @@ def test_extract_consults_each_text(load_fixture, _creds, respx_mock) -> None:  
 def test_extract_empty_texts_fails_loud() -> None:
     with pytest.raises(ValueError, match="no LODA texts"):
         RestConnector().extract({"texts": []})
+
+
+def test_search_retries_on_429_then_succeeds(  # type: ignore[no-untyped-def]
+    load_fixture, _creds, respx_mock, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # PISTE's free tier rate-limits; a 429 must be retried (Retry-After), not abort the run.
+    monkeypatch.setattr(mod, "_pause", lambda *_: None)  # no real backoff in the test
+    respx_mock.post(PISTE_TOKEN_URL).mock(
+        return_value=httpx.Response(200, content=load_fixture("piste_token.json"))
+    )
+    search = respx_mock.post(SEARCH_URL).mock(
+        side_effect=[
+            httpx.Response(429, headers={"Retry-After": "1"}),
+            httpx.Response(200, content=load_fixture("piste_loda_search.json")),
+        ]
+    )
+    resolved = RestConnector().discover(_SOURCE)
+    assert search.call_count == 2  # retried once after the 429
+    assert [t["cid"] for t in resolved["texts"]] == [
+        "JORFTEXT000052457068",
+        "JORFTEXT000052457900",
+    ]
+
+
+def test_consult_retries_on_read_timeout(  # type: ignore[no-untyped-def]
+    load_fixture, _creds, respx_mock, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # A slow consult (read timeout) is transient on the free tier — retry, don't drop the décret.
+    monkeypatch.setattr(mod, "_pause", lambda *_: None)
+    respx_mock.post(PISTE_TOKEN_URL).mock(
+        return_value=httpx.Response(200, content=load_fixture("piste_token.json"))
+    )
+    consult = respx_mock.post(CONSULT_URL).mock(
+        side_effect=[
+            httpx.ReadTimeout("slow consult"),
+            httpx.Response(200, content=load_fixture("piste_consult_decree.json")),
+        ]
+    )
+    resolved = {
+        "texts": [
+            {
+                "id": "X",
+                "cid": "X",
+                "title": "Décret ...",
+                "date": "2025-10-30",
+                "url": "https://www.legifrance.gouv.fr/loda/id/X",
+            }
+        ]
+    }
+    raw = RestConnector().extract(resolved)
+    assert consult.call_count == 2  # retried once after the timeout
+    assert json.loads(raw)["texts"][0]["cid"] == "X"
+
+
+def test_search_429_exhausts_retries_then_fails_loud(  # type: ignore[no-untyped-def]
+    load_fixture, _creds, respx_mock, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # If the rate limit never clears, fail loud (never silently emit an empty/partial extract).
+    monkeypatch.setattr(mod, "_pause", lambda *_: None)
+    respx_mock.post(PISTE_TOKEN_URL).mock(
+        return_value=httpx.Response(200, content=load_fixture("piste_token.json"))
+    )
+    respx_mock.post(SEARCH_URL).mock(return_value=httpx.Response(429))
+    with pytest.raises(httpx.HTTPStatusError):
+        RestConnector().discover(_SOURCE)
+
+
+def test_long_retry_after_fails_fast_without_retrying(  # type: ignore[no-untyped-def]
+    load_fixture, _creds, respx_mock, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # The free-tier daily quota returns a multi-hour Retry-After; don't burn retries — fail loud
+    # immediately with the reset time so the operator reruns later.
+    monkeypatch.setattr(mod, "_pause", lambda *_: None)
+    respx_mock.post(PISTE_TOKEN_URL).mock(
+        return_value=httpx.Response(200, content=load_fixture("piste_token.json"))
+    )
+    search = respx_mock.post(SEARCH_URL).mock(
+        return_value=httpx.Response(429, headers={"Retry-After": "26195"})
+    )
+    with pytest.raises(RuntimeError, match="quota exhausted"):
+        RestConnector().discover(_SOURCE)
+    assert search.call_count == 1  # no pointless retries
 
 
 def test_snapshot_writes_provenance_parquet(_creds, tmp_path, monkeypatch) -> None:  # type: ignore[no-untyped-def]

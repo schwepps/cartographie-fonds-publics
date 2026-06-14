@@ -54,14 +54,19 @@ Only after promotion does an attribution render on the fiche (« Attributions / 
 The code path above (discover → link → backlog) is shipped and offline-tested; the **live run is
 operator-gated** because it needs a PISTE secret that cannot live in the repo. To execute it:
 
-1. **Provision a free PISTE account** at <https://piste.gouv.fr> and register an application with the
-   Légifrance (LODA) API to obtain an OAuth2 **client id + secret**.
+1. **Provision a free PISTE account** at <https://piste.gouv.fr> and register an application, then
+   **subscribe it to the Légifrance API** (the OAuth client only works once the subscription is active
+   — an unsubscribed app's token mint fails `invalid_client`). Use the application's **OAuth2 Client
+   ID + Secret** (the *OAuth Credentials* section), **not** the JS *API Key*.
 2. **Store the secret, server/CI only** — set `PISTE_CLIENT_ID` / `PISTE_CLIENT_SECRET` as GitHub
    Actions secrets (the same way as `SUPABASE_SERVICE_ROLE_KEY`; see `.env.example` and
    `DEPLOYMENT.md`). **Never** the frontend, never committed.
 3. **Run** `make attributions-candidates`. It mints the token, runs the LODA search, and writes the
    review backlog to `candidates/ministres_candidates.yaml`, printing coverage + match rate (it exits
-   nonzero below the match-rate floor). Confirm the numbers look sane.
+   nonzero below the match-rate floor). Confirm the numbers look sane. The connector retries transient
+   429/timeouts, but the **free tier has a daily quota**: if it fails fast with `Retry-After=…s — quota
+   exhausted`, you've hit it — rerun after the stated reset (avoid repeated attempts, which only burn
+   more quota).
 4. **Review + promote** vetted candidates into `ministres.yaml` per the **Promotion** section above —
    never auto-publish (the « pourquoi » layer is a public-trust signal).
 5. **Regenerate the seed / run the load** (`make seed` for dev/preview, or `make load` for prod) so the
