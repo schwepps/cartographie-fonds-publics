@@ -46,6 +46,9 @@
     "vitest-axe": "^0.1.0"
   },
   "pnpm": {
+    "overrides": {
+      "undici": "^7.28.0"
+    },
     "auditConfig": {
       "ignoreGhsas": [
         "GHSA-gv7w-rqvm-qjhr"
