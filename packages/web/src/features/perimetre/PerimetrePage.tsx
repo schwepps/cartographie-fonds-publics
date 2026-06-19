@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ProvenanceBadge } from "../../lib/provenance/ProvenanceBadge";
+import { IS_DEMO } from "../../lib/config";
 import { euroCompact } from "../../lib/format";
 import { LEVELS, type Level } from "../../lib/levels";
 import {
@@ -107,7 +108,7 @@ export default function PerimetrePage() {
             <Sankey
               links={teaser.links}
               height={320}
-              ariaLabel={`Aperçu des principaux flux de financement de ${teaser.name} (montants d’exemple). Détail complet et équivalent tabulaire sur la page Flux de financement.`}
+              ariaLabel={`Aperçu des principaux flux de financement de ${teaser.name}${IS_DEMO ? " (montants d’exemple)" : ""}. Détail complet et équivalent tabulaire sur la page Flux de financement.`}
             />
           ) : (
             <StateBlock title="Aucun flux disponible" />

@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import { IS_DEMO } from "../../lib/config";
 import { buildFlowLinks, type SankeyLink } from "../../lib/flows";
 import { euroCompact } from "../../lib/format";
 import { mixesPerimeters } from "../../lib/perimeter";
@@ -80,8 +81,10 @@ export default function FluxPage() {
           <ExampleFlag>Montants d’exemple</ExampleFlag>
         </div>
         <p className="fr-lead" style={{ marginTop: 12, maxWidth: "70ch" }}>
-          Du financeur public à l’opérateur, puis au titulaire du marché ou au délégataire. Survolez
-          un flux pour son montant et sa provenance.
+          Les marchés et délégations publiés (DECP) d’un acheteur public vers ses titulaires. Les
+          montants sont le <strong>montant global du marché</strong> (souvent un plafond
+          d’accord-cadre, sur toute sa durée) — pas une dépense annuelle. Survolez un flux pour son
+          détail.
         </p>
       </div>
 
@@ -108,10 +111,13 @@ export default function FluxPage() {
               ))}
             </Select>
             <span className="fr-sm text-mention">
-              Total tracé :{" "}
+              Somme des {links.length} flux affichés :{" "}
               <strong className="tnum" style={{ color: "var(--grey-title)" }}>
                 {euroCompact(total)}
-              </strong>
+              </strong>{" "}
+              <span title="Les plus gros marchés/délégations de cet acheteur — pas son total consolidé.">
+                ⓘ
+              </span>
             </span>
           </div>
 
@@ -147,7 +153,7 @@ export default function FluxPage() {
             Équivalent tabulaire
           </h2>
           <DataTable
-            caption={`Flux de financement — ${rootName} (exemple)`}
+            caption={`Flux de financement — ${rootName}${IS_DEMO ? " (exemple)" : ""}`}
             columns={fluxColumns}
             rows={tableRows}
             getRowKey={(r) => r.key}

@@ -1,5 +1,7 @@
 import { Fragment, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Link, useSearchParams } from "react-router-dom";
+import { displayName } from "../../lib/acronyms";
+import { IS_DEMO } from "../../lib/config";
 import { euroCompact } from "../../lib/format";
 import { LEVELS, type Level } from "../../lib/levels";
 import { tutelleChain } from "../../lib/tutelle";
@@ -201,7 +203,7 @@ export default function SearchPage() {
                         {entity.category ? <Badge>{entity.category}</Badge> : null}
                       </div>
                       <div className="fr-h4" style={{ marginBottom: 4 }}>
-                        {highlight(entity.name, q)}
+                        {highlight(displayName(entity.siren, entity.name), q)}
                       </div>
                       <div className="breadcrumb fr-xs">
                         {chain.map((c, i) => (
@@ -216,7 +218,7 @@ export default function SearchPage() {
                       <div className="figure__value" style={{ fontSize: "1.25rem" }}>
                         {euroCompact(entity.magnitude || null)}
                       </div>
-                      <div className="fr-xs text-mention">CP · exemple</div>
+                      <div className="fr-xs text-mention">CP{IS_DEMO ? " · exemple" : ""}</div>
                     </div>
                   </Link>
                 );
