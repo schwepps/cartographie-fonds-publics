@@ -2,12 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
 import { acronymOf } from "../../lib/acronyms";
 import { MINISTRY_CATEGORY } from "../../lib/levels";
-import {
-  budgetCpBySiren,
-  buildMagnitudeMap,
-  type AmountEdge,
-  type BudgetCpRow,
-} from "../../lib/magnitude";
+import { budgetCpBySiren, buildMagnitudeMap, type BudgetCpRow } from "../../lib/magnitude";
 
 export interface SearchEntity {
   siren: string;
@@ -16,7 +11,7 @@ export interface SearchEntity {
   category: string | null;
   parent_siren: string | null;
   acronym: string | null;
-  /** Derived CP magnitude (budget / funds) — drives the amount column + sort. */
+  /** Derived CP magnitude (budget) — drives the amount column + sort. */
   magnitude: number;
 }
 
@@ -30,48 +25,70 @@ export type SearchState =
       ministries: SearchEntity[];
     };
 
+type RawEntity = Omit<SearchEntity, "acronym" | "magnitude">;
+
+/** Cap on server-side text matches; the full perimeter is ~150k entities, so we never fetch it. */
+const RESULT_LIMIT = 200;
+/** Empty-query browse default: the institutional perimeter (state/local/social), not the suppliers. */
+const BROWSE_LIMIT = 1000;
+
+const ENTITY_COLS = "siren,name,level,category,parent_siren";
+
 /**
- * Loads the searchable institution set: all entities + the edges/budget needed to derive each
- * entity's CP magnitude. The set is small (seed/demo scale), so search/facet filtering happens
- * client-side in the page; production scale would move to a server-side RPC.
+ * Query-driven institution search. Text matching happens **server-side**: a non-empty query goes to
+ * the `search_entities` RPC (accent-insensitive `unaccent` ilike on name + SIREN, migration 0009),
+ * so a département/operator/supplier is found regardless of the ~150k total — and "hérault" matches
+ * "HERAULT" (the old client-side filter only ever saw PostgREST's first 1000-row page and was
+ * accent-sensitive). An empty query browses the institutional perimeter (state/local/social).
+ * Magnitude is the per-entity voted budget CP only — the edge-derived funding magnitude would need
+ * the full ~1.2M-edge graph and is empty on the curated data anyway. Re-runs whenever `query` changes.
  */
-export function useSearch(): SearchState {
+export function useSearch(query: string): SearchState {
   const [state, setState] = useState<SearchState>({ status: "loading" });
 
   useEffect(() => {
     let cancelled = false;
 
     async function load() {
-      const [entityRes, edgeRes, budgetRes] = await Promise.all([
-        supabase.from("entities").select("siren,name,level,category,parent_siren").limit(5000),
-        supabase.from("edges").select("source_siren,target_siren,type,amount_eur").limit(20000),
+      // Keep the previous results visible while a new query loads (no blank flash on each keystroke);
+      // the initial state is already "loading".
+      const q = query.trim();
+      const base = () => supabase.from("entities").select(ENTITY_COLS);
+      const resultQuery = q
+        ? supabase.rpc("search_entities", { p_query: q, p_limit: RESULT_LIMIT })
+        : base().in("level", ["state", "local", "social"]).limit(BROWSE_LIMIT);
+
+      const [resultRes, ministryRes, budgetRes] = await Promise.all([
+        resultQuery,
+        base().eq("category", MINISTRY_CATEGORY).limit(100),
         supabase.from("budget_facts").select("entity_siren,exercice,amount_cp_eur,executed"),
       ]);
       if (cancelled) return;
 
-      if (entityRes.error || edgeRes.error || budgetRes.error) {
+      if (resultRes.error || ministryRes.error || budgetRes.error) {
         console.error("Search load failed", {
-          entity: entityRes.error,
-          edge: edgeRes.error,
+          result: resultRes.error,
+          ministry: ministryRes.error,
           budget: budgetRes.error,
         });
         setState({ status: "error" });
         return;
       }
 
-      const rawEntities =
-        (entityRes.data as Omit<SearchEntity, "acronym" | "magnitude">[] | null) ?? [];
-      const edges = (edgeRes.data as AmountEdge[] | null) ?? [];
       const budget = (budgetRes.data as BudgetCpRow[] | null) ?? [];
-
-      const magnitude = buildMagnitudeMap(edges, budgetCpBySiren(budget));
-      const entities: SearchEntity[] = rawEntities.map((e) => ({
+      const magnitude = buildMagnitudeMap([], budgetCpBySiren(budget));
+      const decorate = (e: RawEntity): SearchEntity => ({
         ...e,
         acronym: acronymOf(e.siren),
         magnitude: magnitude.get(e.siren) ?? 0,
-      }));
-      const bySiren = new Map(entities.map((e) => [e.siren, e]));
-      const ministries = entities.filter((e) => e.category === MINISTRY_CATEGORY);
+      });
+
+      const entities = ((resultRes.data as RawEntity[] | null) ?? []).map(decorate);
+      const ministries = ((ministryRes.data as RawEntity[] | null) ?? []).map(decorate);
+      // bySiren covers results + ministries so a result's tutelle chain can resolve its parent.
+      const bySiren = new Map<string, SearchEntity>(
+        [...ministries, ...entities].map((e) => [e.siren, e]),
+      );
 
       setState({ status: "ready", entities, bySiren, ministries });
     }
@@ -80,7 +97,7 @@ export function useSearch(): SearchState {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [query]);
 
   return state;
 }

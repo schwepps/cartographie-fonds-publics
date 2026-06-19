@@ -29,6 +29,9 @@ begin
   -- 2. anon can call the graph RPC (execute granted in 0002_graph_functions.sql).
   perform * from public.graph_neighbors('000000001', 1);
 
+  -- 2b. anon can call the search RPC (execute granted in 0009_search_entities.sql).
+  perform * from public.search_entities('probe', 10);
+
   -- 3. anon cannot INSERT: no write policy, so WITH CHECK fails (SQLSTATE 42501).
   begin
     insert into entities (siren, name, level) values ('000000002', 'should fail', 'state');

@@ -41,6 +41,8 @@ vi.mock("../../lib/supabase", () => {
     };
     const builder = {
       select: () => builder,
+      or: () => builder,
+      in: () => builder,
       then: (resolve: (value: typeof result) => unknown) => Promise.resolve(result).then(resolve),
     };
     return builder;

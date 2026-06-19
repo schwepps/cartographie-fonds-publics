@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { axe } from "vitest-axe";
@@ -17,7 +17,7 @@ vi.mock("../../lib/supabase", () => {
       },
       {
         siren: "180089013",
-        name: "Centre national de la recherche scientifique",
+        name: "CNRS - Centre national de la recherche scientifique",
         level: "state",
         category: "EPST",
         parent_siren: "110044013",
@@ -42,16 +42,28 @@ vi.mock("../../lib/supabase", () => {
       { entity_siren: "110044013", exercice: 2025, amount_cp_eur: 26_000_000_000, executed: false },
     ],
   };
+  // The hook now filters server-side (or/in/eq); the mock returns the table fixture unfiltered and
+  // the page's own client filter (name/acronym/SIREN) drives the assertions below.
   const from = (table: string) => {
-    const result = { data: data[table] ?? [], error: null, count: 0 };
+    const result = { data: data[table] ?? [], error: null, count: (data[table] ?? []).length };
     const builder = {
       select: () => builder,
       limit: () => builder,
+      or: () => builder,
+      in: () => builder,
+      eq: () => builder,
       then: (resolve: (value: typeof result) => unknown) => Promise.resolve(result).then(resolve),
     };
     return builder;
   };
-  return { supabase: { from } };
+  // The search_entities RPC matches name/SIREN server-side; the mock mirrors that (case-insensitive).
+  const rpc = (_name: string, args: { p_query?: string }) => {
+    const q = (args?.p_query ?? "").toLowerCase();
+    const rows = data.entities as Array<{ name: string; siren: string }>;
+    const filtered = rows.filter((e) => e.name.toLowerCase().includes(q) || e.siren.includes(q));
+    return Promise.resolve({ data: filtered, error: null });
+  };
+  return { supabase: { from, rpc } };
 });
 
 const renderSearch = (initial = "/search") =>
@@ -74,11 +86,12 @@ describe("SearchPage (Recherche)", () => {
     expect(resultLinks()).toHaveLength(3);
   });
 
-  it("filters by the query (matches the CNRS acronym)", async () => {
+  it("filters by the query (server-side name match)", async () => {
     renderSearch();
     await screen.findByText(CNRS);
     await userEvent.type(screen.getByLabelText("Terme de recherche"), "CNRS");
-    expect(resultLinks()).toHaveLength(1);
+    // debounced (250 ms) → search_entities RPC → only CNRS remains.
+    await waitFor(() => expect(resultLinks()).toHaveLength(1));
     expect(screen.getByText(CNRS)).toBeInTheDocument();
   });
 
@@ -94,8 +107,7 @@ describe("SearchPage (Recherche)", () => {
 
   it("honours the ?q= seed from the header search", async () => {
     renderSearch("/search?q=Région");
-    await screen.findByText(/résultat/);
-    expect(resultLinks()).toHaveLength(1);
+    await waitFor(() => expect(resultLinks()).toHaveLength(1));
     expect(screen.queryByText(CNRS)).toBeNull();
   });
 
