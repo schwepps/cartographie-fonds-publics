@@ -1,5 +1,10 @@
-"""Ingestion CLI (stub). Commands: ingest, refresh, resolve, operators, budget, resolve-seed,
-seed-emit."""
+"""Ingestion CLI. Commands: ingest, refresh, resolve, operators, budget, resolve-seed,
+seed-emit, demo-seed-emit, load, attributions-candidates, extract-mentions, coverage,
+curate-operators.
+
+``ingest`` runs the registry-driven discover→extract→validate→snapshot loop (FSC-38) for the
+curated load sources; ``load`` renders the provenance-scoped curated SQL from those snapshots
+(FSC-35). Everything stays registry-driven — no dataset slug/URL is hardcoded here."""
 
 from __future__ import annotations
 
@@ -31,7 +36,15 @@ from .crosswalk_io import (
 )
 from .curate_operators import SearchFn, curate
 from .demo_seed import DEMO_SQL_PATH, emit_demo_sql
-from .load import LOAD_SQL_PATH, emit_load_sql, load_summary
+from .errors import SnapshotError, UnsupportedFormatError
+from .load import (
+    ALL_SOURCE_IDS,
+    EDITORIAL_SOURCE_IDS,
+    ETAT_CENTRAL_SOURCE_IDS,
+    LOAD_SQL_PATH,
+    emit_load_sql,
+    load_summary,
+)
 from .mentions_candidates_io import CANDIDATES_PATH as MENTION_CANDIDATES_PATH
 from .mentions_candidates_io import write_candidates as write_mention_candidates
 from .registry import Source, get_source, sources
@@ -92,24 +105,124 @@ def _resolve(s: Source) -> Connector | None:
         return None
 
 
+def _select_ingest_targets(only: list[str] | None, all_sources: bool) -> list[Source]:
+    """Resolve which registry sources to ingest.
+
+    Default: the curated load set (``ALL_SOURCE_IDS`` — exactly what ``make load`` consumes from
+    snapshots). ``--only`` selects exact ids (fails loud on an unknown id); ``--all-sources`` walks
+    the whole registry (useful with ``--discover-only`` to smoke-test every source's discovery).
+    The editorial sources are *not* in the default: they curate from reviewed YAML, so their
+    snapshot is provenance-only — ingest them explicitly with ``--only`` if you want it.
+    """
+    registry = {s.id: s for s in sources()}
+    if only:
+        unknown = [sid for sid in only if sid not in registry]
+        if unknown:
+            raise typer.BadParameter(f"unknown source id(s): {', '.join(unknown)}")
+        return [registry[sid] for sid in only]
+    if all_sources:
+        return list(registry.values())
+    return [registry[sid] for sid in ALL_SOURCE_IDS if sid in registry]
+
+
+def _describe_resolved(resolved: dict[str, Any]) -> str:
+    """A short, connector-agnostic description of what discovery resolved (for the run log)."""
+    for key in ("title", "slug", "dataset_id", "resource_url", "endpoint", "source_ref"):
+        value = resolved.get(key)
+        if value:
+            return f"{key}={value!r}"
+    return f"keys={sorted(resolved)}"
+
+
+def _run_ingest_source(connector: Connector, source: Source, *, discover_only: bool) -> str:
+    """Run one source's pipeline; return a human detail. Raises on any stage failure.
+
+    ``discover_only`` stops after discovery (a dry-run that resolves the live dataset without a
+    download or snapshot — the cheap "what resolves?" probe). Validation is gated on the registry's
+    explicit ``schema.validate`` opt-in (only DECP today); a ``None`` ref makes validate a no-op.
+    """
+    resolved = connector.discover(source.raw)
+    if discover_only:
+        return f"discovered {_describe_resolved(resolved)}"
+    raw = connector.extract(resolved)
+    connector.validate(raw, source.schema_ref if source.schema_validate else None)
+    path = connector.snapshot(raw, source.id)
+    return f"snapshot {path} ({len(raw):,} bytes)"
+
+
 @app.command()
-def ingest() -> None:
-    """Run discover -> extract -> validate -> snapshot -> stage for all sources."""
-    routed = missing = 0
-    for s in sources():
-        connector = _resolve(s)
-        if connector is None:
-            missing += 1
+def ingest(
+    only: Annotated[
+        list[str] | None,
+        typer.Option("--only", help="Ingest only these source id(s) (repeatable)."),
+    ] = None,
+    all_sources: Annotated[
+        bool,
+        typer.Option("--all-sources", help="Ingest every registry source, not just the load set."),
+    ] = False,
+    discover_only: Annotated[
+        bool,
+        typer.Option(
+            "--discover-only", help="Resolve each source's dataset; do not extract/snapshot."
+        ),
+    ] = False,
+) -> None:
+    """Run discover → extract → validate → snapshot for the curated load sources (FSC-38).
+
+    Routing is **all-or-nothing**: every target is resolved to a connector *before* any network
+    side effect, so an unroutable source aborts the run before the first snapshot is written. Each
+    source is then ingested independently (``write_snapshot`` advances its ``latest.json`` pointer
+    atomically), and a per-source ok/skipped/failed summary is printed. The curated load
+    (``load`` / ``make load``) is a separate, cross-source, provenance-scoped step run afterwards.
+    Exits nonzero if any source failed.
+    """
+    targets = _select_ingest_targets(only, all_sources)
+
+    routed: list[tuple[Source, Connector]] = []
+    unroutable: list[str] = []
+    for s in targets:
+        try:
+            routed.append((s, get_connector(s)))
+        except UnknownPlatformError as exc:
+            unroutable.append(f"{s.id}: {exc}")
+    if unroutable:
+        for line in unroutable:
+            typer.echo(f"  UNROUTABLE {line}", err=True)
+        typer.echo(
+            f"[ingest] {len(unroutable)} source(s) cannot be routed to a connector — aborting "
+            "before any extract.",
+            err=True,
+        )
+        raise typer.Exit(code=1)
+
+    ok = skipped = failed = 0
+    for s, connector in routed:
+        editorial = s.id in EDITORIAL_SOURCE_IDS
+        # A credential-gated connector (PISTE) fails loud without its secret; treat absence as a
+        # skip — the curated graph still renders the reviewed editorial YAML (golden rule #5).
+        if not discover_only and not getattr(connector, "has_credentials", True):
+            typer.echo(f"  SKIP {s.id}: credentials absent (editorial YAML fallback)")
+            skipped += 1
             continue
-        routed += 1
-        typer.echo(f"[ingest] {s.id} ({s.layer}) — {type(connector).__name__}")
-        # TODO (FSC-38): connector.discover -> extract -> validate -> snapshot. The curated load
-        # is a separate, cross-source step run after snapshots exist (`load` command / `make load`,
-        # see ingestion.load), not folded into a per-source stage(); that keeps the rebuild
-        # provenance-scoped and atomic. When this loop snapshots live, decide all-or-nothing routing
-        # before any side effects.
-    if missing:
-        typer.echo(f"[ingest] routed {routed}, skipped {missing}", err=True)
+        try:
+            detail = _run_ingest_source(connector, s, discover_only=discover_only)
+            typer.echo(f"  OK   {s.id} ({s.layer}): {detail}")
+            ok += 1
+        except (SnapshotError, UnsupportedFormatError) as exc:
+            # A non-tabular editorial resource (e.g. the Cour des comptes PDF) can't be snapshotted;
+            # its transform reads reviewed YAML, so this is a skip, not a failure.
+            if editorial:
+                typer.echo(f"  SKIP {s.id}: non-tabular resource — {exc}", err=True)
+                skipped += 1
+            else:
+                typer.echo(f"  FAIL {s.id}: {exc}", err=True)
+                failed += 1
+        except Exception as exc:  # noqa: BLE001 — report any source failure and keep going
+            typer.echo(f"  FAIL {s.id}: {type(exc).__name__}: {exc}", err=True)
+            failed += 1
+
+    typer.echo(f"[ingest] {ok} ok, {skipped} skipped, {failed} failed (of {len(routed)} routed)")
+    if failed:
         raise typer.Exit(code=1)
 
 
@@ -325,11 +438,43 @@ def demo_seed_emit(
     typer.echo(f"[demo-seed-emit] wrote {written}")
 
 
+# The curated source sets the `load` command can render, by `--scope`. Defined in ingestion.load:
+# `etat-central` (Phase 1 default), `all` (whole four-layer perimeter), `editorial` (the opt-in
+# attributions/mentions layers, which curate from reviewed YAML — see _empty_rows below).
+_LOAD_SCOPES: dict[str, tuple[str, ...]] = {
+    "etat-central": ETAT_CENTRAL_SOURCE_IDS,
+    "all": ALL_SOURCE_IDS,
+    "editorial": EDITORIAL_SOURCE_IDS,
+}
+
+
+def _empty_rows(_source_id: str) -> tuple[list[str], list[dict[str, str]]]:
+    """A no-snapshot (headers, rows) reader for editorial sources.
+
+    Their transforms curate from reviewed YAML (data/attributions, data/mentions) and ignore the
+    snapshot rows, so the editorial load needs no snapshot — feed empty rows instead of requiring
+    one that `ingest` does not write for them.
+    """
+    return [], []
+
+
 @app.command()
 def load(
     out: Annotated[
         Path, typer.Option(help="Load SQL file to write (then applied by `make load`).")
     ] = LOAD_SQL_PATH,
+    scope: Annotated[
+        str,
+        typer.Option(help="Curated source set to load: etat-central | all | editorial."),
+    ] = "etat-central",
+    only: Annotated[
+        list[str] | None,
+        typer.Option(
+            "--only",
+            help="Load exactly these snapshot-backed source id(s), overriding --scope. Use when a "
+            "source in --scope has no live data yet (e.g. an upstream-deprecated dataset).",
+        ),
+    ] = None,
     snapshot_root: Annotated[
         Path | None, typer.Option(help="Snapshot root (defaults to CFP_SNAPSHOT_ROOT).")
     ] = None,
@@ -341,16 +486,35 @@ def load(
         ),
     ] = False,
 ) -> None:
-    """Render the curated État-central load SQL from the latest snapshots; print a load summary.
+    """Render the curated load SQL from the latest snapshots; print a load summary.
 
+    ``--scope`` selects the source set: ``etat-central`` (default, Phase 1), ``all`` (the whole
+    four-layer perimeter), or ``editorial`` (the attributions/mentions layers). ``--only`` overrides
+    it with an explicit list of snapshot-backed sources — the escape hatch when a ``--scope all``
+    source has no live data yet (an upstream-deprecated dataset) so the available layers still load.
     Emits SQL only — `make load` pipes it to psql via the service-role ``DATABASE_URL`` (mirroring
     `seed-emit` vs `make seed`). The load is idempotent and **provenance-scoped**: entities upsert
-    on SIREN; edges/budget_facts are rebuilt per source (delete-by-provenance then insert), so a
-    reload replaces exactly this load's sources and never touches another source's rows. Curated
-    rows only — raw extracts stay as Parquet snapshots (golden rule #6).
+    on SIREN; edges/budget_facts rebuild per source (delete-by-provenance then insert), so a reload
+    replaces exactly this load's sources and never touches another source's rows. Curated rows only
+    — raw extracts stay as Parquet snapshots (golden rule #6).
     """
+    if only:
+        source_ids: tuple[str, ...] = tuple(only)
+        read_rows = None  # --only is for snapshot-backed sources; editorial goes via --scope
+    else:
+        scoped = _LOAD_SCOPES.get(scope)
+        if scoped is None:
+            raise typer.BadParameter(
+                f"unknown scope {scope!r}; choose from {', '.join(sorted(_LOAD_SCOPES))}"
+            )
+        source_ids = scoped
+        # Editorial sources curate from reviewed YAML and ignore snapshot rows; feed an empty reader
+        # so the load needs no snapshot for them (ingest does not snapshot them by default).
+        read_rows = _empty_rows if scope == "editorial" else None
     root = snapshot_root if snapshot_root is not None else SNAPSHOT_ROOT
-    written, bundle = emit_load_sql(out, snapshot_root=root, allow_empty=allow_empty)
+    written, bundle = emit_load_sql(
+        out, source_ids=source_ids, snapshot_root=root, read_rows=read_rows, allow_empty=allow_empty
+    )
     typer.echo(load_summary(bundle))
     typer.echo(f"[load] wrote {written}")
 

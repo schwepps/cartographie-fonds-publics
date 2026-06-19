@@ -111,9 +111,23 @@ def test_unsafe_source_id_rejected(tmp_path: Path, bad: str) -> None:
 
 
 def test_unsupported_format_raises(tmp_path: Path) -> None:
-    # csv + json are supported (FSC-47); anything else is still a capability limit.
+    # csv + json + parquet are supported (FSC-47/FSC-38); anything else is still a capability limit.
     with pytest.raises(UnsupportedFormatError):
-        write_snapshot(b"\x00", source_id="decp", extracted_at=_AT, fmt="parquet", root=tmp_path)
+        write_snapshot(b"\x00", source_id="decp", extracted_at=_AT, fmt="xlsx", root=tmp_path)
+
+
+def test_write_snapshot_transcodes_non_utf8_csv(tmp_path: Path) -> None:
+    # The Jaune opérateurs CSV is cp1252; duckdb's read_csv needs utf-8. write_snapshot transcodes
+    # for the table write while the provenance hash stays over the ORIGINAL bytes (FSC-38).
+    raw = "siren,nom\n012345678,Opérateur Énergie\n".encode("cp1252")
+    path = write_snapshot(raw, source_id="operateurs_etat", extracted_at=_AT, root=tmp_path)
+    headers, rows = snapshot.read_snapshot_rows("operateurs_etat", root=tmp_path)
+    assert headers == ["siren", "nom"]
+    assert rows[0] == {
+        "siren": "012345678",
+        "nom": "Opérateur Énergie",
+    }  # accents + zeros preserved
+    assert read_provenance(path).content_sha256 == hashlib.sha256(raw).hexdigest()  # original bytes
 
 
 def test_snapshot_json_writes_parquet_with_format_provenance(tmp_path: Path) -> None:

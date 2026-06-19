@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-.PHONY: help install up down supabase-up supabase-down supabase-reset lint format typecheck test spike spike-live spike-resolve spike-resolve-live resolve resolve-seed operators budget ingest refresh seed load db-migrate db-verify web
+.PHONY: help install up down supabase-up supabase-down supabase-reset lint format typecheck test spike spike-live spike-resolve spike-resolve-live resolve resolve-seed operators budget ingest refresh seed load load-all db-migrate db-verify web
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-16s\033[0m %s\n",$$1,$$2}'
@@ -75,7 +75,7 @@ budget: ## Transform the offline budget samples into budget facts (voted + execu
 		--plf packages/ingestion/tests/fixtures/plf_depenses_sample.csv \
 		--execution packages/ingestion/tests/fixtures/ods_situation_mensuelle.csv
 
-ingest: ## Run the ingestion pipeline (reads data/registry, writes Supabase)
+ingest: ## Run discover->extract->validate->snapshot for the curated load sources (FSC-38)
 	uv run python -m ingestion.cli ingest
 
 refresh: ## Discover latest millésimes for all sources
@@ -113,9 +113,22 @@ demo-seed: ## Regenerate supabase/demo_seed.sql + load the ILLUSTRATIVE dev slic
 	uv run python -m ingestion.cli demo-seed-emit
 	psql "$$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/demo_seed.sql
 
-load: ## Load the curated État-central graph from latest snapshots into $$DATABASE_URL (FSC-35)
-	uv run python -m ingestion.cli load --out out/load.sql
+SCOPE ?= etat-central
+load: ## Load curated snapshots into $$DATABASE_URL (SCOPE=etat-central|all|editorial, FSC-35)
+	uv run python -m ingestion.cli load --scope $(SCOPE) --out out/load.sql
 	psql "$$DATABASE_URL" -v ON_ERROR_STOP=1 -f out/load.sql
+
+# Sources currently available live (FSC-38). budget_execution_mensuelle (deprecated upstream) and
+# epl_sem_spl (no open dataset) are excluded — see registry notes. Add them back here once published.
+# ORDER MATTERS (mirrors ingestion.load.ALL_SOURCE_IDS): authoritative layers (state operators, local
+# collectivités) come BEFORE the delegated DECP, so the entity merge keeps a shared SIREN's
+# authoritative level (e.g. a département that is also a DECP buyer stays `local`, not `delegated`).
+LIVE_SOURCES ?= operateurs_etat finances_locales_ofgl comptes_sociaux budget_plf_lfi decp_commande_publique
+load-all: ## Load the available live four-layer perimeter + editorial into $$DATABASE_URL
+	uv run python -m ingestion.cli load $(foreach s,$(LIVE_SOURCES),--only $(s)) --out out/load.sql
+	psql "$$DATABASE_URL" -v ON_ERROR_STOP=1 -f out/load.sql
+	uv run python -m ingestion.cli load --scope editorial --out out/load-editorial.sql
+	psql "$$DATABASE_URL" -v ON_ERROR_STOP=1 -f out/load-editorial.sql
 
 db-migrate: ## Apply Supabase SQL migrations (in order) to $$DATABASE_URL
 	@for f in supabase/migrations/*.sql; do \

@@ -36,8 +36,10 @@ _LATEST_POINTER = "latest.json"
 _UNSAFE_STAMP = re.compile(r"[^0-9A-Za-z]+")
 # Formats the harness can snapshot. JSON is tabularised to CSV first (see json_records), so the
 # atomic Parquet write + all_varchar faithfulness are one code path; provenance records the true
-# source format and hashes the *raw* bytes (FSC-47).
-_SUPPORTED_FORMATS = frozenset({"csv", "json"})
+# source format and hashes the *raw* bytes (FSC-47). A ``parquet`` source (e.g. the DECP dump, ~10x
+# smaller than its CSV) is read through duckdb's read_parquet — every column cast to VARCHAR so the
+# same all_varchar faithfulness (SIREN leading zeros) holds (FSC-38).
+_SUPPORTED_FORMATS = frozenset({"csv", "json", "parquet"})
 
 
 class Provenance(BaseModel):
@@ -76,9 +78,11 @@ def write_snapshot(
 ) -> Path:
     """Persist ``raw`` as a provenance-tagged Parquet snapshot. Return the snapshot path.
 
-    ``fmt`` is ``csv`` or ``json``. For ``json`` the extract is unwrapped (``record_path`` names the
-    envelope key, e.g. ODS ``results``) and tabularised to CSV before the Parquet write; provenance
-    still records ``format='json'`` and hashes the *raw* JSON bytes (the reproducibility anchor).
+    ``fmt`` is ``csv``, ``json`` or ``parquet``. For ``json`` the extract is unwrapped
+    (``record_path`` names the envelope key, e.g. ODS ``results``) and tabularised to CSV before the
+    Parquet write. For ``parquet`` the raw bytes are read straight through ``read_parquet`` (every
+    column cast to VARCHAR). In all cases provenance records the *true* source format and hashes the
+    *raw* bytes (the reproducibility anchor).
 
     Atomic and non-destructive: the new file and the ``latest.json`` pointer are swapped in with
     ``os.replace`` only after a successful write, so any failure leaves the previous valid
@@ -102,16 +106,28 @@ def write_snapshot(
     target_dir = Path(root) / source_id
     target_dir.mkdir(parents=True, exist_ok=True)
 
-    # Hash/measure the RAW extract (reproducibility anchor); JSON is then collapsed to the CSV view
-    # that read_csv stores all_varchar. A malformed JSON envelope fails loud here.
+    # Hash/measure the RAW extract (reproducibility anchor — over the ORIGINAL source bytes, before
+    # any transcode); JSON is then collapsed to the CSV view that read_csv stores all_varchar. A
+    # malformed JSON envelope fails loud here.
     content_sha256 = hashlib.sha256(raw).hexdigest()
     byte_size = len(raw)
+    is_parquet = fmt == "parquet"
     try:
-        table_bytes = raw if fmt == "csv" else json_to_csv_bytes(raw, record_path=record_path)
+        if fmt == "csv":
+            # French open data is often cp1252/latin-1 (e.g. the Jaune opérateurs CSV); duckdb's
+            # read_csv requires utf-8. Transcode to utf-8 for the table write while the provenance
+            # hash/size stay over the original raw bytes (golden rule #4 faithfulness).
+            table_bytes = _to_utf8(raw)
+        elif is_parquet:
+            table_bytes = raw
+        else:
+            table_bytes = json_to_csv_bytes(raw, record_path=record_path)
     except ValueError as exc:
         raise SnapshotError(f"Failed to snapshot source {source_id!r}: {exc}") from exc
 
-    raw_fd, raw_tmp = tempfile.mkstemp(dir=target_dir, suffix=".csv.tmp")
+    raw_fd, raw_tmp = tempfile.mkstemp(
+        dir=target_dir, suffix=".parquet.tmp" if is_parquet else ".csv.tmp"
+    )
     parquet_tmp: str | None = None
     try:
         with os.fdopen(raw_fd, "wb") as fh:
@@ -119,10 +135,17 @@ def write_snapshot(
 
         con = duckdb.connect()
         try:
-            con.execute(
-                "CREATE TABLE t AS SELECT * FROM read_csv(?, header=true, all_varchar=true)",
-                [raw_tmp],
-            )
+            # all_varchar both ways: read_csv reads text as text; read_parquet's columns are cast to
+            # VARCHAR so a parquet source keeps the same byte-faithful snapshot (e.g. SIREN zeros).
+            if is_parquet:
+                con.execute(
+                    "CREATE TABLE t AS SELECT columns(*)::VARCHAR FROM read_parquet(?)", [raw_tmp]
+                )
+            else:
+                con.execute(
+                    "CREATE TABLE t AS SELECT * FROM read_csv(?, header=true, all_varchar=true)",
+                    [raw_tmp],
+                )
             count_row = con.execute("SELECT count(*) FROM t").fetchone()
             row_count = int(count_row[0]) if count_row else 0
 
@@ -168,6 +191,22 @@ def write_snapshot(
         _silent_unlink(raw_tmp)
         if parquet_tmp is not None:
             _silent_unlink(parquet_tmp)
+
+
+def _to_utf8(raw: bytes) -> bytes:
+    """Decode a text extract and re-encode as utf-8, tolerating common French open-data encodings.
+
+    Tries utf-8 (incl. a BOM), then cp1252/latin-1 (the Jaune opérateurs CSV is cp1252). latin-1
+    decodes any byte sequence, so this always succeeds. Re-encoding preserves the characters
+    (accents) and leaves ASCII (e.g. SIREN leading zeros) untouched; the provenance hash is over the
+    original bytes by the caller, so faithfulness to the source is unaffected.
+    """
+    for encoding in ("utf-8-sig", "cp1252", "latin-1"):
+        try:
+            return raw.decode(encoding).encode("utf-8")
+        except UnicodeDecodeError:
+            continue
+    return raw  # unreachable: latin-1 never raises
 
 
 def read_provenance(path: Path | str) -> Provenance:

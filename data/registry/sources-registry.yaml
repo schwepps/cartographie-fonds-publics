@@ -156,7 +156,10 @@ sources:
     description: "Dépenses par mission/programme/action/sous-action et ministère (voté)."
     platform: datagouv_api
     discovery:
-      strategy: "organizations/<ministeres-economiques-et-financiers>/datasets + tag 'plf' ; sélection millésime"
+      # Découverte par recherche catalogue (jamais un slug figé, règle d'or #2). La requête cible la
+      # famille « PLF <année> - Dépenses <année> selon destination » ; le connecteur datagouv retient
+      # le millésime le plus récent par l'année du titre (_latest_by_year). Vérifié live (FSC-38).
+      strategy: "search_datasets(query='PLF Dépenses selon destination')"
       pattern: "plf-<année>-depenses-...-selon-destination"
     format: csv
     schema: "LOLF (mission > programme > action > sous-action)"
@@ -176,6 +179,12 @@ sources:
     platform: ods_explore
     discovery:
       strategy: "ODS dataset 'situation-mensuelle-de-l-etat' sur data.economie.gouv.fr"
+    # ⚠️ INDISPONIBLE EN L'ÉTAT (vérifié live FSC-38, 2026-06) : le dataset
+    # `situation-mensuelle-de-l-etat` ne renvoie plus AUCUN enregistrement (déprécié) ; le seul
+    # remplaçant ODS (`situations-mensuelles-budgetaires-series-longues`) est un tableau croisé AGRÉGÉ
+    # (sans mission/programme) — incompatible avec ce transform (grain mission/programme). Aucun jeu
+    # mission×mois trouvé sur data.gouv ni ODS. -> couche « exécuté » exclue du load live tant que la
+    # source n'est pas republiée ; le « voté » (budget_plf_lfi) reste, lui, chargé.
     endpoint_hint: "https://data.economie.gouv.fr/api/explore/v2.1/catalog/datasets/situation-mensuelle-de-l-etat/records"
     format: [json, csv]
     records_path: results            # enveloppe JSON ODS v2.1 (FSC-47)
@@ -212,10 +221,11 @@ sources:
     platform: ods_explore
     discovery:
       strategy: "portail data.ofgl.fr -> catalogue ODS ; un jeu par niveau de collectivité (base communes/départements/régions)"
-    # Endpoint d'UN jeu OFGL (base communes) au format records ODS v2.1 ; l'identifiant exact du
-    # dataset est à confirmer au spike (data.ofgl.fr). Forme `.../datasets/<id>/records` requise par
-    # le connecteur ods_explore.
-    endpoint_hint: "https://data.ofgl.fr/api/explore/v2.1/catalog/datasets/ofgl-base-communes/records"
+    # Base DÉPARTEMENTS vérifiée live (FSC-38) : ~21 k lignes/exercice (~5 Mo), 101 collectivités —
+    # un niveau borné et pertinent pour la cartographie. La base communes (~2,66 M lignes/an, >150 Mo,
+    # ~35 k nœuds) est trop granulaire pour le graphe ; régions (18) est un complément possible.
+    # Le connecteur ods_explore résout le dernier exercice (champ `annee_join`) et filtre l'export.
+    endpoint_hint: "https://data.ofgl.fr/api/explore/v2.1/catalog/datasets/ofgl-base-departements/records"
     format: [json, csv]
     records_path: results            # enveloppe JSON ODS v2.1 (FSC-47)
     schema: ods_fields
@@ -234,9 +244,11 @@ sources:
     platform: ods_explore
     discovery:
       strategy: "DREES (data.drees...) dataset 'comptes de la protection sociale' ; open.urssaf en complément"
-    # slug à confirmer sur le portail DREES (le connecteur ODS exige /datasets/<id>/records) ;
-    # vérifier aussi le nom du champ millésime (exercice/année) attendu par discover().
-    endpoint_hint: "https://data.drees.solidarites-sante.gouv.fr/api/explore/v2.1/catalog/datasets/cps-comptes-de-la-protection-sociale/records"
+    # Slug DREES vérifié live (FSC-38) : dataset 305_les-comptes-de-la-protection-sociale. Champ
+    # millésime = `annee`. Le transform agrège au grain consolidé (risque niveau 1 x « Total tous
+    # régimes »). L'ancien slug cps-... renvoyait 404 ; le précédent situation-mensuelle est, lui,
+    # déprécié (0 enregistrement) — voir budget_execution_mensuelle.
+    endpoint_hint: "https://data.drees.solidarites-sante.gouv.fr/api/explore/v2.1/catalog/datasets/305_les-comptes-de-la-protection-sociale/records"
     format: [json, csv, pdf]
     records_path: results            # enveloppe JSON ODS v2.1 (FSC-47)
     schema: ods_fields
@@ -286,6 +298,11 @@ sources:
       # ce jeu consolidé (et non un jeu daté). Affinage de la sélection « continuous » = FSC-38.
       strategy: "search_datasets('données essentielles de la commande publique consolidées format tabulaire')"
     format: [csv, parquet]
+    # Le jeu publie un decp.parquet (~210 Mo) ET un decp.csv (~2,2 Go) : même contenu, le Parquet est
+    # ~10x plus petit -> on l'ingère EN ENTIER (pas d'échantillon de tête, règle d'or « valider tout »).
+    # max_download_mb relève le plafond de 50 Mo (échantillon) pour ce téléchargement complet (FSC-38).
+    preferred_format: parquet
+    max_download_mb: 1024
     schema:
       # Table Schema officiel (139bercy / format-commande-publique, arrêté 22/12/2022), committé
       # localement pour une validation hors-ligne + détection de dérive fail-loud (FSC-31, golden
@@ -308,6 +325,10 @@ sources:
     description: "Sociétés d'économie mixte (SEM) & sociétés publiques locales (SPL)."
     platform: datagouv_api
     discovery:
+      # ⚠️ PAS DE JEU OPEN DATA PRÊT (vérifié FSC-38) : aucun dataset SEM/SPL directement
+      # découvrable ; il faudrait filtrer un fichier stock SIRENE (catégories juridiques 5422/5416,
+      # ~Go) — gros téléchargement, hors périmètre de cette itération. Le transform epl_sem_spl est
+      # prêt ; seule la *source* manque. -> couche SEM/SPL exclue du load live (gap documenté).
       strategy: "SIRENE : filtrer catégories juridiques SEM/SPL ; actionnariat public non consolidé en open data"
     format: [api, csv]
     schema: none

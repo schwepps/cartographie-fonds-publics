@@ -1,13 +1,13 @@
-Branche;Année;Montant;Niveau
-Maladie;2022;240 000 000 000;Tous régimes
-Vieillesse;2022;340 000 000 000;Tous régimes
-Famille;2022;55 000 000 000;Tous régimes
-AT-MP;2022;14 000 000 000;Tous régimes
-Autonomie;2022;38 000 000 000;Tous régimes
-Maladie;2021;230 000 000 000;Tous régimes
-Famille;2021;0;Tous régimes
-Ensemble des branches;2022;687 000 000 000;Tous régimes
-Maladie;2022;12 000 000 000;Régime agricole
-Vieillesse;;15 000 000 000;Tous régimes
-Maladie;2022;999 000 000 000;Ensemble
-MALADIE;2022;111 000 000 000;Tous régimes
+annee;ps_niveau;ps_lib;risque;nom_regime;si_niveau;si_nom;val
+2022;1;SANTÉ;SANTÉ;;0;Total tous régimes;315000
+2022;1;VIEILLESSE-SURVIE;VIEILLESSE-SURVIE;;0;Total tous régimes;382000
+2022;1;FAMILLE;FAMILLE;;0;Total tous régimes;59000
+2022;1;EMPLOI;EMPLOI;;0;Total tous régimes;48000
+2021;1;SANTÉ;SANTÉ;;0;Total tous régimes;300000
+2021;1;LOGEMENT;LOGEMENT;;0;Total tous régimes;0
+2022;0;PRESTATIONS DE PROTECTION SOCIALE;PRESTATIONS DE PROTECTION SOCIALE;;0;Total tous régimes;855000
+2022;1;SANTÉ;SANTÉ;Régime général;2;Régime général de la Sécurité sociale;200000
+2022;2;Soins de santé;SANTÉ;;0;Total tous régimes;250000
+2022;1;DIVERS;DIVERS;;0;Total tous régimes;1000
+;1;EMPLOI;EMPLOI;;0;Total tous régimes;40000
+2022;1;santé;santé;;0;Total tous régimes;999000

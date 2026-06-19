@@ -117,10 +117,10 @@ def test_bom_prefixed_extract_passes(
 
 
 def test_unsupported_format_raises(fixtures_dir: Path) -> None:
-    # csv + json are supported (FSC-47); anything else is still a capability limit, not drift.
+    # csv + json + parquet are supported (FSC-47/FSC-38); anything else is a capability limit.
     with pytest.raises(UnsupportedFormatError):
         validate_extract(
-            b"\x00", source_id=SOURCE, schema_ref=_schema_path(fixtures_dir), fmt="parquet"
+            b"\x00", source_id=SOURCE, schema_ref=_schema_path(fixtures_dir), fmt="xlsx"
         )
 
 

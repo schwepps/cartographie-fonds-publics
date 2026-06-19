@@ -52,6 +52,7 @@ class OdsExploreConnector(Connector):
         self._license: str | None = None
         self._schema_ref: str | None = None
         self._source_ref: str | None = None
+        self._max_bytes: int = MAX_RESOURCE_BYTES  # per-source export ceiling (registry override)
         self._cell_warnings: int = 0
 
     # -- discover ----------------------------------------------------------- #
@@ -60,7 +61,13 @@ class OdsExploreConnector(Connector):
         records_url, export_url = self._endpoints(source)
         with httpx.Client(headers={"User-Agent": USER_AGENT}, timeout=HTTP_TIMEOUT) as client:
             results = self._sample_records(client, records_url)
-        field, latest_exercice = self._resolve_exercice(results)
+            field, sampled = self._resolve_exercice(results)
+            # The 100-record sample is unordered: in a long historical series (e.g. DREES from 1959)
+            # its max year is NOT the latest. Re-query ordered by the exercice field desc to get the
+            # true latest; fall back to the sample's max only if that probe yields nothing.
+            latest_exercice = (
+                self._latest_exercice(client, records_url, field) if field else None
+            ) or sampled
         if field is None or latest_exercice is None:
             # The connector's contract is "resolve latest exercice, then fetch that year". Without a
             # resolved exercice we'd fall back to an unfiltered multi-year export (unbounded, and
@@ -77,6 +84,8 @@ class OdsExploreConnector(Connector):
         self._license = source.get("license")
         schema = source.get("schema")
         self._schema_ref = schema.get("ref") if isinstance(schema, dict) else None
+        max_mb = source.get("max_download_mb")
+        self._max_bytes = int(max_mb) * 1_000_000 if max_mb else MAX_RESOURCE_BYTES
         self._source_ref = self._with_where(export_url, where)
         return {
             "dataset_id": self._dataset_id_from(records_url),
@@ -94,7 +103,7 @@ class OdsExploreConnector(Connector):
         params = {"where": where} if where else None
         with httpx.Client(headers={"User-Agent": USER_AGENT}, timeout=HTTP_TIMEOUT) as client:
             raw = self._fetch_bounded(
-                client, url, params=params, max_bytes=MAX_RESOURCE_BYTES, what="export"
+                client, url, params=params, max_bytes=self._max_bytes, what="export"
             )
         self._source_ref = self._with_where(url, where)
         return raw
@@ -179,6 +188,24 @@ class OdsExploreConnector(Connector):
         if not results:
             raise ValueError(f"ODS dataset returned no records at {records_url!r}.")
         return list(results)
+
+    def _latest_exercice(self, client: httpx.Client, records_url: str, field: str) -> int | None:
+        """The true latest exercice: one record ordered by ``field`` desc (not a sample max).
+
+        A bounded sample is unordered, so its max year understates a long historical series. ODS
+        ``order_by`` returns the newest first; a single record is enough. Returns ``None`` if the
+        probe yields nothing (the caller then falls back to the sample max).
+        """
+        raw = self._fetch_bounded(
+            client,
+            records_url,
+            params={"limit": 1, "order_by": f"{field} desc"},
+            max_bytes=RECORDS_MAX_BYTES,
+            what="latest-exercice probe",
+            follow_redirects=False,
+        )
+        results = json.loads(raw).get("results", [])
+        return self._as_year(results[0].get(field)) if results else None
 
     @classmethod
     def _resolve_exercice(cls, results: list[dict[str, Any]]) -> tuple[str | None, int | None]:

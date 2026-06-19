@@ -73,24 +73,43 @@ def sql_literal(value: object) -> str:
     return "'" + str(value).replace("'", "''") + "'"
 
 
+# Rows per INSERT statement. A single multi-row INSERT of the full curated graph (e.g. ~1.2M edges /
+# ~2M DECP contracts) is one giant statement that exhausts the Postgres backend's memory and drops
+# the connection — so large tables are emitted as a sequence of bounded INSERTs (all inside the
+# loader's single transaction, so the load stays atomic). The threshold is far above any seed/demo
+# table, so their single-batch output (and the seed's pinned golden SQL) stays byte-for-byte equal.
+_BATCH_SIZE = 5000
+
+
 def render_insert(
     table: str,
     columns: tuple[str, ...],
     rows: Sequence[BaseModel],
     *,
     on_conflict: str | None = None,
+    batch_size: int = _BATCH_SIZE,
 ) -> str:
-    """Render a single multi-row INSERT for ``rows`` (pydantic models), or a comment if empty.
+    """Render multi-row INSERT(s) for ``rows`` (pydantic models), or a comment if empty.
 
-    ``on_conflict`` appends an ``ON CONFLICT …`` clause (e.g. an upsert) before the terminating
-    semicolon; omitted (the seed's case) it renders a plain INSERT byte-for-byte as before.
+    Rows are split into statements of at most ``batch_size`` so a very large table cannot crash the
+    Postgres backend on one oversized statement. With ``len(rows) <= batch_size`` exactly one INSERT
+    is emitted, byte-for-byte as before (the seed/demo golden tests depend on this). ``on_conflict``
+    appends an ``ON CONFLICT …`` clause to **each** statement (the upsert applies per batch).
     """
     if not rows:
         return f"-- (no {table} rows)\n"
-    values = [
-        "  (" + ", ".join(sql_literal(r.model_dump(mode="json")[c]) for c in columns) + ")"
-        for r in rows
-    ]
     cols = ", ".join(columns)
     suffix = f"\n{on_conflict}" if on_conflict else ""
-    return f"insert into {table} ({cols}) values\n" + ",\n".join(values) + suffix + ";\n"
+
+    def value_line(r: BaseModel) -> str:
+        dumped = r.model_dump(mode="json")
+        return "  (" + ", ".join(sql_literal(dumped[c]) for c in columns) + ")"
+
+    statements = [
+        f"insert into {table} ({cols}) values\n"
+        + ",\n".join(value_line(r) for r in rows[start : start + batch_size])
+        + suffix
+        + ";\n"
+        for start in range(0, len(rows), batch_size)
+    ]
+    return "".join(statements)
