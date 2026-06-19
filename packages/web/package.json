@@ -40,12 +40,15 @@
     "jsdom": "^29.1.1",
     "prettier": "^3.3.3",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.8.0",
+    "typescript-eslint": "^8.61.1",
     "vite": "^6.4.0",
     "vitest": "^4.1.0",
     "vitest-axe": "^0.1.0"
   },
   "pnpm": {
+    "overrides": {
+      "undici": "^7.28.0"
+    },
     "auditConfig": {
       "ignoreGhsas": [
         "GHSA-gv7w-rqvm-qjhr"
