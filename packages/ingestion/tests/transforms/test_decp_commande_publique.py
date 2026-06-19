@@ -227,3 +227,40 @@ def test_all_input_rows_accounted_for() -> None:
     # 6 rows → 4 markets (B has 2 co-titulaire rows, C has 2 amendment rows) → 5 contracts.
     assert result.report["markets"] == 4
     assert len(result.contracts) == 5
+
+
+def test_implausible_montant_is_nulled_but_link_kept() -> None:
+    # DECP garbage: a sentinel (99 999 999 999,99) must not inflate totals — the buyer→supplier link
+    # is kept but the amount is nulled and counted (golden rule #5). A large-but-plausible value
+    # (just under the ceiling) is preserved.
+    headers = ["uid", "acheteur_id", "titulaire_id", "montant", "nature"]
+    rows = [
+        {
+            "uid": "A",
+            "acheteur_id": "11111111100011",
+            "titulaire_id": "22222222200022",
+            "montant": "99999999999.99",
+            "nature": "marché",
+        },
+        {
+            "uid": "B",
+            "acheteur_id": "11111111100011",
+            "titulaire_id": "33333333300033",
+            "montant": "1000000",
+            "nature": "marché",
+        },
+        {
+            "uid": "C",
+            "acheteur_id": "11111111100011",
+            "titulaire_id": "44444444400044",
+            "montant": "9000000000",
+            "nature": "marché",
+        },
+    ]
+    result = build(headers, rows, crosswalk=Crosswalk.from_entries([]))
+    assert result.report["implausible_montants"] == 1  # only the sentinel market
+    by_tit = {c.titulaire_siren: c for c in result.contracts}
+    assert by_tit["222222222"].montant_eur is None  # sentinel nulled, link kept
+    assert by_tit["333333333"].montant_eur == 1_000_000  # normal value untouched
+    assert by_tit["444444444"].montant_eur == 9_000_000_000  # under the ceiling: preserved
+    assert len(result.contracts) == 3  # every link kept (nothing dropped)
