@@ -42,8 +42,9 @@ vi.mock("../../lib/supabase", () => {
       { entity_siren: "110044013", exercice: 2025, amount_cp_eur: 26_000_000_000, executed: false },
     ],
   };
-  // The hook now filters server-side (or/in/eq); the mock returns the table fixture unfiltered and
-  // the page's own client filter (name/acronym/SIREN) drives the assertions below.
+  // Search matching is server-side: the rpc() mock (search_entities) filters by name/SIREN, and the
+  // page applies only the level/tutelle facets over the returned rows. The from() builder returns
+  // table fixtures unfiltered (the empty-query browse default + the budget/ministry lookups).
   const from = (table: string) => {
     const result = { data: data[table] ?? [], error: null, count: (data[table] ?? []).length };
     const builder = {

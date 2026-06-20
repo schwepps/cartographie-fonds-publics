@@ -281,17 +281,18 @@ class DatagouvApiConnector(Connector):
         Used for parquet (and any format where a head sample would corrupt the file). The ceiling is
         a safety bound, not a sampling cap: exceeding it raises, so a source that outgrew its budget
         is surfaced (raise ``max_download_mb`` in the registry) rather than silently half-ingested.
+
+        Accumulates into a single ``bytearray`` (amortized growth, one final copy) rather than a
+        list of chunks + ``join`` — bounded peak memory for a large (~hundreds of MB) parquet.
         """
-        chunks: list[bytes] = []
-        total = 0
+        buf = bytearray()
         with client.stream("GET", url, follow_redirects=True) as resp:
             resp.raise_for_status()
             for chunk in resp.iter_bytes():
-                chunks.append(chunk)
-                total += len(chunk)
-                if total > max_bytes:
+                buf.extend(chunk)
+                if len(buf) > max_bytes:
                     raise ValueError(
                         f"resource at {url} exceeds the {max_bytes:,}-byte ceiling — refusing to "
                         "truncate a binary resource. Raise max_download_mb in the registry."
                     )
-        return b"".join(chunks)
+        return bytes(buf)

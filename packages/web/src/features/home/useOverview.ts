@@ -107,6 +107,11 @@ export function useOverview(): OverviewState {
         .select("siren,name,level")
         .in("siren", [...sirens]);
       if (cancelled) return;
+      if (nameRes.error) {
+        // The teaser is a secondary signal; degrade to an empty teaser (logged) rather than blank
+        // the whole landing page — the headline figures above are the main content and have loaded.
+        console.error("Overview teaser names load failed (teaser hidden)", nameRes.error);
+      }
 
       const entityBySiren = new Map<string, FlowEntity>(
         ((nameRes.data as FlowEntity[] | null) ?? []).map((e) => [e.siren, e]),

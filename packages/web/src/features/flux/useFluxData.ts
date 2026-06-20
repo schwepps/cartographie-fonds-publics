@@ -76,6 +76,13 @@ export function useFluxData(focusSiren: string | null): FluxState {
           .select("siren,name,level")
           .in("siren", [...sirens]);
         if (cancelled) return;
+        if (entRes.error) {
+          // The entity names label every Sankey node/link, so a failure here is not recoverable —
+          // surface the error rather than render unlabeled flows.
+          console.error("Flux entities load failed", entRes.error);
+          setState({ status: "error" });
+          return;
+        }
         for (const e of (entRes.data as FlowEntity[] | null) ?? []) entityBySiren.set(e.siren, e);
         // Ensure the focus is labelled even if it is an unresolved buyer (use the delegator record).
         if (!entityBySiren.has(focus)) {
