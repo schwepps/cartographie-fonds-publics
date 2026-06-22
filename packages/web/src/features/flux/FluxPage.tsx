@@ -119,6 +119,7 @@ export default function FluxPage() {
               </strong>{" "}
               <span
                 role="img"
+                tabIndex={0}
                 aria-label="Les plus gros marchés/délégations de cet acheteur — pas son total consolidé."
                 title="Les plus gros marchés/délégations de cet acheteur — pas son total consolidé."
               >

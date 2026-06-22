@@ -73,9 +73,10 @@ describe("FluxPage", () => {
     // resolves. The current focus must still appear as a (SIREN-labelled) option so the controlled
     // <select value={root}> is not left pointing at a missing option.
     renderFlux("/flux?focus=999999999");
-    await screen.findByLabelText(/Focaliser sur/);
-    const select = screen.getByLabelText(/Focaliser sur/) as HTMLSelectElement;
-    const focusOption = within(select).getByRole("option", { name: "999999999" });
+    const select = (await screen.findByLabelText(/Focaliser sur/)) as HTMLSelectElement;
+    // The label/select render during loading too, so wait for the focus option to appear before
+    // asserting on the value — otherwise the check can race the async data load.
+    const focusOption = await within(select).findByRole("option", { name: "999999999" });
     expect(focusOption).toBeInTheDocument();
     expect(select.value).toBe("999999999");
   });
