@@ -64,10 +64,12 @@ export default function FluxPage() {
 
   // The selector lists the top public buyers by delegated amount (real DECP flows). A ?focus= on a
   // buyer outside that list is surfaced as a selectable option too, so the control reflects it.
+  // Fall back to the SIREN as the label when the name has not resolved yet, so the option always
+  // matches `value={root}` and the selector never goes blank on a deep link.
   const delegators = model?.delegators ?? [];
   const knownFocus = delegators.some((d) => d.siren === root);
   const options =
-    !knownFocus && root && rootName ? [{ siren: root, name: rootName }, ...delegators] : delegators;
+    !knownFocus && root ? [{ siren: root, name: rootName || root }, ...delegators] : delegators;
 
   return (
     <div className="page fr-container">
@@ -115,7 +117,11 @@ export default function FluxPage() {
               <strong className="tnum" style={{ color: "var(--grey-title)" }}>
                 {euroCompact(total)}
               </strong>{" "}
-              <span title="Les plus gros marchés/délégations de cet acheteur — pas son total consolidé.">
+              <span
+                role="img"
+                aria-label="Les plus gros marchés/délégations de cet acheteur — pas son total consolidé."
+                title="Les plus gros marchés/délégations de cet acheteur — pas son total consolidé."
+              >
                 ⓘ
               </span>
             </span>

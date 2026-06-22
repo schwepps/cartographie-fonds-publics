@@ -44,9 +44,9 @@ vi.mock("../../lib/supabase", () => {
   return { supabase: { from, rpc } };
 });
 
-const renderFlux = () =>
+const renderFlux = (initialEntry = "/flux") =>
   render(
-    <MemoryRouter>
+    <MemoryRouter initialEntries={[initialEntry]}>
       <FluxPage />
     </MemoryRouter>,
   );
@@ -66,6 +66,18 @@ describe("FluxPage", () => {
     await screen.findByRole("table", { name: /Flux de financement/ });
     const select = screen.getByLabelText(/Focaliser sur/);
     expect(within(select as HTMLElement).getByRole("option", { name: /CNRS/ })).toBeInTheDocument();
+  });
+
+  it("keeps the selector synced when a ?focus= deep link resolves to no name", async () => {
+    // Unknown buyer: absent from both the top_delegators list and entities, so its name never
+    // resolves. The current focus must still appear as a (SIREN-labelled) option so the controlled
+    // <select value={root}> is not left pointing at a missing option.
+    renderFlux("/flux?focus=999999999");
+    await screen.findByLabelText(/Focaliser sur/);
+    const select = screen.getByLabelText(/Focaliser sur/) as HTMLSelectElement;
+    const focusOption = within(select).getByRole("option", { name: "999999999" });
+    expect(focusOption).toBeInTheDocument();
+    expect(select.value).toBe("999999999");
   });
 
   it("has no accessibility violations (Sankey + table fallback)", async () => {
