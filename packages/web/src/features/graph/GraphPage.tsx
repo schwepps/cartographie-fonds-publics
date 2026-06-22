@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { IS_DEMO } from "../../lib/config";
 import { euroCompact } from "../../lib/format";
 import { LEVELS, MENTION_COLOR } from "../../lib/levels";
 import { mixesPerimeters } from "../../lib/perimeter";
@@ -275,7 +276,7 @@ function EntityPanel({
             className="fr-xs text-mention"
             style={{ textTransform: "uppercase", letterSpacing: ".04em", marginBottom: 4 }}
           >
-            Crédits de paiement (CP) — exemple
+            Crédits de paiement (CP){IS_DEMO ? " — exemple" : ""}
           </div>
           <div className="figure__value" style={{ fontSize: "1.6rem" }}>
             {euroCompact(e.cp || null)}
@@ -395,7 +396,7 @@ function GraphTableView({ model, filters }: { model: GraphModel; filters: GraphF
     },
     {
       key: "cp",
-      header: "CP (exemple)",
+      header: `CP${IS_DEMO ? " (exemple)" : ""}`,
       num: true,
       render: (r) => <span className="tnum">{euroCompact(r.cp || null)}</span>,
       sortValue: (r) => r.cp,

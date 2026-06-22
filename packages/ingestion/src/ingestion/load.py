@@ -392,10 +392,20 @@ def emit_load_sql(
     *,
     source_ids: tuple[str, ...] = ETAT_CENTRAL_SOURCE_IDS,
     snapshot_root: Path = SNAPSHOT_ROOT,
+    read_rows: ReadRows | None = None,
     allow_empty: bool = False,
 ) -> tuple[Path, LoadBundle]:
-    """Build the bundle from the latest snapshots and write the load SQL to ``path``."""
-    bundle = build_bundle(source_ids, snapshot_root=snapshot_root, allow_empty=allow_empty)
+    """Build the bundle from the latest snapshots and write the load SQL to ``path``.
+
+    ``read_rows`` is the injectable (headers, rows) reader (defaults to the latest on-disk
+    snapshot). The editorial sources (``EDITORIAL_SOURCE_IDS``) curate from reviewed YAML and
+    ignore their snapshot rows, so a caller loading them passes a no-snapshot reader
+    (``lambda _sid: ([], [])``) rather than requiring a snapshot that the ``ingest`` loop does
+    not write for them.
+    """
+    bundle = build_bundle(
+        source_ids, snapshot_root=snapshot_root, read_rows=read_rows, allow_empty=allow_empty
+    )
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(render_load_sql(bundle), encoding="utf-8")

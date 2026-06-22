@@ -214,7 +214,7 @@ export function Sankey({ links, height = 460, ariaLabel = DEFAULT_ARIA_LABEL }: 
             >
               <title>
                 {link.sourceLabel} → {link.targetLabel} : {euroFull(link.value)} (
-                {link.exercice ?? "exemple"})
+                {link.exercice ?? "millésime n.d."})
               </title>
             </path>
           );

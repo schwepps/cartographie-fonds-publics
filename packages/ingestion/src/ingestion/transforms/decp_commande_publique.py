@@ -51,6 +51,15 @@ _TITULAIRE_ID_PATTERNS = (r"^titulaire_?id$", r"titulaire_?id", r"titulaire.*sir
 _TITULAIRE_NAME_PATTERNS = (r"^titulaire_nom$", r"titulaire.*(denom|raison)")
 _MONTANT_PATTERNS = (r"^montant$", r"montant")
 _NATURE_PATTERNS = (r"nature",)
+
+# DECP is "qualité hétérogène": some montants are obvious garbage/sentinels (e.g. the recurring
+# 99 999 999 999,99 filler), and a handful of absurd >€10bn values inflate the totals by orders of
+# magnitude (national totals jumped to ~€14T — > France GDP). A single real French public market
+# does not reach €10bn (even large accords-cadres maxima stay below), so a montant above this
+# ceiling is treated as unreliable: the buyer→supplier LINK is kept (golden rule #5 — never drop a
+# real relationship) but its amount is nulled and counted in the report, so money totals/flows stay
+# trustworthy. Tune the ceiling here, in one place.
+_MAX_PLAUSIBLE_MONTANT_EUR = 10_000_000_000.0
 _DATE_PATTERNS = (r"date.*notif", r"exercice", r"ann[eé]e")
 _UID_PATTERNS = (r"^uid$", r"\buid\b")
 # The internal market id, shared across a market's co-titulaire and amendment rows (anchored so it
@@ -221,6 +230,7 @@ def build(
     ends_total = 0
     ends_resolved = 0
     unresolved_names: set[str] = set()
+    implausible_montants = 0  # markets whose montant exceeded the sanity ceiling (amount nulled)
 
     def resolve_party(identifier: str, name: str) -> str | None:
         nonlocal ends_total, ends_resolved
@@ -254,6 +264,10 @@ def build(
         n_titulaires = len(titulaire_rows) or 1
         first = current[0]
         montant = _parse_amount(first.get(cols.montant, ""))
+        if montant is not None and montant > _MAX_PLAUSIBLE_MONTANT_EUR:
+            # Garbage/sentinel amount — keep the link, drop the unreliable figure (golden rule #5).
+            implausible_montants += 1
+            montant = None
         # Equal split among co-titulaires, remainder-distributed so the shares sum back exactly.
         shares = _split_amount(montant, n_titulaires)
         nature = _parse_nature(first.get(cols.nature, ""))
@@ -284,6 +298,7 @@ def build(
         "source_id": SOURCE_ID,
         "markets": len(markets),
         "contracts": len(contracts),
+        "implausible_montants": implausible_montants,
         "delegates_edges": len(edges),
         "delegated_entities": len(entities),
         "parties_total": ends_total,

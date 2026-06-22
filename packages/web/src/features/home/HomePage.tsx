@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { ProvenanceBadge } from "../../lib/provenance/ProvenanceBadge";
 import { allSources } from "../../lib/provenance/sources";
+import { IS_DEMO } from "../../lib/config";
 import { euroCompact } from "../../lib/format";
 import {
   Arrow,
@@ -164,7 +165,7 @@ export default function HomePage() {
                   <Sankey
                     links={overview.teaser.links}
                     height={300}
-                    ariaLabel={`Aperçu des principaux flux de financement de ${overview.teaser.name} (montants d’exemple). Détail complet et équivalent tabulaire sur la page Flux de financement.`}
+                    ariaLabel={`Aperçu des principaux flux de financement de ${overview.teaser.name}${IS_DEMO ? " (montants d’exemple)" : ""}. Détail complet et équivalent tabulaire sur la page Flux de financement.`}
                   />
                 ) : null}
               </div>
@@ -188,8 +189,10 @@ export default function HomePage() {
           ))}
         </div>
         <p className="fr-xs text-mention" style={{ marginTop: 10 }}>
-          Chiffres calculés sur le jeu de démonstration ; en production, ils portent sur l’ensemble
-          du périmètre suivi. Voir{" "}
+          {IS_DEMO
+            ? "Chiffres calculés sur le jeu de démonstration ; en production, ils portent sur l’ensemble du périmètre suivi. "
+            : "Chiffres calculés sur l’ensemble du périmètre suivi, à partir de données publiques ouvertes. "}
+          Voir{" "}
           <Link className="fr-link" to="/sources">
             Données &amp; licences
           </Link>

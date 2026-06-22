@@ -120,3 +120,27 @@ def test_stage_defers_to_fsc35() -> None:
 def test_factory_routes_the_execution_source() -> None:
     # The registry entry (platform: ods_explore) resolves to this connector — no shared-file edits.
     assert isinstance(get_connector(get_source("budget_execution_mensuelle")), OdsExploreConnector)
+
+
+def test_discover_uses_ordered_probe_not_sample_max(respx_mock) -> None:  # type: ignore[no-untyped-def]
+    # The 100-record sample is unordered (e.g. a DREES series from 1959): its max year understates
+    # the latest. discover must re-query ordered by the exercice field desc and use THAT (FSC-38).
+    def handler(request: httpx.Request) -> httpx.Response:
+        if "order_by" in request.url.params:
+            return httpx.Response(200, json={"results": [{"exercice": "2024"}]})
+        return httpx.Response(200, json={"results": [{"exercice": "2010"}, {"exercice": "2012"}]})
+
+    respx_mock.get(RECORDS_URL).mock(side_effect=handler)
+    resolved = OdsExploreConnector().discover(_SOURCE)
+    assert resolved["latest_exercice"] == 2024  # the ordered probe, not the sample max (2012)
+    assert resolved["where"] == "exercice=2024"
+
+
+def test_discover_reads_max_download_mb_override(respx_mock) -> None:  # type: ignore[no-untyped-def]
+    # A source may raise the default 50 MB export ceiling via registry max_download_mb (FSC-38).
+    respx_mock.get(RECORDS_URL).mock(
+        return_value=httpx.Response(200, json={"results": [{"exercice": "2025"}]})
+    )
+    connector = OdsExploreConnector()
+    connector.discover({**_SOURCE, "max_download_mb": 200})
+    assert connector._max_bytes == 200_000_000  # the export fetch is bounded to the override

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { IS_DEMO } from "../../lib/config";
 import { euroCompact } from "../../lib/format";
 import { levelMeta, MENTION_COLOR } from "../../lib/levels";
 import { radiusForCp } from "../../lib/magnitude";
@@ -712,7 +713,10 @@ export function GraphCanvas({
             {tooltip.node.category ? ` · ${tooltip.node.category}` : ""}
           </span>
           {tooltip.node.cp ? (
-            <div className="gt-meta">CP {euroCompact(tooltip.node.cp)} · exemple</div>
+            <div className="gt-meta">
+              CP {euroCompact(tooltip.node.cp)}
+              {IS_DEMO ? " · exemple" : ""}
+            </div>
           ) : null}
           {!tooltip.node.resolved ? <div className="gt-meta">SIREN non résolu</div> : null}
         </div>

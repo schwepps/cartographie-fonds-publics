@@ -47,15 +47,22 @@ class DatagouvApiConnector(Connector):
         self._schema_ref: str | None = None
         self._resource_url: str | None = None
         self._resource_format: str | None = None  # data.gouv format of the selected resource
+        self._max_bytes: int = MAX_RESOURCE_BYTES  # per-source download ceiling (registry override)
         self._cell_warnings: int = 0
 
     # -- discover ----------------------------------------------------------- #
     def discover(self, source: dict[str, Any]) -> dict[str, Any]:
-        """Resolve the latest dataset + its primary CSV resource for a registry source."""
+        """Resolve the latest dataset + its primary resource for a registry source.
+
+        A source may declare ``preferred_format`` (e.g. DECP's ``parquet``, ~10x smaller than its
+        CSV) and ``max_download_mb`` (raise the default head-sample bound for a source we ingest in
+        full). Both stay in the registry — never hardcoded here (golden rule #1).
+        """
         query = self._query_from_strategy(source)
         with httpx.Client(headers={"User-Agent": USER_AGENT}, timeout=HTTP_TIMEOUT) as client:
             dataset = self._discover_dataset(client, query)
-        resource = self._select_resource(dataset)
+        preferred = str(source.get("preferred_format") or "").strip().lower() or None
+        resource = self._select_resource(dataset, preferred_format=preferred)
         # Capture provenance from the registry source for snapshot().
         self._source_id = str(source.get("id") or self._source_id)
         self._license = source.get("license")
@@ -63,26 +70,47 @@ class DatagouvApiConnector(Connector):
         self._schema_ref = schema.get("ref") if isinstance(schema, dict) else None
         self._resource_url = resource["url"]
         self._resource_format = str(resource.get("format") or "").strip().lower() or None
+        max_mb = source.get("max_download_mb")
+        self._max_bytes = int(max_mb) * 1_000_000 if max_mb else MAX_RESOURCE_BYTES
         return {
             "dataset_id": dataset.get("id"),
             "title": dataset.get("title"),
             "slug": dataset.get("slug"),
             "resource_url": resource["url"],
+            "format": self._resource_format,
         }
 
     # -- extract ------------------------------------------------------------ #
     def extract(self, resolved: dict[str, Any]) -> bytes:
-        """Download the resolved CSV resource (bounded to a head sample for very large dumps)."""
+        """Download the resolved resource.
+
+        CSV/JSON are bounded to a head sample for very large dumps (a trailing partial row is
+        dropped so the CSV still parses). A ``parquet`` resource is binary — head-truncation
+        corrupts it — so it is downloaded **in full**, failing loud if it exceeds the per-source
+        ceiling rather than silently truncating.
+        """
         url = resolved["resource_url"]
         with httpx.Client(headers={"User-Agent": USER_AGENT}, timeout=HTTP_TIMEOUT) as client:
-            raw = self._download_head(client, url, MAX_RESOURCE_BYTES)
+            if self._resource_format == "parquet":
+                raw = self._download_full(client, url, self._max_bytes)
+            else:
+                raw = self._download_head(client, url, self._max_bytes)
         self._resource_url = url
         return raw
 
     # -- validate ----------------------------------------------------------- #
     def validate(self, raw: bytes, schema_ref: str | None) -> None:
-        """Validate against the Table Schema; raise loudly on drift. Keep the cell-warning count."""
-        report = validate_extract(raw, source_id=self._source_id, schema_ref=schema_ref)
+        """Validate against the Table Schema; raise loudly on drift. Keep the cell-warning count.
+
+        The validation format follows the selected resource: a parquet extract is checked
+        structurally (column drift only, via its footer — see ``validation`` FSC-38).
+        """
+        report = validate_extract(
+            raw,
+            source_id=self._source_id,
+            schema_ref=schema_ref,
+            fmt=self._validate_fmt(self._resource_format),
+        )
         self._cell_warnings = report.cell_warning_count
         # Pin provenance to what was actually validated, so the snapshot can't record a stale ref.
         self._schema_ref = schema_ref
@@ -112,22 +140,40 @@ class DatagouvApiConnector(Connector):
     def _snapshot_fmt(resource_format: str | None) -> str:
         """Map a data.gouv resource format to a snapshot format; fail loud on non-tabular.
 
-        ``write_snapshot`` only tabularises ``csv``/``json``. CSV (and an unknown/blank format —
-        the historic default for the tabular sources) snapshots as csv; json/geojson as json; any
-        explicitly non-tabular format (pdf, txt, xlsx, zip…) raises, since parsing it as CSV would
-        corrupt the snapshot. Such sources are curated editorially (their transform reads a reviewed
-        file, not the snapshot); a dedicated non-tabular snapshot path is future work (FSC-38).
+        ``write_snapshot`` handles ``csv``/``json``/``parquet``. CSV (and an unknown/blank format —
+        the historic default for the tabular sources) snapshots as csv; json/geojson as json;
+        parquet as parquet (read straight through duckdb); any explicitly non-tabular format (pdf,
+        txt, xlsx, zip…) raises, since parsing it as CSV would corrupt the snapshot. Such sources
+        are curated editorially (the transform reads a reviewed file, not the snapshot); a dedicated
+        non-tabular snapshot path is future work (FSC-38).
         """
         fmt = (resource_format or "").strip().lower()
         if fmt in ("", "csv"):
             return "csv"
         if fmt in ("json", "geojson"):
             return "json"
+        if fmt == "parquet":
+            return "parquet"
         raise SnapshotError(
-            f"datagouv_api cannot snapshot a {fmt!r} resource — write_snapshot tabularises "
-            "csv/json only. Non-tabular sources (e.g. the Cour des comptes PDF corpus) are curated "
-            "editorially via their transform; a dedicated non-tabular snapshot path is FSC-38."
+            f"datagouv_api cannot snapshot a {fmt!r} resource — write_snapshot handles "
+            "csv/json/parquet only. Non-tabular sources (e.g. the Cour des comptes PDF corpus) are "
+            "curated editorially via their transform; a non-tabular snapshot path is FSC-38."
         )
+
+    @staticmethod
+    def _validate_fmt(resource_format: str | None) -> str:
+        """Validation format for the selected resource — tolerant (never raises).
+
+        Mirrors ``_snapshot_fmt`` for csv/json/parquet, but an unknown/non-tabular format maps to
+        ``csv``: such sources declare no schema, so ``validate_extract`` returns early (skipped)
+        before the format matters — keeping validation a no-op rather than a hard error.
+        """
+        fmt = (resource_format or "").strip().lower()
+        if fmt == "parquet":
+            return "parquet"
+        if fmt in ("json", "geojson"):
+            return "json"
+        return "csv"
 
     # -- stage -------------------------------------------------------------- #
     def stage(self, snapshot_uri: str, source_id: str) -> None:
@@ -175,20 +221,26 @@ class DatagouvApiConnector(Connector):
         return best
 
     @staticmethod
-    def _select_resource(dataset: dict[str, Any]) -> dict[str, Any]:
-        """Pick the primary resource — the largest CSV when present, else the largest of any format.
+    def _select_resource(
+        dataset: dict[str, Any], preferred_format: str | None = None
+    ) -> dict[str, Any]:
+        """Pick the primary resource — largest of the preferred format, else largest CSV, else any.
 
-        Most sources here are CSV (the largest by catalog filesize; annexes are smaller). The Cour
-        des comptes oversight corpus (FSC-62) is only PDF/txt, and discovery just needs to snapshot
-        *a* resource for provenance (the curated mentions come from the reviewed editorial mapping,
-        not the file body), so a non-CSV fallback keeps discovery working without weakening CSV
-        sources — they always have a CSV, so the preference still selects it.
+        ``preferred_format`` (registry-declared, e.g. DECP's ``parquet``) wins when the dataset
+        offers it. Otherwise most sources are CSV (the largest by catalog filesize; annexes are
+        smaller). The Cour des comptes oversight corpus (FSC-62) is only PDF/txt, and discovery just
+        needs to snapshot *a* resource for provenance, so a non-CSV fallback keeps discovery working
+        without weakening CSV sources — they always have a CSV, so the preference still selects it.
         """
         resources = dataset.get("resources", [])
         if not resources:
             raise ValueError(f"No resource in dataset {dataset.get('title')!r}.")
-        csvs = [r for r in resources if str(r.get("format", "")).lower() == "csv"]
-        candidates = csvs or resources
+
+        def of_format(fmt: str) -> list[dict[str, Any]]:
+            return [r for r in resources if str(r.get("format", "")).lower() == fmt]
+
+        preferred = (preferred_format or "").strip().lower()
+        candidates = (preferred and of_format(preferred)) or of_format("csv") or resources
         # Stable tie-break on id/url so equal-size, equal-mtime candidates resolve identically
         # run to run — discovery's whole point is a reproducible millésime pick.
         return max(
@@ -221,3 +273,26 @@ class DatagouvApiConnector(Connector):
             if cut != -1:
                 data = data[:cut]
         return data
+
+    @staticmethod
+    def _download_full(client: httpx.Client, url: str, max_bytes: int) -> bytes:
+        """Stream a resource in full; fail loud past ``max_bytes`` (never truncate a binary).
+
+        Used for parquet (and any format where a head sample would corrupt the file). The ceiling is
+        a safety bound, not a sampling cap: exceeding it raises, so a source that outgrew its budget
+        is surfaced (raise ``max_download_mb`` in the registry) rather than silently half-ingested.
+
+        Accumulates into a single ``bytearray`` (amortized growth, one final copy) rather than a
+        list of chunks + ``join`` — bounded peak memory for a large (~hundreds of MB) parquet.
+        """
+        buf = bytearray()
+        with client.stream("GET", url, follow_redirects=True) as resp:
+            resp.raise_for_status()
+            for chunk in resp.iter_bytes():
+                buf.extend(chunk)
+                if len(buf) > max_bytes:
+                    raise ValueError(
+                        f"resource at {url} exceeds the {max_bytes:,}-byte ceiling — refusing to "
+                        "truncate a binary resource. Raise max_download_mb in the registry."
+                    )
+        return bytes(buf)

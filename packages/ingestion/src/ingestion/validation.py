@@ -14,11 +14,15 @@ goes through httpx so the offline test harness (respx) can mock it.
 
 from __future__ import annotations
 
+import contextlib
 import json
+import os
+import tempfile
 from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
 
+import duckdb
 import httpx
 from frictionless import Report, Resource, Schema
 
@@ -30,8 +34,10 @@ _HEADER_TAGS = frozenset({"#header", "#label"})
 _SCHEMA_FETCH_TIMEOUT = 30.0
 _MAX_SCHEMA_BYTES = 5_000_000  # a Table Schema descriptor is small; cap so a bad ref can't OOM CI
 # Formats the harness can validate. JSON is tabularised to CSV first (see json_records): a Table
-# Schema is enforced on delimited text, not on keyed JSON, so one path covers both (FSC-47).
-_SUPPORTED_FORMATS = frozenset({"csv", "json"})
+# Schema is enforced on delimited text, not on keyed JSON, so one path covers both (FSC-47). A
+# ``parquet`` extract (a large binary dump, e.g. DECP) is validated structurally — column drift
+# only, via the parquet footer — not row-by-row (FSC-38, see _validate_parquet_columns).
+_SUPPORTED_FORMATS = frozenset({"csv", "json", "parquet"})
 
 
 @dataclass(frozen=True)
@@ -108,6 +114,11 @@ def validate_extract(
             f"Cannot validate format {fmt!r} yet (supported: {supported})."
         )
 
+    if fmt == "parquet":
+        return _validate_parquet_columns(
+            raw, schema=schema, source_id=source_id, schema_ref=schema_ref
+        )
+
     try:
         # JSON is collapsed to the CSV view first (a malformed envelope raises here = fails loud);
         # CSV passes through untouched, so its behaviour is byte-for-byte unchanged.
@@ -124,6 +135,47 @@ def validate_extract(
         return ValidationReport(source_id, schema_ref, skipped=False)
 
     return _classify(report, source_id=source_id, schema_ref=schema_ref)
+
+
+def _validate_parquet_columns(
+    raw: bytes, *, schema: Schema, source_id: str, schema_ref: str | None
+) -> ValidationReport:
+    """Structural-only validation for a parquet extract: its columns vs the Table Schema.
+
+    A full frictionless cell scan over a multi-million-row dump is neither cheap nor needed — the
+    fatal check is **column drift**, exactly what ``_classify`` treats as fatal for CSV. We read the
+    parquet's column names from its footer via duckdb (no data scan) and fail loud on a **missing**
+    expected column (the transform needs it). An **extra** column is tolerated and only counted: the
+    transforms read columns by name and ignore unknowns, so a new upstream column must not break the
+    run (it would otherwise fail loud on every DECP schema addition). Cell-level quality stays the
+    transform's concern (it pattern-matches and reports unresolved rows).
+    """
+    fd, tmp = tempfile.mkstemp(suffix=".parquet")
+    try:
+        with os.fdopen(fd, "wb") as fh:
+            fh.write(raw)
+        con = duckdb.connect()
+        try:
+            described = con.execute("DESCRIBE SELECT * FROM read_parquet(?)", [tmp]).fetchall()
+        finally:
+            con.close()
+    except Exception as exc:  # noqa: BLE001 — an unreadable extract IS drift, surfaced as such
+        raise SchemaValidationError(
+            source_id=source_id,
+            schema_ref=schema_ref,
+            other_issues=[f"parquet could not be read: {exc}"],
+        ) from exc
+    finally:
+        with contextlib.suppress(FileNotFoundError):
+            os.unlink(tmp)
+
+    columns = {row[0] for row in described}
+    missing = [name for name in schema.field_names if name not in columns]
+    if missing:
+        raise SchemaValidationError(
+            source_id=source_id, schema_ref=schema_ref, missing_columns=missing
+        )
+    return ValidationReport(source_id, schema_ref, skipped=False)
 
 
 def _classify(report: Report, *, source_id: str, schema_ref: str | None) -> ValidationReport:

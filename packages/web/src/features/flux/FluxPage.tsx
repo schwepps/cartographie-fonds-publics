@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import { IS_DEMO } from "../../lib/config";
 import { buildFlowLinks, type SankeyLink } from "../../lib/flows";
 import { euroCompact } from "../../lib/format";
 import { mixesPerimeters } from "../../lib/perimeter";
@@ -42,20 +43,18 @@ const fluxColumns: DataTableColumn<SankeyLink & { key: string }>[] = [
 ];
 
 export default function FluxPage() {
-  const flux = useFluxData();
   const [params] = useSearchParams();
-  const [rootSel, setRootSel] = useState<string | null>(null);
+  const [focusSel, setFocusSel] = useState<string | null>(params.get("focus"));
+  const flux = useFluxData(focusSel);
 
   const model = flux.status === "ready" ? flux.model : null;
-  const root = rootSel ?? params.get("focus") ?? model?.ministries[0]?.siren ?? "";
+  const root = model?.focusSiren ?? "";
 
   const links = useMemo(
     () => (model && root ? buildFlowLinks(root, model.edges, model.entityBySiren) : []),
     [model, root],
   );
-  // Total tracé = what flows OUT of the selected root: funds for a financeur, delegates for an
-  // operator. Sum the links originating from the root itself — not the minimum column, which would
-  // wrongly count an operator's *incoming* funding (its financeur's funds sit at col 0).
+  // Total tracé = the delegated amount flowing OUT of the focused buyer across the shown flows.
   const total = links.filter((l) => l.source === root).reduce((s, l) => s + l.value, 0);
   // When the traced flow touches more than one accounting universe (e.g. State LOLF + local M57),
   // the total is not a consolidated sum — surface the stronger mixed-perimeter caveat (FSC-42).
@@ -63,13 +62,12 @@ export default function FluxPage() {
   const rootName = model?.entityBySiren.get(root)?.name ?? "";
   const tableRows = links.map((l, i) => ({ ...l, key: `${l.source}-${l.target}-${i}` }));
 
-  // The selector lists financeurs (ministries); if focused on another entity (e.g. an operator via
-  // ?focus=), surface it as a selectable option too so the control reflects the current root.
-  const rootIsMinistry = (model?.ministries ?? []).some((m) => m.siren === root);
+  // The selector lists the top public buyers by delegated amount (real DECP flows). A ?focus= on a
+  // buyer outside that list is surfaced as a selectable option too, so the control reflects it.
+  const delegators = model?.delegators ?? [];
+  const knownFocus = delegators.some((d) => d.siren === root);
   const options =
-    !rootIsMinistry && root && rootName
-      ? [{ siren: root, name: rootName }, ...(model?.ministries ?? [])]
-      : (model?.ministries ?? []);
+    !knownFocus && root && rootName ? [{ siren: root, name: rootName }, ...delegators] : delegators;
 
   return (
     <div className="page fr-container">
@@ -83,8 +81,10 @@ export default function FluxPage() {
           <ExampleFlag>Montants d’exemple</ExampleFlag>
         </div>
         <p className="fr-lead" style={{ marginTop: 12, maxWidth: "70ch" }}>
-          Du financeur public à l’opérateur, puis au titulaire du marché ou au délégataire. Survolez
-          un flux pour son montant et sa provenance.
+          Les marchés et délégations publiés (DECP) d’un acheteur public vers ses titulaires. Les
+          montants sont le <strong>montant global du marché</strong> (souvent un plafond
+          d’accord-cadre, sur toute sa durée) — pas une dépense annuelle. Survolez un flux pour son
+          détail.
         </p>
       </div>
 
@@ -102,7 +102,7 @@ export default function FluxPage() {
               id="flux-root"
               style={{ maxWidth: 420 }}
               value={root}
-              onChange={(e) => setRootSel(e.target.value)}
+              onChange={(e) => setFocusSel(e.target.value)}
             >
               {options.map((m) => (
                 <option key={m.siren} value={m.siren}>
@@ -111,10 +111,13 @@ export default function FluxPage() {
               ))}
             </Select>
             <span className="fr-sm text-mention">
-              Total tracé :{" "}
+              Somme des {links.length} flux affichés :{" "}
               <strong className="tnum" style={{ color: "var(--grey-title)" }}>
                 {euroCompact(total)}
-              </strong>
+              </strong>{" "}
+              <span title="Les plus gros marchés/délégations de cet acheteur — pas son total consolidé.">
+                ⓘ
+              </span>
             </span>
           </div>
 
@@ -150,7 +153,7 @@ export default function FluxPage() {
             Équivalent tabulaire
           </h2>
           <DataTable
-            caption={`Flux de financement — ${rootName} (exemple)`}
+            caption={`Flux de financement — ${rootName}${IS_DEMO ? " (exemple)" : ""}`}
             columns={fluxColumns}
             rows={tableRows}
             getRowKey={(r) => r.key}

@@ -1,5 +1,7 @@
-import { Fragment, useMemo, useState, type ReactNode } from "react";
+import { Fragment, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Link, useSearchParams } from "react-router-dom";
+import { displayName } from "../../lib/acronyms";
+import { IS_DEMO } from "../../lib/config";
 import { euroCompact } from "../../lib/format";
 import { LEVELS, type Level } from "../../lib/levels";
 import { tutelleChain } from "../../lib/tutelle";
@@ -39,18 +41,17 @@ const ALL_LEVELS_ON: Record<Level, boolean> = {
   delegated: true,
 };
 
-const searchableText = (e: SearchEntity) =>
-  `${e.name} ${e.acronym ?? ""} ${e.category ?? ""} ${e.siren}`.toLowerCase();
-
 // Stable empty fallbacks so the memo deps don't churn while the data loads.
 const EMPTY_ENTITIES: SearchEntity[] = [];
 const EMPTY_BY_SIREN = new Map<string, SearchEntity>();
 
 export default function SearchPage() {
   const [params] = useSearchParams();
-  const search = useSearch();
   const urlQuery = params.get("q")?.trim() ?? "";
   const [q, setQ] = useState(urlQuery);
+  // `debouncedQ` drives the server-side fetch (useSearch) so we don't hit PostgREST on every
+  // keystroke; `q` drives the controlled input + instant highlight.
+  const [debouncedQ, setDebouncedQ] = useState(urlQuery);
   // Re-sync the controlled input when the URL ?q= changes (deep links, back/forward, a fresh header
   // search) — the React "adjust state during render" pattern, so typing stays free but navigation
   // wins. No effect (avoids the set-state-in-effect rule).
@@ -58,44 +59,48 @@ export default function SearchPage() {
   if (urlQuery !== lastUrlQuery) {
     setLastUrlQuery(urlQuery);
     setQ(urlQuery);
+    setDebouncedQ(urlQuery); // a navigation deep-links straight to its results (no debounce wait)
   }
+  useEffect(() => {
+    if (q === debouncedQ) return;
+    const timer = setTimeout(() => setDebouncedQ(q), 250);
+    return () => clearTimeout(timer);
+  }, [q, debouncedQ]);
+  const search = useSearch(debouncedQ);
   const [levels, setLevels] = useState<Record<Level, boolean>>(ALL_LEVELS_ON);
   const [tutelle, setTutelle] = useState("all");
-  const [sort, setSort] = useState<"amount" | "name">("amount");
+  // Default to name: per-entity budget magnitude is mostly absent on the curated data (PLF is
+  // mission-level, not per-SIREN), so amount-sort would otherwise be an arbitrary tie-break.
+  const [sort, setSort] = useState<"amount" | "name">("name");
 
   const ready = search.status === "ready";
   const entities = ready ? search.entities : EMPTY_ENTITIES;
   const bySiren = ready ? search.bySiren : EMPTY_BY_SIREN;
   const ministries = ready ? search.ministries : EMPTY_ENTITIES;
 
+  // Text matching is done server-side (useSearch → search_entities RPC); here we only apply the
+  // level + tutelle facets and the sort over the returned set.
   const results = useMemo(() => {
-    const needle = q.trim().toLowerCase();
     const filtered = entities.filter((e) => {
       if (e.level && !levels[e.level as Level]) return false;
       if (tutelle !== "all") {
         const chain = tutelleChain(e.siren, bySiren);
         if (e.level !== "state" || chain[0]?.siren !== tutelle) return false;
       }
-      if (needle && !searchableText(e).includes(needle)) return false;
       return true;
     });
     return filtered.sort((a, b) =>
       sort === "amount" ? b.magnitude - a.magnitude : a.name.localeCompare(b.name, "fr"),
     );
-  }, [entities, bySiren, q, levels, tutelle, sort]);
+  }, [entities, bySiren, levels, tutelle, sort]);
 
   const levelCounts = useMemo(() => {
-    const needle = q.trim().toLowerCase();
     const counts: Record<string, number> = {};
     for (const level of Object.keys(LEVELS)) {
-      counts[level] = entities.filter(
-        (e) =>
-          e.level === level &&
-          (!needle || `${e.name}${e.acronym ?? ""}`.toLowerCase().includes(needle)),
-      ).length;
+      counts[level] = entities.filter((e) => e.level === level).length;
     }
     return counts;
-  }, [entities, q]);
+  }, [entities]);
 
   return (
     <div className="page fr-container">
@@ -198,7 +203,7 @@ export default function SearchPage() {
                         {entity.category ? <Badge>{entity.category}</Badge> : null}
                       </div>
                       <div className="fr-h4" style={{ marginBottom: 4 }}>
-                        {highlight(entity.name, q)}
+                        {highlight(displayName(entity.siren, entity.name), q)}
                       </div>
                       <div className="breadcrumb fr-xs">
                         {chain.map((c, i) => (
@@ -213,7 +218,7 @@ export default function SearchPage() {
                       <div className="figure__value" style={{ fontSize: "1.25rem" }}>
                         {euroCompact(entity.magnitude || null)}
                       </div>
-                      <div className="fr-xs text-mention">CP · exemple</div>
+                      <div className="fr-xs text-mention">CP{IS_DEMO ? " · exemple" : ""}</div>
                     </div>
                   </Link>
                 );

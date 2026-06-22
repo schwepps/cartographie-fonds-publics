@@ -1,3 +1,4 @@
+import { IS_DEMO } from "../../lib/config";
 import { allSources, registryUpdatedAt, type Source } from "../../lib/provenance/sources";
 import { Breadcrumb, DataTable, External, Info, Shield, type DataTableColumn } from "../../lib/ui";
 
@@ -21,7 +22,9 @@ const NOTES: { title: string; body: string; id?: string }[] = [
   },
   {
     title: "Périmètre",
-    body: "Le jeu de démonstration couvre une tranche État-central (Culture, ESR, Travail) et quelques entités sociales et locales pour illustrer les quatre niveaux. Le périmètre de production est défini par le registre des sources.",
+    body: IS_DEMO
+      ? "Le jeu de démonstration couvre une tranche État-central (Culture, ESR, Travail) et quelques entités sociales et locales pour illustrer les quatre niveaux. Le périmètre de production est défini par le registre des sources."
+      : "Le périmètre couvre les quatre niveaux — État, local, social, services délégués — tels que définis par le registre des sources, à partir de données publiques ouvertes. Couverture variable selon la publication de chaque source (voir le tableau ci-dessous).",
   },
 ];
 

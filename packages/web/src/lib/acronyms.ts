@@ -36,7 +36,17 @@ export function acronymOf(siren: string | null | undefined): string | null {
   return siren ? (ACRONYM_BY_SIREN[siren] ?? null) : null;
 }
 
-/** A short label for an entity: its acronym if known, else the full name. */
+/**
+ * A display name that flags a missing raison sociale. A curated entity's `name` falls back to its
+ * bare SIREN when the source published none (common for DECP titulaires) — show "SIREN … · nom non
+ * publié" so a 9-digit code reads as an unnamed party, not data noise.
+ */
+export function displayName(siren: string | null | undefined, name: string): string {
+  if (siren && name === siren) return `SIREN ${siren} · nom non publié`;
+  return name;
+}
+
+/** A short label for an entity: its acronym if known, else its (name-aware) display name. */
 export function shortLabel(siren: string | null | undefined, name: string): string {
-  return acronymOf(siren) ?? name;
+  return acronymOf(siren) ?? displayName(siren, name);
 }

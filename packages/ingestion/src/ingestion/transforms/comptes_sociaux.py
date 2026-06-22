@@ -1,26 +1,28 @@
-"""Transform the social-protection accounts (DREES / Urssaf / LFSS) into aggregated social budget
-facts (FSC-34).
+"""Transform the social-protection accounts (DREES « Comptes de la protection sociale », dataset
+305) into aggregated social budget facts (FSC-34).
 
-The "comptes de la protection sociale" report spending **by branche** (risque) — Maladie,
-Accidents du travail-Maladies professionnelles, Vieillesse, Famille, Autonomie — in the **social**
-accounting universe (LFSS), distinct from the State's LOLF (mission/programme, AE/CP) and the
-collectivités' M57/M14. So the facts are stamped ``nomenclature=social``; the anti-double-counting
-methodology (FSC-42) keeps them from being silently summed with State credits or local balances.
+The comptes report social spending along **two hierarchies**: a *risque* (prestation) dimension —
+Santé, Vieillesse-survie, Famille, Emploi, Logement, Pauvreté-exclusion sociale — and a *secteur
+institutionnel* (régime) dimension. They live in the **social** accounting universe (LFSS), distinct
+from the State's LOLF (mission/programme, AE/CP) and the collectivités' M57/M14, so the facts are
+stamped ``nomenclature=social``; the anti-double-counting methodology (FSC-42) keeps them from being
+silently summed with State credits or local balances.
 
 This is the **most autonomous, hardest-to-link layer** (registry ``volatility.notes``: "Traiter en
-module agrégé"): branches are not SIREN entities, so ``entity_siren`` is ``None`` and this transform
+module agrégé"): risques are not SIREN entities, so ``entity_siren`` is ``None`` and this transform
 emits **no entities and no edges** — the social layer is an aggregated module, deliberately not
 woven into the entity graph.
 
-**Anti-double-counting within the social accounts (golden rule #8).** The source mixes grains: a
-branche figure, régime sub-rows that decompose it, and an "ensemble des branches" total that sums
-them. To avoid multiplying the spend we emit **one fact per (exercice, branche)** from the curated
-branche allowlist at the **consolidated grain** (``niveau`` = "tous régimes" when the source carries
-a niveau/régime column) and **never sum rows together**: off-allowlist labels, régime sub-grains,
-and any second consolidated figure for the same branche/year are each **counted in the report**
-(``skipped_branche`` / ``skipped_subgrain`` / ``duplicate_grain``), never silently dropped or added
-(golden rule #5). The branche / niveau vocabulary is the publisher's; **à confirmer** against the
-live DREES dataset before freezing (mirrors the OFGL transform).
+**Anti-double-counting within the social accounts (golden rule #8).** Both hierarchies mix grains:
+the prestation dimension has a grand total (``ps_niveau`` 0, "Prestations de protection sociale")
+that sums the six risques, plus sub-levels that decompose each one; the régime dimension has a
+"Total tous régimes" consolidation plus individual régimes that decompose it. To avoid multiplying
+the spend we emit **one fact per (exercice, risque)** at the **consolidated grain** — the top level
+(``ps_niveau == "1"``) of the **all-régimes** figure (``si_nom == "Total tous régimes"``) — and
+**never sum rows together**. Every other row (the grand total, a risk sub-level, an individual
+régime, an off-allowlist label, a second figure for the same risque/year) is **counted in the
+report**, never silently dropped or added (golden rule #5). The risque / secteur vocabulary was
+confirmed against the live DREES dataset (2026-06); amounts are published in **millions of euros**.
 
 Pure: persistence is the loader's job; columns are matched by **pattern** (labels drift), never
 frozen positions (mirrors the State-budget and OFGL transforms).
@@ -38,40 +40,46 @@ from .budget_common import EXERCICE_PATTERNS, clean_cell, parse_amount, parse_ye
 
 SOURCE_ID = "comptes_sociaux"
 
-# Column detection (DREES/Urssaf ODS export labels; match by pattern, never a frozen header).
-_BRANCHE_PATTERNS = (r"\bbranche\b", r"\brisque\b")
-# `^montant$` first so the euro figure is taken over `Euros par habitant`/ratio columns; then the
-# common social-accounts spend labels.
-_MONTANT_PATTERNS = (r"^montant$", r"\bmontant\b", r"prestation", r"d[ée]pense", r"charge")
-# Optional grain column: when present, restrict to the consolidated grain (see `_TOP_GRAIN`).
-_NIVEAU_PATTERNS = (r"niveau", r"r[ée]gime", r"p[ée]rim[èe]tre")
+# Column detection (DREES ODS field names; match by pattern, never a frozen header).
+_BRANCHE_PATTERNS = (r"\brisque\b", r"\bbranche\b")
+# `^val$`/`^valeur$` first (the DREES amount column), then the generic social-spend labels.
+_MONTANT_PATTERNS = (
+    r"^val$",
+    r"^valeur$",
+    r"^montant$",
+    r"\bmontant\b",
+    r"prestation",
+    r"d[ée]pense",
+    r"charge",
+)
+# The prestation hierarchy level (``ps_niveau``) and the secteur-institutionnel name (``si_nom``):
+# the two grain columns that pin the consolidated figure. Required — without them the
+# anti-double-counting grain can't be established, so the transform fails loud (golden rule #3/#8).
+_PRESTATION_NIVEAU_PATTERNS = (r"^ps[_ ]?niveau$", r"niveau.*prestation")
+_SECTEUR_PATTERNS = (r"^si[_ ]?nom$", r"secteur.*institutionnel")
 
-# Curated branche allowlist (normalised, see `_norm`): the canonical Sécu branches. Their
-# consolidated figures partition social spending, so summing ACROSS branches is double-count-free.
-# Aggregates that sum branches ("ensemble des branches", "total") are deliberately excluded — adding
-# one re-introduces double-counting. **à confirmer** against the live dataset vocabulary.
-_BRANCHES: frozenset[str] = frozenset(
+# The 6 DREES risques (normalised, see `_norm`): their consolidated figures partition social
+# spending, so summing ACROSS them is double-count-free. The grand total ("prestations de protection
+# sociale", ps_niveau 0) is deliberately excluded — it sums the six.
+_RISQUES: frozenset[str] = frozenset(
     {
-        "maladie",
-        "at-mp",
-        "accidents du travail - maladies professionnelles",
-        "vieillesse",
-        "retraite",
+        "sante",
+        "vieillesse-survie",
         "famille",
-        "autonomie",
+        "emploi",
+        "logement",
+        "pauvrete-exclusion sociale",
     }
 )
 
-# Consolidated grain kept when the source ships a niveau/régime column: drop régime sub-rows that
-# decompose a branche (summing them under the branche double-counts). **à confirmer** likewise.
-_TOP_GRAIN: frozenset[str] = frozenset(
-    {
-        "tous regimes",
-        "tous regimes confondus",
-        "ensemble des regimes",
-        "ensemble",
-    }
-)
+# The kept grain: the top risk level of the all-régimes consolidation. Deeper prestation levels
+# decompose a risque, and individual régimes decompose the consolidation — keeping either double-
+# counts. (`_RISK_LEVEL` compares the raw ps_niveau cell; `_TOUS_REGIMES` the normalised si_nom.)
+_RISK_LEVEL = "1"
+_TOUS_REGIMES = "total tous regimes"
+
+# DREES publishes amounts in MILLIONS of euros; the curated facts are stored in euros.
+_MILLIONS = 1_000_000
 
 
 def _norm(value: str) -> str:
@@ -82,16 +90,20 @@ def _norm(value: str) -> str:
 
 
 def build(headers: list[str], rows: list[dict[str, str]]) -> TransformResult:
-    """Social-accounts rows → aggregated ``social`` budget facts (by branche), plus a report."""
+    """DREES rows → aggregated ``social`` facts (one per exercice × risque), plus a report."""
     branche_col = first_column(headers, _BRANCHE_PATTERNS)
     exercice_col = first_column(headers, EXERCICE_PATTERNS)
     montant_col = first_column(headers, _MONTANT_PATTERNS)
+    niveau_col = first_column(headers, _PRESTATION_NIVEAU_PATTERNS)
+    secteur_col = first_column(headers, _SECTEUR_PATTERNS)
     missing = [
         name
         for name, col in (
-            ("branche", branche_col),
+            ("risque", branche_col),
             ("exercice", exercice_col),
             ("montant", montant_col),
+            ("prestation niveau", niveau_col),
+            ("secteur", secteur_col),
         )
         if col is None
     ]
@@ -99,35 +111,38 @@ def build(headers: list[str], rows: list[dict[str, str]]) -> TransformResult:
         raise ValueError(
             f"comptes_sociaux: required column(s) {missing} not found in headers {headers!r}"
         )
-    assert branche_col and exercice_col and montant_col  # narrowed by the guard
-    niveau_col = first_column(headers, _NIVEAU_PATTERNS)
+    assert branche_col and exercice_col and montant_col and niveau_col and secteur_col
 
-    # One fact per (exercice, branche): the grain guard already keeps a single consolidated figure
-    # per branche, so we do NOT sum — a second row for the same branche/year is a data anomaly (a
-    # restated/synonym total) counted in `duplicate_grain`, never added (golden rule #8). We key on
-    # the NORMALISED branche label so casing/accent/whitespace variants collapse to one fact, and
-    # keep the first raw label for `programme` (mirroring OFGL's agrégat handling).
-    by_key: dict[tuple[int, str], tuple[str, float]] = {}  # (exercice, norm) -> (raw label, amount)
-    considered = 0  # rows in the curated branche allowlist at the consolidated grain (denominator)
-    skipped_branche = 0  # off the curated branche allowlist
-    skipped_subgrain = 0  # an allowlisted branche but a régime sub-grain (would double-count)
+    # One fact per (exercice, risque) at the consolidated grain — we do NOT sum, so a second figure
+    # for an already-seen (exercice, risque) is an anomaly counted in `duplicate_grain`, never added
+    # (golden rule #8). Keyed on the NORMALISED risque so casing/accent variants collapse to one.
+    by_key: dict[tuple[int, str], tuple[str, float]] = {}  # (exercice, norm) -> (raw label, euros)
+    considered = 0  # rows at the kept grain whose risque is in the allowlist (the denominator)
+    skipped_branche = 0  # off the curated risque allowlist (incl. the grand total)
+    skipped_subgrain = 0  # a régime sub-figure or a prestation sub-level (would double-count)
     dropped_no_exercice = 0
     dropped_no_amount = 0
-    duplicate_grain = 0  # a second consolidated figure for an already-seen (exercice, branche)
+    duplicate_grain = 0  # a second consolidated figure for an already-seen (exercice, risque)
 
     for row in rows:
+        secteur = clean_cell(row, secteur_col)
+        niveau = clean_cell(row, niveau_col)
+        # Keep only the all-régimes consolidation at the top risk level; everything else is a finer
+        # grain of a kept figure (golden rule #8) — counted, never summed.
+        if (
+            secteur is None
+            or _norm(secteur) != _TOUS_REGIMES
+            or niveau is None
+            or niveau != _RISK_LEVEL
+        ):
+            skipped_subgrain += 1
+            continue
         label = clean_cell(row, branche_col)
         norm_label = _norm(label) if label is not None else None
-        if norm_label is None or norm_label not in _BRANCHES:
-            skipped_branche += 1  # outside the curated branche set
+        if norm_label is None or norm_label not in _RISQUES:
+            skipped_branche += 1  # outside the curated risque set (e.g. the grand total)
             continue
         assert label is not None  # narrowed: norm_label is set only when label is not None
-        if niveau_col is not None:
-            niveau = clean_cell(row, niveau_col)
-            if niveau is not None and _norm(niveau) not in _TOP_GRAIN:
-                # régime decomposition — summing it under the branche would double-count
-                skipped_subgrain += 1
-                continue
         considered += 1
         exercice = parse_year(row.get(exercice_col))
         if exercice is None:  # no usable year -> the row cannot form a fact; surfaced in the report
@@ -138,24 +153,24 @@ def build(headers: list[str], rows: list[dict[str, str]]) -> TransformResult:
             dropped_no_amount += 1
             continue
         key = (exercice, norm_label)
-        if key in by_key:  # already have this branche/year at top grain -> anomaly, not summed
+        if key in by_key:  # already have this risque/year at the consolidated grain -> anomaly
             duplicate_grain += 1
             continue
-        by_key[key] = (label, amount)  # first raw label wins for display
+        by_key[key] = (label, round(amount * _MILLIONS, 2))  # millions -> euros; first label wins
 
     facts = [
         BudgetFact(
-            entity_siren=None,  # social branches are not SIREN entities (aggregated module)
+            entity_siren=None,  # social risques are not SIREN entities (aggregated module)
             exercice=exercice,
             mission=None,  # LOLF mission/programme do not apply to the social universe
-            programme=label,  # the (first-seen) branche label is the within-nomenclature class
+            programme=label,  # the (first-seen) risque label is the within-nomenclature class
             amount_ae_eur=None,  # social accounts are cash flows: no AE/CP split
             amount_cp_eur=amount,
             executed=True,  # the comptes are realised, not voted
             nomenclature=Nomenclature.social,
             provenance=SOURCE_ID,
         )
-        for (exercice, _norm_branche), (label, amount) in sorted(
+        for (exercice, _norm_risque), (label, amount) in sorted(
             by_key.items(), key=lambda kv: (kv[0][0], kv[0][1])
         )
     ]
@@ -178,5 +193,5 @@ def build(headers: list[str], rows: list[dict[str, str]]) -> TransformResult:
 
 @register_transform(SOURCE_ID)
 def transform(headers: list[str], rows: list[dict[str, str]]) -> TransformResult:
-    """Registered entry point: social-accounts rows → aggregated ``social`` facts (by branche)."""
+    """Registered entry point: DREES rows → aggregated ``social`` facts (by risque)."""
     return build(headers, rows)
